@@ -655,12 +655,24 @@ export class UI {
         <div class="hook">${affordable ? `${affordable} Hearth upgrade${affordable > 1 ? 's' : ''} affordable!` : nextChar ? `${nextChar[1].cost - save.cinders > 0 ? nextChar[1].cost - save.cinders + ' ✦ until ' + nextChar[1].name + ' unlocks' : nextChar[1].name + ' can be unlocked!'}` : ''}</div>
         <div class="row">
           <button class="btn primary" data-a="again">Again [Enter]</button>
+          <button class="btn" data-a="share">Share</button>
           <button class="btn" data-a="hearth">The Hearth</button>
           <button class="btn ghost" data-a="title">Title</button>
         </div>
       </div>`, 'dim');
     const charId = g.charId;
     this.bind({
+      share: (el) => {
+        const c = CHARACTERS[g.charId], st = STAGES[g.stageId];
+        const fused = g.weapons.filter((w) => w.fused).map((w) => FUSIONS[w.id].name);
+        const text = `Emberwake 🔥 ${c.name}, ${c.title} ${win ? 'broke the Eclipse' : 'survived'} ${fmtTime(g.time)} on ${st.name}`
+          + (g.heat ? ` (Heat ${g.heat})` : '') + (g.daily ? ` · Daily ${g.daily.key}` : '')
+          + ` · LV ${g.level} · ${fmtNum(g.kills)} slain` + (fused.length ? ` · Ascended: ${fused.join(', ')}` : '')
+          + (!win && !abandoned && g.lastHitBy ? ` · felled by ${srcName(g.lastHitBy)}` : '');
+        const done = () => { el.textContent = 'Copied!'; setTimeout(() => (el.textContent = 'Share'), 1600); };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => prompt('Copy your run:', text));
+        else prompt('Copy your run:', text);
+      },
       again: () => { this.close(); g.daily ? this.h.startRun(g.daily.charId, g.daily.stageId, { daily: g.daily }) : this.h.startRun(charId); },
       hearth: () => { this.h.quitToTitle(); this.showHearth(); },
       title: () => { this.h.quitToTitle(); this.showTitle(); },
