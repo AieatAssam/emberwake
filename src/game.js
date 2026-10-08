@@ -1052,6 +1052,7 @@ export class Game {
     } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
       this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
     }
+    this.checkHints();
     this.featT -= rawDt;
     if (this.featT <= 0) { this.featT = 0.5; this.checkFeats(); }
     setIntensity(Math.min(1, this.time / 600 + this.kindleTier * 0.08 + (this.boss ? 0.3 : 0)));
@@ -1563,6 +1564,18 @@ export class Game {
 
     for (const k in this.L) this.L[k].flush();
     this.ui.updateHUD(this);
+  }
+
+  // one-time contextual onboarding hints, each shown once ever
+  checkHints() {
+    if (this.hintCd > 0) { this.hintCd -= 1 / 60; return; }
+    const H = save.hints, touch = matchMedia('(pointer: coarse)').matches;
+    const show = (id, text) => { if (H[id]) return false; H[id] = true; persist(); this.ui.hintPop(text); this.hintCd = 6; return true; };
+    if (this.time > 0.5 && show('move', touch ? 'Drag anywhere to move. Your weapons fire on their own.' : 'Move with WASD or the arrow keys. Your weapons fire on their own.')) return;
+    if (this.pickups.some((p) => p.alive && p.type === 'gem') && show('gems', 'Gather the gems the dark leaves behind. They level you up.')) return;
+    if (this.combo >= 12 && show('kindle', 'Keep killing to build your Kindle streak: more XP and cinders. Stop and it fades.')) return;
+    if (this.flare >= 100 && show('flare', touch ? 'Your Flare is ready! Tap the ✹ button to unleash it.' : 'Your Flare is ready! Press SPACE to unleash it.')) return;
+    if (this.pickups.some((p) => p.alive && p.type === 'chest') && show('chest', 'A relic chest! Grab it for free upgrades. Golden arrows point to chests off-screen.')) return;
   }
 
   checkFeats() {

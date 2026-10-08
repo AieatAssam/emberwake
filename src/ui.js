@@ -392,6 +392,14 @@ export class UI {
     $('#toasts').appendChild(el);
     setTimeout(() => el.remove(), 2600);
   }
+  hintPop(text) {
+    document.querySelectorAll('.hint-pop').forEach((el) => el.remove());
+    const el = document.createElement('div');
+    el.className = 'hint-pop';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5500);
+  }
   featPop(f) {
     const el = document.createElement('div');
     el.className = 'feat-pop';
