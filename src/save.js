@@ -12,7 +12,7 @@ const DEFAULT = {
   lastStage: 'gloam',
   best: { time: 0, kills: 0, level: 0 },
   totals: { runs: 0, kills: 0, cinders: 0, wins: 0 },
-  settings: { muted: false, music: true, numbers: true, shake: true },
+  settings: { muted: false, music: true, numbers: true, shake: true, lowfx: false },
 };
 
 export const save = load();

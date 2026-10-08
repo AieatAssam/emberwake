@@ -180,6 +180,7 @@ export class Game {
     this.chunks = new Map();
     this.chestQueue = [];
     this.pressure = 1;
+    this.maxFx = save.settings.lowfx ? Math.round(MAX_FX / 2) : MAX_FX;
     this.bossKills = {};
     this.featsEarned = [];
     this.featT = 0;
@@ -417,7 +418,10 @@ export class Game {
   inView(x, y, m = 0) {
     return Math.abs(x - this.player.x) < this.halfW + m && Math.abs(y - this.player.y) < this.halfH + m;
   }
-  flash(color, a) { this.flashColor = color; this.flashAlpha = Math.max(this.flashAlpha, a); }
+  flash(color, a) {
+    if (save.settings.lowfx) return; // no full-screen flashes in reduced-effects mode
+    this.flashColor = color; this.flashAlpha = Math.max(this.flashAlpha, a);
+  }
 
   enemiesIn(x, y, r, out) { out.length = 0; return this.grid.query(x, y, r, out); }
 
@@ -444,7 +448,7 @@ export class Game {
 
   // ---------- FX ----------
   spawnFx(tex, x, y, o) {
-    if (this.fx.length >= MAX_FX) return null;
+    if (this.fx.length >= this.maxFx) return null;
     const layer = o.add === false ? this.L.fx : this.L.fxAdd;
     const p = layer.add(tex, x, y);
     p.tint = o.tint ?? 0xffffff;
@@ -610,7 +614,7 @@ export class Game {
     // death fx
     const col = ENEMY_COLORS[e.type] || 0xb080ff;
     const big = e.boss ? 4 : e.elite ? 2 : 1;
-    if ((this.fx.length < MAX_FX * 0.8 && this.deathFxBudget-- > 0) || big > 1) {
+    if ((this.fx.length < this.maxFx * 0.8 && this.deathFxBudget-- > 0) || big > 1) {
       this.burst(x, y, 5 * big, [col, 0xffffff], 160 * big, 0.6, 'shard');
       this.spawnFx(T.glow, x, y, { life: 0.22, s0: 0.5 * big * e.scale, s1: 1.4 * big * e.scale, tint: col, a: 0.8 });
       this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: 0x302040, a: 0.5, add: false, vy: -20 });
@@ -883,7 +887,7 @@ export class Game {
     for (const e of list) this.damage(e, dmg, { w, knock, fx: x, fy: y });
     this.spawnFx(T.glow, x, y, { life: 0.3, s0: radius / 40, s1: radius / 18, tint, a: 0.9 });
     this.shockwave(x, y, tint, radius, 0.3);
-    if (this.fx.length < MAX_FX * 0.7) this.burst(x, y, 8, [tint, 0xffffff], radius * 3, 0.6);
+    if (this.fx.length < this.maxFx * 0.7) this.burst(x, y, 8, [tint, 0xffffff], radius * 3, 0.6);
     sfx.boom();
   }
 
@@ -934,7 +938,7 @@ export class Game {
       if (pr.fade) p.alpha = Math.min(1, pr.life / (pr.max * 0.3));
       if (pr.trail) {
         pr.trailT -= dt;
-        if (pr.trailT <= 0 && this.fx.length < MAX_FX * 0.75) {
+        if (pr.trailT <= 0 && this.fx.length < this.maxFx * 0.75) {
           pr.trailT = pr.trail;
           this.spawnFx(T.dot, pr.x + rand(-3, 3), pr.y + rand(-3, 3), { life: 0.3, s0: 1.4 * pr.scale, s1: 0, tint: pr.trailTint, a: 0.8, vx: -pr.vx * 0.1, vy: -pr.vy * 0.1 });
         }
@@ -1205,7 +1209,7 @@ export class Game {
             if (e.stT <= 0) { e.state = 2; e.stT = 0.75; }
           } else {
             mvx = e.dirX * sp * 5; mvy = e.dirY * sp * 5; e.stT -= dt;
-            if (this.fx.length < MAX_FX * 0.6 && Math.random() < 0.4) this.spawnFx(T.smoke, e.x, e.y + 8, { life: 0.4, s0: 0.4, s1: 0.8, tint: 0x504060, a: 0.4, add: false });
+            if (this.fx.length < this.maxFx * 0.6 && Math.random() < 0.4) this.spawnFx(T.smoke, e.x, e.y + 8, { life: 0.4, s0: 0.4, s1: 0.8, tint: 0x504060, a: 0.4, add: false });
             if (e.stT <= 0) { e.state = 0; e.stT = rand(2, 3.5); }
           }
         } else if (e.d.ranged) {

@@ -234,7 +234,7 @@ export class UI {
     this.open(`
       <div class="panel">
         <h2>Settings</h2>
-        ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}
+        ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}
         <div class="row"><button class="btn" data-a="back">Back</button>${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
       </div>`);
     this.screen.querySelectorAll('input[data-k]').forEach((el) => el.addEventListener('change', () => {
