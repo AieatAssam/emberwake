@@ -1316,9 +1316,12 @@ export class Game {
       const hpBefore = P.hp;
       this.hurtPlayer(contactDmg, 'touch:' + contactSrc);
       // Thorn Mail: reflect a share of the blow back at the attacker
-      if (this.stats.thorns > 0 && contactE && contactE.alive && P.hp < hpBefore) {
-        this.damage(contactE, (hpBefore - P.hp) * this.stats.thorns * (contactE.boss ? 0.5 : 1));
-        this.burst(contactE.x, contactE.y - 10, 8, [0xd8e8c0, 0x9ab07a], 220, 0.6, 'shard');
+      if (this.stats.thorns > 0 && P.hp < hpBefore) {
+        const refl = (hpBefore - P.hp) * this.stats.thorns;
+        const near = this.enemiesIn(P.x, P.y - 10, 70, this.qExp);
+        for (const t of near) if (!t.inert) this.damage(t, t.boss ? refl * 0.5 : refl);
+        this.burst(P.x, P.y - 10, 14, [0xd8e8c0, 0x9ab07a], 260, 0.7, 'shard');
+        this.shockwave(P.x, P.y - 10, 0x9ab07a, 70, 0.25);
       }
       if (contactBoss) {
         // bosses shove you clear instead of juggling you to death

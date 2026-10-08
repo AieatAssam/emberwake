@@ -171,7 +171,7 @@ export const PASSIVES = {
   growth: { name: 'Sage Tome', desc: '+8% experience', max: 5, apply: (s, l) => (s.growth += 0.08 * l) },
   greed: { name: 'Gilded Tooth', desc: '+15% cinders', max: 5, apply: (s, l) => (s.greed += 0.15 * l) },
   reservoir: { name: 'Ember Reservoir', desc: '+20% Flare charge rate', max: 5, apply: (s, l) => (s.flareGain += 0.2 * l) },
-  thorns: { name: 'Thorn Mail', desc: 'Melee attackers take 150% of the damage they deal', max: 5, apply: (s, l) => (s.thorns += 1.5 * l) },
+  thorns: { name: 'Thorn Mail', desc: 'When struck in melee, thorns burst out: nearby foes take 300% of the damage dealt', max: 5, apply: (s, l) => (s.thorns += 3 * l) },
 };
 
 // Dark Pacts: rare, risky draft cards. Max 3 per run.
