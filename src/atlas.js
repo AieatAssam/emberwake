@@ -660,6 +660,31 @@ function drawEnemies() {
     c.fillStyle = '#100808'; c.fillRect(78, 22, 34, 10);
     eye(c, 86, 27, 4, '#ff6a20'); eye(c, 104, 27, 4, '#ff6a20');
   });
+  // Gloam Herald — gaunt shadow in a tattered cloak, crown of three pale eye-lights, black banner
+  for (const f of [0, 1]) make('herald' + f, 90, 120, (c) => {
+    shadow(c, 45, 112, 26, 6);
+    // banner pole + tattered black banner
+    c.strokeStyle = '#2a2230'; c.lineWidth = 3; c.beginPath(); c.moveTo(70, 112); c.lineTo(70, 10); c.stroke();
+    c.beginPath(); c.moveTo(70, 14); c.lineTo(88 - f * 3, 18); c.lineTo(84 - f * 2, 34); c.lineTo(88, 40 + f * 2); c.lineTo(72, 44); c.closePath();
+    c.fillStyle = '#0c0812'; c.fill(); c.strokeStyle = '#5a4a6a'; c.lineWidth = 1.5; c.stroke();
+    circle(c, 79, 28, 3, null, '#b8a8ff', 1.2);
+    // cloak body: tall tapered shape with ragged hem
+    c.beginPath(); c.moveTo(45, 22);
+    c.bezierCurveTo(62, 30, 64, 70, 62, 104);
+    c.lineTo(56, 98); c.lineTo(52, 108); c.lineTo(46, 99); c.lineTo(40, 110); c.lineTo(35, 99); c.lineTo(29, 106); c.lineTo(28, 96);
+    c.bezierCurveTo(26, 70, 28, 30, 45, 22);
+    c.fillStyle = lin(c, 0, 22, 0, 108, [[0, '#2a2038'], [1, '#08060c']]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    // arm holding pole
+    c.strokeStyle = '#1a1424'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(55, 44); c.lineTo(68, 50 + f); c.stroke();
+    // hood with void face
+    c.beginPath(); c.moveTo(45, 6); c.bezierCurveTo(60, 12, 58, 34, 45, 38); c.bezierCurveTo(32, 34, 30, 12, 45, 6);
+    c.fillStyle = '#1a1424'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
+    ellipse(c, 45, 25, 8, 9, '#020104');
+    // crown of three pale eye-lights
+    for (const [x, y] of [[37, 9], [45, 4], [53, 9]]) glowDot(c, x, y, 6, 'rgba(200,190,255,0.85)');
+    eye(c, 41, 25, 1.6, '#c8c0ff'); eye(c, 49, 25, 1.6, '#c8c0ff');
+  });
   // Eclipse Tyrant — a black sun wearing a crown of corona
   for (const f of [0, 1]) make('tyrant' + f, 220, 220, (c) => {
     c.save(); c.translate(110, 105);
@@ -746,7 +771,7 @@ function drawEnemies() {
   // White flash variants
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
-    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem',
+    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem', 'herald0', 'herald1',
     'imp0', 'imp1', 'frostwisp0', 'frostwisp1', 'lurker0', 'lurker1']) makeWhite(n);
 }
 

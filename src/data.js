@@ -233,6 +233,7 @@ export const ENEMIES = {
   sentinel: { tex: 'sentinel', hp: 140, speed: 44, dmg: 18, xp: 10, r: 23, knockRes: 0.8 },
   matron: { tex: 'matron', hp: 4200, speed: 58, dmg: 20, xp: 250, r: 58, boss: true, knockRes: 1, summon: 'broodling' },
   colossus: { tex: 'colossus', hp: 16000, speed: 46, dmg: 40, xp: 600, r: 75, boss: true, knockRes: 1, slam: true },
+  herald: { tex: 'herald', hp: 11000, speed: 22, dmg: 30, xp: 450, r: 30, boss: true, knockRes: 1, blink: true },
   tyrant: { tex: 'tyrant', hp: 90000, speed: 62, dmg: 60, xp: 2500, r: 85, boss: true, knockRes: 1, nova: true, final: true },
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
@@ -279,6 +280,7 @@ export const EVENTS = [
   { at: 690, type: 'elite', enemy: 'husk' },
   { at: 720, type: 'stampede', enemy: 'wraith', count: 70 },
   { at: 750, type: 'elite', enemy: 'sentinel' },
+  { at: 750, type: 'boss', enemy: 'herald' },
   { at: 780, type: 'ring', enemy: 'sentinel', count: 30 },
   { at: 810, type: 'elite', enemy: 'beetle' },
   { at: 840, type: 'stampede', enemy: 'husk', count: 60 },
@@ -392,6 +394,7 @@ export const FEATS = {
   twoFusions: { name: 'Twin Suns', desc: 'Hold two Ascended weapons at once', reward: 300, check: (g) => g.weapons.filter((w) => w.fused).length >= 2 },
   pacts3: { name: 'Blood Debtor', desc: 'Swear three Dark Pacts in one run', reward: 200, check: (g) => g.pacts.length >= 3 },
   matron: { name: 'Broodbreaker', desc: 'Slay the Brood Matron', reward: 120, check: (g) => g.bossKills.matron },
+  herald: { name: 'Silence the Herald', desc: 'Slay the Gloam Herald', reward: 300, check: (g) => g.bossKills.herald },
   colossus: { name: 'Quench the Forge', desc: 'Slay the Cinder Colossus', reward: 250, check: (g) => g.bossKills.colossus },
   tyrant: { name: 'Dawnbringer', desc: 'Slay the Eclipse Tyrant', reward: 600, check: (g) => g.bossKills.tyrant },
   overcharge25: { name: 'Beyond the Limit', desc: 'Stack 25 Overcharges', reward: 300, check: (g) => (g.overcharge || 0) >= 25 },
@@ -446,6 +449,7 @@ export const BESTIARY = {
   lurker: { name: 'Mire Lurker', lore: 'Sinks beneath the black water and rises at your heels. Strike when it surfaces.' },
   matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
+  herald: { name: 'The Gloam Herald', lore: 'It does not walk; it arrives. Watch the pale crown flare, then move.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
 };
 

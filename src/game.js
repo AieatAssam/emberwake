@@ -1326,8 +1326,8 @@ export class Game {
     }
     if (e.stT > 0) return;
     // telegraph: slams and novas wind up visibly before they fire
-    if ((e.d.slam || e.d.nova) && !e.charging) {
-      e.charging = e.d.slam ? 0.8 : 0.5;
+    if ((e.d.slam || e.d.nova || e.d.blink) && !e.charging) {
+      e.charging = e.d.slam ? 0.8 : e.d.blink ? 0.7 : 0.5;
       e.stT = e.charging;
       if (e.d.slam) this.spawnFx(T.target, e.x, e.y, { life: 0.8, s0: 1, s1: 200 / 28, tint: 0xff3020, a: 0.85, drag: 0 });
       else this.spawnFx(T.glow, e.x, e.y - 20, { life: 0.5, s0: 1, s1: 4.5, tint: 0xff3a6a, a: 0.7, drag: 0 });
@@ -1357,6 +1357,19 @@ export class Game {
         this.enemyShot(e.x, e.y, Math.cos(a) * 200, Math.sin(a) * 200, e.dmg * 0.5);
       }
       if (dist < 200) this.hurtPlayer(e.dmg, 'slam');
+    } else if (e.d.blink) {
+      // vanish, then arrive close to the Bearer and erupt
+      e.stT = 3.6;
+      const P = this.player, a = Math.random() * TAU, d = rand(150, 210);
+      this.shockwave(e.x, e.y, 0xb8a8ff, 160, 0.4);
+      this.burst(e.x, e.y - 40, 24, [0x2a2038, 0xb8a8ff], 260, 0.9, 'smoke');
+      e.x = P.x + Math.cos(a) * d; e.y = P.y + Math.sin(a) * d;
+      this.shockwave(e.x, e.y, 0xb8a8ff, 260, 0.5);
+      this.shake = Math.max(this.shake, 8);
+      for (let k = 0; k < 16; k++) {
+        const b = (k / 16) * TAU;
+        this.enemyShot(e.x, e.y - 40, Math.cos(b) * 130, Math.sin(b) * 130, e.dmg * 0.4);
+      }
     } else if (e.d.nova) {
       e.stT = 3;
       e.spiral = (e.spiral || 0) + 0.4;
@@ -1678,11 +1691,12 @@ export class Game {
 const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
 const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
 const ENEMY_COLORS = {
+  herald: 0xb8a8ff,
   gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
   imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070,
 };
-function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
+function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', herald: 'THE GLOAM HERALD', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }
 function weighted(pairs) {
   let tot = 0; for (const [, w] of pairs) tot += w;

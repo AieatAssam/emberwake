@@ -370,7 +370,7 @@ export class UI {
     this.set('#bossbar', '.on', !!boss);
     if (boss) {
       this.set('#bossbar .fill', 'w', Math.max(0, (boss.hp / boss.maxHp) * 100).toFixed(1) + '%');
-      this.set('#bossbar .name', 'text', { matron: 'The Brood Matron', colossus: 'The Cinder Colossus', tyrant: 'The Eclipse Tyrant' }[boss.type]);
+      this.set('#bossbar .name', 'text', { matron: 'The Brood Matron', colossus: 'The Cinder Colossus', herald: 'The Gloam Herald', tyrant: 'The Eclipse Tyrant' }[boss.type]);
     }
     if ((this._invTick = (this._invTick || 0) + 1) % 15 !== 0) return;
     // inventory (only rebuild on change)
