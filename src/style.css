@@ -306,3 +306,7 @@ table.records td img.sil { filter: brightness(0); }
 .heat-tag { color: #ff7a3a; border-color: rgba(255,122,58,.4) !important; }
 .daily-tag { color: var(--ember2); }
 .oc-tag { color: var(--fusion); }
+
+/* death recap */
+.death-recap { margin: 8px auto 0; max-width: 520px; font-size: 13px; color: var(--muted); }
+.death-recap b { color: #ff8a9a; }

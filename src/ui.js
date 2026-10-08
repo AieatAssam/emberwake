@@ -640,6 +640,7 @@ export class UI {
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
         ${newBest ? '<div class="newbest">NEW BEST TIME</div>' : ''}
         ${heatUnlocked ? `<div class="newbest">HEAT ${heatUnlocked} UNLOCKED</div>` : ''}
+        ${!win && !abandoned && g.lastHitBy ? `<div class="death-recap">Felled by <b>${esc(srcName(g.lastHitBy))}</b>${g.dmgLog ? ` · most damage from ${Object.entries(g.dmgLog).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${esc(srcName(k))} (${Math.round(v)})`).join(', ')}` : ''}</div>` : ''}
         ${g.daily ? `<div class="sub">Daily Ember ${g.daily.key}${dailyBonus ? ` · first run bonus <b>+${dailyBonus} ✦</b>` : ''}</div>` : ''}
         ${g.heat ? `<div class="sub">${STAGES[g.stageId].name} · Heat ${g.heat}</div>` : ''}
         <div class="res-grid">
@@ -669,3 +670,13 @@ export class UI {
 }
 
 function it_isFusion(it) { return it && it.kind === 'fusion'; }
+
+// readable names for damage sources recorded by Game.hurtPlayer
+function srcName(src) {
+  const [kind, raw = ''] = src.split(':');
+  const elite = raw.endsWith('*'), id = raw.replace('*', '');
+  const name = (BESTIARY[id] && BESTIARY[id].name) || id;
+  if (kind === 'touch') return (elite ? 'an elite ' : '') + name;
+  if (kind === 'shot') return id ? `${name}'s orbs` : 'Spitter venom';
+  return { slam: "the Colossus's slam", 'imp-ember': 'Cinder Imp embers', volatile: 'a volatile elite\'s embers' }[kind] || kind;
+}
