@@ -486,7 +486,7 @@ export class Game {
   shockwave(x, y, tint, radius, life = 0.45) {
     this.spawnFx(T.ring, x, y, { life, s0: 0.1, s1: radius / 58, tint, a: 0.9, drag: 0 });
   }
-  dmgNumber(x, y, val, crit) {
+  dmgNumber(x, y, val, crit, tint = 0xffffff) {
     if (!save.settings.numbers || this.numbers.length > 120 || (this.pressure > 2 && !crit)) return;
     const str = String(Math.max(1, Math.round(val))) + (crit ? '!' : '');
     const sc = crit ? 0.8 : 0.55;
@@ -497,7 +497,7 @@ export class Game {
     for (let i = 0; i < str.length; i++) {
       const p = this.L.nums.add(T['d' + str[i]], x + (i - (str.length - 1) / 2) * w, y);
       p.scaleX = p.scaleY = sc;
-      p.tint = crit ? 0xffd040 : 0xffffff;
+      p.tint = crit ? 0xffd040 : tint;
       parts.push(p);
     }
     n.x = x; n.y = y; n.vy = -60; n.life = 0.7; n.sc = sc; n.w = w;
@@ -595,7 +595,7 @@ export class Game {
       if (o.slow) { e.slowT = Math.max(e.slowT, o.slow); }
     }
     if (this.buffs.bloodrage > 0) this.heal(dmg * 0.004, false);
-    if (!e.inert) this.dmgNumber(e.x + rand(-6, 6), e.y - e.r - 6, dmg, crit);
+    if (!e.inert) this.dmgNumber(e.x + rand(-6, 6), e.y - e.r - 6, dmg, crit, o && o.w ? elementTint(o.w.id) : 0xffffff);
     sfx.hit();
     if (e.hp <= 0) this.killEnemy(e, o && o.w);
     return dmg;
@@ -1703,6 +1703,14 @@ export class Game {
 }
 
 // ---------- utils ----------
+// damage numbers take their weapon's element colour (fusions use their first parent's)
+const ELEMENT_TINT = { fire: 0xffb070, frost: 0xb0e8ff, storm: 0x9ef0ff, steel: 0xe4e6ee, spirit: 0x9affe0, nature: 0xffa8d4, holy: 0xfff0b0, void: 0xd0b0ff };
+const tintCache = {};
+function elementTint(id) {
+  if (tintCache[id] != null) return tintCache[id];
+  const w = WEAPONS[id] || (FUSIONS[id] && WEAPONS[FUSIONS[id].parents[0]]);
+  return (tintCache[id] = (w && ELEMENT_TINT[w.element]) || 0xffffff);
+}
 const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
 const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
 const ENEMY_COLORS = {
