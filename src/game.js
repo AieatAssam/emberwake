@@ -503,7 +503,7 @@ export class Game {
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.boss ? 3.5 : rand(1, 3); e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
-    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0;
+    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
     e.p.scaleX = e.p.scaleY = scale;
@@ -1176,7 +1176,8 @@ export class Game {
             this.spawnFx(T.glow, e.x, e.y - 10, { life: 0.25, s0: 0.4, s1: 1, tint: 0xd060ff, a: 0.8 });
           }
         } else if (e.boss) {
-          mvx = dx * sp; mvy = dy * sp;
+          const wind = e.charging ? 0.15 : 1;
+          mvx = dx * sp * wind; mvy = dy * sp * wind;
           if (dist > Math.max(this.halfW, this.halfH) * 1.6) {
             // bosses leap after a fleeing Bearer and land just off-screen
             const lp = this.spawnPointOffscreen(40);
@@ -1242,7 +1243,21 @@ export class Game {
 
   bossAI(e, dt, dx, dy, dist) {
     e.stT -= dt;
+    if (e.charging && Math.random() < dt * 30) {
+      // gathering light while winding up
+      const a = Math.random() * TAU, r = e.r * 1.6;
+      this.spawnFx(T.dot, e.x + Math.cos(a) * r, e.y - 20 + Math.sin(a) * r, { life: 0.35, s0: 1.6, s1: 0, tint: e.d.slam ? 0xff7020 : 0xff3a6a, vx: -Math.cos(a) * r * 2.5, vy: -Math.sin(a) * r * 2.5, drag: 0 });
+    }
     if (e.stT > 0) return;
+    // telegraph: slams and novas wind up visibly before they fire
+    if ((e.d.slam || e.d.nova) && !e.charging) {
+      e.charging = e.d.slam ? 0.8 : 0.5;
+      e.stT = e.charging;
+      if (e.d.slam) this.spawnFx(T.target, e.x, e.y, { life: 0.8, s0: 1, s1: 200 / 28, tint: 0xff3020, a: 0.85, drag: 0 });
+      else this.spawnFx(T.glow, e.x, e.y - 20, { life: 0.5, s0: 1, s1: 4.5, tint: 0xff3a6a, a: 0.7, drag: 0 });
+      return;
+    }
+    e.charging = 0;
     this._shotSrc = 'shot:' + e.type;
     if (e.d.summon) {
       e.stT = 4;
