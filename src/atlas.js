@@ -182,6 +182,24 @@ function drawFX() {
 
 // ---------- projectiles ----------
 function drawProjectiles() {
+  // Ember Bolt: comet-shaped flame pointing right (+x), two flicker frames
+  for (const f of [0, 1]) make('flame' + f, 44, 26, (c) => {
+    c.save(); c.translate(30, 13);
+    c.fillStyle = radial(c, 0, 0, 16, [[0, 'rgba(255,170,60,0.8)'], [1, 'rgba(255,80,0,0)']]);
+    c.beginPath(); c.arc(0, 0, 13, 0, TAU); c.fill();
+    const tail = f ? 30 : 26, wob = f ? 2 : -2;
+    const shape = (len, w, col) => {
+      c.beginPath(); c.moveTo(9, 0);
+      c.bezierCurveTo(8, -w, -len * 0.4, -w * 0.8 + wob, -len, wob * 0.5);
+      c.bezierCurveTo(-len * 0.4, w * 0.8 + wob, 8, w, 9, 0);
+      c.fillStyle = col; c.fill();
+    };
+    shape(tail, 8, 'rgba(255,90,20,0.85)');
+    shape(tail * 0.72, 5.5, '#ffb43a');
+    shape(tail * 0.42, 3.4, '#fff1b8');
+    circle(c, 4, 0, 3, '#fff');
+    c.restore();
+  });
   make('bolt', 32, 32, (c) => {
     glowDot(c, 16, 16, 16, 'rgba(255,140,40,0.9)');
     circle(c, 16, 16, 7, '#ffd27a');

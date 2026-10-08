@@ -88,7 +88,7 @@ export const BEHAVIORS = {
           const a = tg ? Math.atan2(tg.y - 10 - (P.y - 16), tg.x - P.x) + rand(-0.25, 0.25) : Math.random() * TAU;
           const sp = st.speed;
           g.addProjectile({
-            tex: T.bolt, x: P.x, y: P.y - 16, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: st.duration,
+            tex: T.flame0, frames: [T.flame0, T.flame1], faceVel: true, x: P.x, y: P.y - 16, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: st.duration,
             dmg: st.dmg, pierce: st.pierce, r: 9 * st.area, scale: (st.explode ? 1.25 : 1) * Math.sqrt(st.area), w: part.w,
             homing: 4, target: tg, explode: st.explode * st.area, trail: 0.025, trailTint: 0xff7a20, knock: st.knock,
           });

@@ -876,6 +876,7 @@ export class Game {
     pr.faceVel = !!o.faceVel; pr.returnTo = !!o.returnTo; pr.retT = o.retT || 0; pr.curve = o.curve || 0;
     pr.trail = o.trail || 0; pr.trailTint = o.trailTint ?? 0xffffff; pr.trailT = 0; pr.alive = true;
     pr.speed = Math.hypot(o.vx, o.vy); pr.onHit = o.onHit || null; pr.scale = o.scale || 1; pr.fade = !!o.fade; pr.accel = o.accel || 0;
+    pr.frames = o.frames || null; pr.frameT = 0; pr.frameI = 0;
     if (pr.faceVel) p.rotation = Math.atan2(pr.vy, pr.vx);
     this.projectiles.push(pr);
     return pr;
@@ -932,6 +933,10 @@ export class Game {
       pr.x += pr.vx * dt; pr.y += pr.vy * dt;
       const p = pr.p;
       p.x = pr.x; p.y = pr.y;
+      if (pr.frames) {
+        pr.frameT += dt;
+        if (pr.frameT > 0.07) { pr.frameT = 0; pr.frameI ^= 1; p.texture = pr.frames[pr.frameI]; }
+      }
       if (pr.spin) p.rotation += pr.spin * dt;
       else if (pr.faceVel) p.rotation = Math.atan2(pr.vy, pr.vx);
       if (pr.fade) p.alpha = Math.min(1, pr.life / (pr.max * 0.3));
