@@ -270,6 +270,11 @@ export class UI {
         <div class="codex-grid">${fus}</div>
         <h3>Feats — ${Object.keys(save.feats).length}/${Object.keys(FEATS).length}</h3>
         <div class="mini-grid">${Object.entries(FEATS).map(([id, f]) => `<div class="card mini feat ${save.feats[id] ? 'done' : ''}"><div class="feat-ic">${save.feats[id] ? '★' : '☆'}</div><div><b>${f.name}</b><div class="mdesc">${f.desc} · ${f.reward} ✦</div></div></div>`).join('')}</div>
+        <h3>Records</h3>
+        <table class="dmg records"><tr><th>Stage</th><th>Best time</th><th>Wins</th><th>Highest Heat cleared</th></tr>
+        ${Object.entries(STAGES).map(([id, st]) => { const r = save.records['stage:' + id]; return `<tr><td style="color:${st.color}">${st.name}</td><td>${r ? fmtTime(r.time) : '—'}</td><td>${r ? r.wins : 0}</td><td>${r && r.heatWon >= 0 ? 'Heat ' + r.heatWon : '—'}</td></tr>`; }).join('')}</table>
+        <table class="dmg records"><tr><th></th><th>Bearer</th><th>Runs</th><th>Wins</th><th>Best time</th></tr>
+        ${Object.entries(CHARACTERS).map(([id, c]) => { const r = save.records['char:' + id]; return `<tr><td><img src="${spriteURL(c.sprite, 1)}" class="${save.unlocked[id] ? '' : 'sil'}"></td><td style="color:${c.color}">${save.unlocked[id] ? c.name : '???'}</td><td>${r ? r.runs : 0}</td><td>${r ? r.wins : 0}</td><td>${r ? fmtTime(r.time) : '—'}</td></tr>`; }).join('')}</table>
         <h3>Bestiary — ${Object.keys(BESTIARY).filter((k) => save.seen[k]).length}/${Object.keys(BESTIARY).length} encountered</h3>
         <div class="mini-grid">${Object.entries(BESTIARY).map(([id, b]) => {
           const seen = save.seen[id], tex = ENEMIES[id].tex + '0';
@@ -599,6 +604,13 @@ export class UI {
     }
     save.totals.runs++; save.totals.kills += g.kills; save.totals.cinders += total;
     Object.assign(save.seen, g.seenRun);
+    // records: per-stage and per-Bearer bests
+    const R = save.records;
+    const st = R['stage:' + g.stageId] || (R['stage:' + g.stageId] = { time: 0, heatWon: -1, wins: 0 });
+    st.time = Math.max(st.time, g.time);
+    if (win) { st.wins++; st.heatWon = Math.max(st.heatWon, g.heat || 0); }
+    const ch = R['char:' + g.charId] || (R['char:' + g.charId] = { runs: 0, wins: 0, time: 0 });
+    ch.runs++; ch.time = Math.max(ch.time, g.time); if (win) ch.wins++;
     if (win) save.totals.wins++;
     let heatUnlocked = 0;
     if (win && g.heat < 5 && (save.heatMax[g.stageId] || 0) <= g.heat) {

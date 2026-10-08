@@ -292,3 +292,7 @@ table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 /* onboarding hints */
 .hint-pop { position: fixed; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 15; pointer-events: none; max-width: min(520px, 90vw); text-align: center; padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(138, 208, 255, 0.5); background: rgba(10, 18, 34, 0.92); color: #dff2ff; font-size: 15px; box-shadow: 0 0 20px rgba(90, 184, 255, 0.3); animation: hintIn 5.5s ease forwards; }
 @keyframes hintIn { 0% { opacity: 0; transform: translate(-50%, 12px); } 6% { opacity: 1; transform: translate(-50%, 0); } 88% { opacity: 1; } 100% { opacity: 0; } }
+
+/* records */
+table.records td img { width: 30px; height: 30px; object-fit: contain; }
+table.records td img.sil { filter: brightness(0); }
