@@ -903,7 +903,8 @@ export class Game {
   explodeAt(x, y, radius, dmg, w, tint = 0xff8030, knock = 12) {
     const list = this.enemiesIn(x, y, radius, this.qExp);
     for (const e of list) this.damage(e, dmg, { w, knock, fx: x, fy: y });
-    this.spawnFx(T.glow, x, y, { life: 0.3, s0: radius / 40, s1: radius / 18, tint, a: 0.9 });
+    // big additive glows are fill-rate heavy: only a few per frame (mine/meteor chains stack dozens)
+    if (this.explGlowBudget-- > 0) this.spawnFx(T.glow, x, y, { life: 0.3, s0: radius / 40, s1: Math.min(radius / 18, 5), tint, a: 0.9 });
     this.shockwave(x, y, tint, radius, 0.3);
     if (this.fx.length < this.maxFx * 0.7) this.burst(x, y, 8, [tint, 0xffffff], radius * 3, 0.6);
     sfx.boom();
@@ -1015,6 +1016,7 @@ export class Game {
     }
 
     this.deathFxBudget = Math.round(18 / this.pressure);
+    this.explGlowBudget = 3;
     this.glintBudget = this.fx.length < this.maxFx * 0.5 ? 3 : 0;
     // grid
     const pf = this.prof, now = performance.now.bind(performance);
