@@ -526,7 +526,7 @@ export class Game {
     e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900);
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
-    e.stT = d.boss ? 3.5 : rand(1, 3); e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
+    e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
     e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.affix = null; e.sunk = false;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
@@ -571,7 +571,7 @@ export class Game {
 
   damage(e, amount, o = null) {
     if (!e.alive) return 0;
-    let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1);
+    let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1) * (e.d.shroud && this.time - e.lastBlink > 1.5 ? 0.25 : 1);
     let crit = false;
     if (Math.random() < this.stats.crit) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
@@ -1257,7 +1257,8 @@ export class Game {
           this.bossAI(e, dt, dx, dy, dist);
         } else {
           mvx = dx * sp; mvy = dy * sp;
-          if (e.d.submerge) {
+          if (e.d.shroud) p.alpha = this.time - e.lastBlink > 1.5 ? 0.55 : 1;
+      if (e.d.submerge) {
             // cycle: sink (fast, faint, resists damage) -> surface near the Bearer (exposed)
             e.stT -= dt;
             if (e.stT <= 0) { e.sunk = !e.sunk; e.stT = e.sunk ? rand(1.8, 2.6) : rand(1.6, 2.2); if (!e.sunk) this.shockwave(e.x, e.y, 0x8ad070, 60, 0.35); }
@@ -1300,6 +1301,7 @@ export class Game {
       p.scaleX = e.scale * face * (2 - squash);
       p.scaleY = e.scale * squash;
       if (e.d.alpha) p.alpha = e.d.alpha * (0.75 + Math.sin(e.t * 5 + e.phase) * 0.25);
+      if (e.d.shroud) p.alpha = this.time - e.lastBlink > 1.5 ? 0.55 : 1;
       if (e.d.submerge) { p.alpha = e.sunk ? 0.22 : 1; p.texture = e.flash > 0 ? e.d._w[e.sunk ? 1 : 0] : e.d._t[e.sunk ? 1 : 0]; }
       if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.alpha = 0.45 + Math.sin(e.t * 4) * 0.15; }
       if (e.affix === 'vampiric' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.025 * dt);
@@ -1359,8 +1361,8 @@ export class Game {
       if (dist < 200) this.hurtPlayer(e.dmg, 'slam');
     } else if (e.d.blink) {
       // vanish, then arrive close to the Bearer and erupt
-      e.stT = 3.6;
-      const P = this.player, a = Math.random() * TAU, d = rand(150, 210);
+      e.stT = 2.6; e.lastBlink = this.time;
+      const P = this.player, a = Math.random() * TAU, d = rand(110, 150);
       this.shockwave(e.x, e.y, 0xb8a8ff, 160, 0.4);
       this.burst(e.x, e.y - 40, 24, [0x2a2038, 0xb8a8ff], 260, 0.9, 'smoke');
       e.x = P.x + Math.cos(a) * d; e.y = P.y + Math.sin(a) * d;
@@ -1368,8 +1370,13 @@ export class Game {
       this.shake = Math.max(this.shake, 8);
       for (let k = 0; k < 16; k++) {
         const b = (k / 16) * TAU;
-        this.enemyShot(e.x, e.y - 40, Math.cos(b) * 130, Math.sin(b) * 130, e.dmg * 0.4);
+        this.enemyShot(e.x, e.y - 40, Math.cos(b) * 120, Math.sin(b) * 120, e.dmg * 0.4);
+        const c = b + TAU / 32; // offset faster outer ring closes the gaps
+        this.enemyShot(e.x, e.y - 40, Math.cos(c) * 190, Math.sin(c) * 190, e.dmg * 0.4);
       }
+      // aimed fan: fast orbs straight at the Bearer, so fleeing alone isn't enough
+      const aim = Math.atan2(P.y - 12 - (e.y - 40), P.x - e.x);
+      for (let k = -2; k <= 2; k++) this.enemyShot(e.x, e.y - 40, Math.cos(aim + k * 0.16) * 300, Math.sin(aim + k * 0.16) * 300, e.dmg * 0.5);
     } else if (e.d.nova) {
       e.stT = 3;
       e.spiral = (e.spiral || 0) + 0.4;
