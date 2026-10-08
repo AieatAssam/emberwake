@@ -623,6 +623,9 @@ export class Game {
     const col = ENEMY_COLORS[e.type] || 0xb080ff;
     const big = e.boss ? 4 : e.elite ? 2 : 1;
     if ((this.fx.length < this.maxFx * 0.8 && this.deathFxBudget-- > 0) || big > 1) {
+      // death pop: the creature's white silhouette swells and fades
+      const pop = this.spawnFx(e.d._w[(e.anim | 0) & 1], x, y, { life: 0.16, s0: e.scale, s1: e.scale * 1.6, a: 0.85, add: false, drag: 0 });
+      if (pop) pop.p.anchorY = 0.62;
       this.burst(x, y, 5 * big, [col, 0xffffff], 160 * big, 0.6, 'shard');
       this.spawnFx(T.glow, x, y, { life: 0.22, s0: 0.5 * big * e.scale, s1: 1.4 * big * e.scale, tint: col, a: 0.8 });
       this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: 0x302040, a: 0.5, add: false, vy: -20 });
