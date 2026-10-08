@@ -49,6 +49,7 @@ export class UI {
       <div class="title-wrap">
         <div class="logo"><span class="ember-dot"></span>EMBERWAKE</div>
         <div class="tagline">The sun is dead. You carry the last Ember.<br>Burn brighter than the Gloam — or be swallowed by it.</div>
+        <div class="lineup">${Object.entries(CHARACTERS).map(([id, c], i) => `<img class="${s.unlocked[id] ? '' : 'locked'}" style="--c:${c.color};animation-delay:${i * -0.4}s" src="${spriteURL(c.sprite, 2)}" alt="${c.name}" title="${s.unlocked[id] ? c.name + ', ' + c.title : 'Locked'}">`).join('')}</div>
         <div class="menu">
           <button class="btn primary" data-a="play">Kindle a Run</button>
           <button class="btn" data-a="hearth">The Hearth <small>${s.cinders} ✦</small></button>
