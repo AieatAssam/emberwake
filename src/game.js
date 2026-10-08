@@ -2,7 +2,7 @@
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas } from './atlas.js';
 import {
-  BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS,
+  BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnerOf,
 } from './data.js';
 import { BEHAVIORS } from './weapons.js';
@@ -170,6 +170,9 @@ export class Game {
     this.chunks = new Map();
     this.chestQueue = [];
     this.pressure = 1;
+    this.bossKills = {};
+    this.featsEarned = [];
+    this.featT = 0;
     this.prof = { weapons: 0, proj: 0, enemies: 0, fx: 0, pickups: 0, grid: 0 };
     this.weaponUid = 0;
 
@@ -588,6 +591,7 @@ export class Game {
     sfx.kill();
     // drops
     if (e.boss) {
+      this.bossKills[e.type] = true;
       this.dropPickup('gem', x, y, e.xp);
       for (let i = 0; i < 12; i++) this.dropPickup('cinder', x + rand(-60, 60), y + rand(-60, 60), 5);
       this.dropPickup('chest', x, y, e.d.final ? 5 : 3);
@@ -969,6 +973,8 @@ export class Game {
     } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
       this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
     }
+    this.featT -= rawDt;
+    if (this.featT <= 0) { this.featT = 0.5; this.checkFeats(); }
     setIntensity(Math.min(1, this.time / 600 + this.kindleTier * 0.08 + (this.boss ? 0.3 : 0)));
   }
 
@@ -1419,6 +1425,18 @@ export class Game {
 
     for (const k in this.L) this.L[k].flush();
     this.ui.updateHUD(this);
+  }
+
+  checkFeats() {
+    for (const id in FEATS) {
+      if (save.feats[id] || !FEATS[id].check(this)) continue;
+      save.feats[id] = true;
+      save.cinders += FEATS[id].reward;
+      this.featsEarned.push(id);
+      persist();
+      sfx.chestOpen();
+      this.ui.featPop(FEATS[id]);
+    }
   }
 
   // edge arrows pointing at off-screen chests and bosses

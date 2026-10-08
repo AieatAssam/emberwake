@@ -5,6 +5,7 @@ const DEFAULT = {
   meta: {},
   unlocked: { warden: true },
   fusions: {},
+  feats: {},
   best: { time: 0, kills: 0, level: 0 },
   totals: { runs: 0, kills: 0, cinders: 0, wins: 0 },
   settings: { muted: false, music: true, numbers: true, shake: true },
@@ -17,7 +18,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      return { ...structuredClone(DEFAULT), ...s, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
+      return { ...structuredClone(DEFAULT), ...s, feats: s.feats || {}, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
     }
   } catch { /* storage unavailable */ }
   return structuredClone(DEFAULT);

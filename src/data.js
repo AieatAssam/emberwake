@@ -348,3 +348,22 @@ export function fusionPartnerOf(id) {
   }
   return null;
 }
+
+// Feats: one-time achievements that pay cinders. check(g) runs live during a run.
+export const FEATS = {
+  firstBlood: { name: 'First Embers', desc: 'Slay 500 foes in one run', reward: 40, check: (g) => g.kills >= 500 },
+  massacre: { name: 'Gloamcleaver', desc: 'Slay 5,000 foes in one run', reward: 150, check: (g) => g.kills >= 5000 },
+  annihilation: { name: 'Unmaker', desc: 'Slay 25,000 foes in one run', reward: 400, check: (g) => g.kills >= 25000 },
+  survive5: { name: 'Still Burning', desc: 'Survive 5 minutes', reward: 50, check: (g) => g.time >= 300 },
+  survive10: { name: 'Long Night', desc: 'Survive 10 minutes', reward: 150, check: (g) => g.time >= 600 },
+  kindle2: { name: 'Wildfire', desc: 'Reach Kindle x2', reward: 80, check: (g) => g.kindleTier >= 5 },
+  level50: { name: 'Ascendant', desc: 'Reach level 50', reward: 120, check: (g) => g.level >= 50 },
+  fusion: { name: 'Alchemist', desc: 'Forge an Ascended weapon', reward: 150, check: (g) => g.weapons.some((w) => w.fused) },
+  twoFusions: { name: 'Twin Suns', desc: 'Hold two Ascended weapons at once', reward: 300, check: (g) => g.weapons.filter((w) => w.fused).length >= 2 },
+  pacts3: { name: 'Blood Debtor', desc: 'Swear three Dark Pacts in one run', reward: 200, check: (g) => g.pacts.length >= 3 },
+  matron: { name: 'Broodbreaker', desc: 'Slay the Brood Matron', reward: 120, check: (g) => g.bossKills.matron },
+  colossus: { name: 'Quench the Forge', desc: 'Slay the Cinder Colossus', reward: 250, check: (g) => g.bossKills.colossus },
+  tyrant: { name: 'Dawnbringer', desc: 'Slay the Eclipse Tyrant', reward: 600, check: (g) => g.bossKills.tyrant },
+  overcharge25: { name: 'Beyond the Limit', desc: 'Stack 25 Overcharges', reward: 300, check: (g) => (g.overcharge || 0) >= 25 },
+  untouched: { name: 'Ghost of the Gloam', desc: 'Reach 3:00 without taking damage', reward: 150, check: (g) => g.time >= 180 && !g.dmgLog },
+};

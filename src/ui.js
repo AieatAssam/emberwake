@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, MAX_WEAPON_LEVEL } from './data.js';
+import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, MAX_WEAPON_LEVEL } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, initAudio, setMuted, setMusic } from './audio.js';
@@ -183,6 +183,8 @@ export class UI {
         <h2>Codex</h2>
         <h3>Ascensions — ${Object.keys(save.fusions).length}/${Object.keys(FUSIONS).length} discovered</h3>
         <div class="codex-grid">${fus}</div>
+        <h3>Feats — ${Object.keys(save.feats).length}/${Object.keys(FEATS).length}</h3>
+        <div class="mini-grid">${Object.entries(FEATS).map(([id, f]) => `<div class="card mini feat ${save.feats[id] ? 'done' : ''}"><div class="feat-ic">${save.feats[id] ? '★' : '☆'}</div><div><b>${f.name}</b><div class="mdesc">${f.desc} · ${f.reward} ✦</div></div></div>`).join('')}</div>
         <h3>Weapons</h3><div class="mini-grid">${weps}</div>
         <h3>Relics</h3><div class="mini-grid">${pas}</div>
         <h3>How the Gloam works</h3>
@@ -283,6 +285,13 @@ export class UI {
     el.textContent = text;
     $('#toasts').appendChild(el);
     setTimeout(() => el.remove(), 2600);
+  }
+  featPop(f) {
+    const el = document.createElement('div');
+    el.className = 'feat-pop';
+    el.innerHTML = `<div class="fp-k">FEAT UNLOCKED</div><div class="fp-n">${esc(f.name)}</div><div class="fp-d">${esc(f.desc)} · +${f.reward} ✦</div>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4200);
   }
   kindlePop(mul) {
     const k = $('#kindle');
@@ -492,6 +501,7 @@ export class UI {
           <div><em>Best streak</em><b>${fmtNum(g.bestCombo)}</b></div>
         </div>
         <table class="dmg"><tr><th></th><th>Weapon</th><th></th><th>Damage</th><th>Kills</th></tr>${rows}</table>
+        ${g.featsEarned.length ? `<div class="run-feats">${g.featsEarned.map((id) => `<span>★ ${FEATS[id].name} +${FEATS[id].reward}</span>`).join('')}</div>` : ''}
         <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus = <b>${total} ✦</b></div>
         <div class="hook">${affordable ? `${affordable} Hearth upgrade${affordable > 1 ? 's' : ''} affordable!` : nextChar ? `${nextChar[1].cost - save.cinders > 0 ? nextChar[1].cost - save.cinders + ' ✦ until ' + nextChar[1].name + ' unlocks' : nextChar[1].name + ' can be unlocked!'}` : ''}</div>
         <div class="row">
