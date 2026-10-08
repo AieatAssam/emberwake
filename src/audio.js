@@ -90,6 +90,13 @@ export const sfx = {
     [0, 3, 7, 10, 12, 15, 19, 24].forEach((n, i) => tone(midi(60 + n), 0.6, 'triangle', 0.1, null, 0.3 + i * 0.08));
   },
   flare() { tone(80, 1, 'sawtooth', 0.25, 600); noise(1.2, 0.3, 1500); tone(midi(84), 0.8, 'triangle', 0.15, null, 0.2); },
+  blink() {
+    if (!throttle('blink', 300)) return;
+    noise(0.35, 0.18, 900, 3, 'bandpass');
+    tone(900, 0.3, 'sine', 0.1, 120);
+    tone(55, 0.6, 'sawtooth', 0.12, 40, 0.15);
+  },
+  shrineTick(p) { if (throttle('shrine', 220)) tone(midi(72 + Math.round(p * 12)), 0.18, 'sine', 0.06); },
   bossWarn() { [0, 0.5, 1].forEach((w) => { tone(110, 0.4, 'sawtooth', 0.2, 55, w); }); },
   pickup() { tone(midi(79), 0.1, 'triangle', 0.12); tone(midi(86), 0.15, 'triangle', 0.12, null, 0.07); },
   bomb() { noise(1, 0.5, 400); tone(60, 1, 'sine', 0.4, 25); },

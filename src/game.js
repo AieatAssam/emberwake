@@ -1368,6 +1368,7 @@ export class Game {
     } else if (e.d.blink) {
       // vanish, then arrive close to the Bearer and erupt
       e.stT = 2.6; e.lastBlink = this.time;
+      sfx.blink();
       const P = this.player, a = Math.random() * TAU, d = rand(110, 150);
       this.shockwave(e.x, e.y, 0xb8a8ff, 160, 0.4);
       this.burst(e.x, e.y - 40, 24, [0x2a2038, 0xb8a8ff], 260, 0.9, 'smoke');
@@ -1642,6 +1643,7 @@ export class Game {
     sh.life -= dt; sh.t += dt;
     const inside = Math.hypot(P.x - sh.x, P.y - sh.y) < sh.r;
     sh.prog = Math.max(0, Math.min(1, sh.prog + (inside ? dt / 5 : -dt / 12)));
+    if (inside && sh.prog < 1) sfx.shrineTick(sh.prog);
     if (inside && Math.random() < dt * 25) {
       const a = Math.random() * TAU;
       this.spawnFx(T.dot, sh.x + Math.cos(a) * sh.r, sh.y + Math.sin(a) * sh.r, { life: 0.6, s0: 1.4, s1: 0, tint: 0x7af0ff, vx: -Math.cos(a) * 140, vy: -Math.sin(a) * 140, drag: 0 });
