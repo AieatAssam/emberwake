@@ -309,7 +309,8 @@ function drawProjectiles() {
 }
 
 // ---------- pickups ----------
-function gem(name, light, mid, dark, s = 1) {
+// pips: tier marks (0-4) so gem value reads without relying on colour
+function gem(name, light, mid, dark, s = 1, pips = 0) {
   const w = Math.round(22 * s), h = Math.round(28 * s);
   make(name, w, h, (c) => {
     c.save(); c.scale(s, s);
@@ -318,15 +319,19 @@ function gem(name, light, mid, dark, s = 1) {
     poly(c, [[11, 2], [19, 12], [11, 14]], light);
     poly(c, [[3, 12], [11, 14], [11, 26]], dark);
     circle(c, 9, 9, 1.6, '#fff');
+    for (let i = 0; i < pips; i++) {
+      const x = 11 + (i - (pips - 1) / 2) * 3.4;
+      poly(c, [[x, 17], [x + 1.4, 18.6], [x, 20.2], [x - 1.4, 18.6]], '#ffffff', 'rgba(0,0,0,0.55)', 0.6);
+    }
     c.restore();
   });
 }
 function drawPickups() {
   gem('gem0', '#bfe9ff', 'rgb(70,170,255)', '#13335e');
-  gem('gem1', '#c9ffcf', 'rgb(60,220,110)', '#0f4a26');
-  gem('gem2', '#ffd0d0', 'rgb(255,70,90)', '#5a0f1c');
-  gem('gem3', '#f1d4ff', 'rgb(190,90,255)', '#3a0f5a');
-  gem('gem4', '#fff3c4', 'rgb(255,200,60)', '#5a3a0a', 1.4);
+  gem('gem1', '#c9ffcf', 'rgb(60,220,110)', '#0f4a26', 1, 1);
+  gem('gem2', '#ffd0d0', 'rgb(255,70,90)', '#5a0f1c', 1, 2);
+  gem('gem3', '#f1d4ff', 'rgb(190,90,255)', '#3a0f5a', 1, 3);
+  gem('gem4', '#fff3c4', 'rgb(255,200,60)', '#5a3a0a', 1.4, 4);
   make('heart', 28, 26, (c) => {
     glowDot(c, 14, 13, 14, 'rgba(255,80,110,0.45)');
     c.beginPath(); c.moveTo(14, 23); c.bezierCurveTo(-2, 12, 4, 0, 14, 7); c.bezierCurveTo(24, 0, 30, 12, 14, 23);
