@@ -509,14 +509,19 @@ export class Game {
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.boss ? 3.5 : rand(1, 3); e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
-    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0;
+    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.affix = null;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
     e.p.scaleX = e.p.scaleY = scale;
     if (d.alpha) e.p.alpha = d.alpha;
+    // from 3:00, elites roll an affix that changes how they must be fought
+    if (elite && this.time > 180) {
+      e.affix = AFFIXES[(Math.random() * AFFIXES.length) | 0];
+      if (e.affix === 'swift') e.speed *= 1.5;
+    }
     if (elite || e.boss) {
       e.glow = this.L.glowUnder.add(T.softglow, x, y);
-      e.glow.tint = e.boss ? 0xff4060 : 0xffc040;
+      e.glow.tint = e.boss ? 0xff4060 : AFFIX_TINT[e.affix] || 0xffc040;
       e.glow.scaleX = e.glow.scaleY = (e.r * 3.2) / 64;
       e.glow.alpha = 0.6;
     }
@@ -547,7 +552,7 @@ export class Game {
 
   damage(e, amount, o = null) {
     if (!e.alive) return 0;
-    let dmg = amount * rand(0.92, 1.08);
+    let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1);
     let crit = false;
     if (Math.random() < this.stats.crit) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
@@ -629,6 +634,12 @@ export class Game {
     if (Math.random() < 0.012 * this.stats.luck) {
       const roll = weighted([['cinder', 62], ['heart', this.stats.noHeal ? 0 : 16], ['magnet', 5], ['bomb', 4], ['freeze', 4], ['flareorb', 7]]);
       this.dropPickup(roll, x + rand(-8, 8), y + rand(-8, 8), roll === 'cinder' ? 1 + ((Math.random() * 3) | 0) : 1);
+    }
+    if (e.affix === 'volatile') {
+      this._shotSrc = 'volatile';
+      const off = Math.random() * TAU;
+      for (let k = 0; k < 10; k++) { const a = off + (k / 10) * TAU; this.enemyShot(x, y, Math.cos(a) * 120, Math.sin(a) * 120, e.dmg * 0.5, T.bolt, 0.9); }
+      this._shotSrc = null;
     }
     if (e.d.deathBurst) {
       this._shotSrc = 'imp-ember';
@@ -1234,6 +1245,7 @@ export class Game {
       p.scaleY = e.scale * squash;
       if (e.d.alpha) p.alpha = e.d.alpha * (0.75 + Math.sin(e.t * 5 + e.phase) * 0.25);
       if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.alpha = 0.45 + Math.sin(e.t * 4) * 0.15; }
+      if (e.affix === 'vampiric' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.025 * dt);
     }
     if (contactDmg > 0 && P.iframes <= 0) {
       this.hurtPlayer(contactDmg, 'touch:' + contactSrc);
@@ -1576,6 +1588,8 @@ export class Game {
 }
 
 // ---------- utils ----------
+const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
+const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
 const ENEMY_COLORS = {
   gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
