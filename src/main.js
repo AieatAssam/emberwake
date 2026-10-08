@@ -3,7 +3,7 @@ import { buildAtlas, atlasCanvas } from './atlas.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
 import { initInput, consumePressed, padButtons } from './input.js';
-import { initAudio, startMusic, setMuted, setMusic } from './audio.js';
+import { initAudio, startMusic, setMuted, setMusic, setTheme } from './audio.js';
 import { save } from './save.js';
 import './style.css';
 
@@ -29,6 +29,7 @@ const ui = new UI({
   startRun(charId, stageId = save.lastStage || 'gloam') {
     if (game) { game.destroy(); game = null; }
     initAudio();
+    setTheme(stageId);
     startMusic();
     game = new Game(app, ui, charId, stageId);
     ui.beginRun(game);

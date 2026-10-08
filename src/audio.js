@@ -102,9 +102,14 @@ export const sfx = {
 
 // ---- Generative music: driving minor-pentatonic loop that intensifies with the run ----
 let musicTimer = null, step = 0, intensity = 0, nextTime = 0;
-const BPM = 128;
-const ROOTS = [45, 45, 41, 43]; // A, A, F, G
-const ARP = [0, 3, 7, 10, 12, 10, 7, 3];
+// Per-stage procedural themes (original progressions, generated live)
+const THEMES = {
+  gloam: { bpm: 128, roots: [45, 45, 41, 43], arp: [0, 3, 7, 10, 12, 10, 7, 3], bass: 'sawtooth', lead: 'square', bell: false, drive: 1 },
+  ashfields: { bpm: 142, roots: [40, 41, 40, 38], arp: [0, 1, 5, 7, 12, 7, 5, 1], bass: 'sawtooth', lead: 'sawtooth', bell: false, drive: 1.5 },
+  rimewood: { bpm: 108, roots: [50, 46, 48, 43], arp: [0, 7, 14, 15, 19, 15, 14, 7], bass: 'triangle', lead: 'sine', bell: true, drive: 0.6 },
+};
+let theme = THEMES.gloam;
+export function setTheme(id) { theme = THEMES[id] || THEMES.gloam; }
 
 export function setIntensity(v) { intensity = Math.max(0, Math.min(1, v)); }
 
@@ -130,16 +135,19 @@ function note(t, n, dur, type, vol, cutoff = 2400) {
 }
 
 function schedule() {
-  const spb = 60 / BPM / 4; // 16th notes
+  const th = theme, spb = 60 / th.bpm / 4; // 16th notes
   while (nextTime < ctx.currentTime + 0.15) {
-    const t = nextTime, bar = Math.floor(step / 16) % ROOTS.length, s16 = step % 16;
-    const root = ROOTS[bar];
-    if (s16 % 4 === 0) kick(t);
-    if (intensity > 0.15 && s16 % 2 === 1) hat(t, 0.04 + intensity * 0.05);
-    if (s16 % 2 === 0) note(t, root - 12 + (s16 % 8 === 6 ? 12 : 0), spb * 1.8, 'sawtooth', 0.09, 500 + intensity * 900);
-    if (intensity > 0.3) note(t, root + 12 + ARP[s16 % 8], spb * 0.9, 'square', 0.025 + intensity * 0.02, 1800 + intensity * 2000);
-    if (intensity > 0.6 && s16 % 8 === 4) noise(0.12, 0.12, 1800, 1, 'bandpass', t - ctx.currentTime, musicBus);
-    if (s16 === 0) note(t, root + 24, spb * 14, 'triangle', 0.03, 3000);
+    const t = nextTime, bar = Math.floor(step / 16) % th.roots.length, s16 = step % 16;
+    const root = th.roots[bar];
+    if (s16 % 4 === 0 && !(th.bell && s16 === 8 && intensity < 0.4)) kick(t);
+    if (intensity > 0.15 && s16 % 2 === 1) hat(t, (0.04 + intensity * 0.05) * th.drive);
+    if (s16 % 2 === 0) note(t, root - 12 + (s16 % 8 === 6 ? 12 : 0), spb * 1.8, th.bass, 0.09, (500 + intensity * 900) * th.drive);
+    if (th.bell) {
+      // sparse bell arpeggio: long sine tones on off-beats
+      if (s16 % 4 === 2) note(t, root + 24 + th.arp[(s16 / 2 + bar) % 8], spb * 6, 'sine', 0.035 + intensity * 0.02, 6000);
+    } else if (intensity > 0.3) note(t, root + 12 + th.arp[s16 % 8], spb * 0.9, th.lead, (0.025 + intensity * 0.02) * (th.lead === 'sawtooth' ? 0.7 : 1), 1800 + intensity * 2000);
+    if (intensity > 0.6 && s16 % 8 === 4) noise(0.12, 0.12 * th.drive, 1800, 1, 'bandpass', t - ctx.currentTime, musicBus);
+    if (s16 === 0) note(t, root + 24, spb * 14, 'triangle', th.bell ? 0.05 : 0.03, 3000);
     nextTime += spb; step++;
   }
 }
