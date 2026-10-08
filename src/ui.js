@@ -211,6 +211,7 @@ export class UI {
           <li><b>Ascension</b> — two max-level partner weapons fuse at the next chest into one Ascended weapon, freeing a slot.</li>
           <li><b>Dark Pacts</b> — rare blood-red draft cards. Power at a price, for the rest of the run.</li>
           <li><b>Totems</b> — golden obelisks in the dark hold relics: health, magnets, bombs, frost, flare.</li>
+          <li><b>Ember Shrines</b> — glowing circles appear every few minutes. Hold your ground inside for 5s to earn a relic chest — but the dark answers.</li>
           <li><b>Overcharge</b> — once everything is maxed, power keeps climbing. Forever.</li>
         </ul>
         <div class="row"><button class="btn" data-a="back">Back</button></div>

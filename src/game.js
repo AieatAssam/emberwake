@@ -128,6 +128,9 @@ export class Game {
       pickups: new Layer(this.world),
       enemies: new Layer(this.world),
     };
+    this.shrineG = new Graphics();
+    this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
+    this.shrine = null; this.shrineT = 150;
     this.playerGlow = new Sprite(T.softglow);
     this.playerGlow.anchor.set(0.5);
     this.playerGlow.blendMode = 'add';
@@ -959,6 +962,7 @@ export class Game {
     if (!this.dead) {
       this.director(dt);
       for (const w of this.weapons) for (const part of w.parts) BEHAVIORS[part.behavior].update(this, part, this.eff(part), dt);
+      this.updateShrine(dt);
     }
     this.updateNovas(dt);
     t1 = now(); pf.weapons += t1 - t0; t0 = t1;
@@ -1469,6 +1473,7 @@ export class Game {
     }
 
     this.drawIndicators(sw, sh);
+    this.drawShrine();
 
     // screen overlays
     this.hurtFlash = Math.max(0, (this.hurtFlash || 0) - rawDt * 2);
@@ -1494,6 +1499,55 @@ export class Game {
     }
   }
 
+  // Ember Shrines: hold position inside the circle for 5s to earn a relic chest
+  updateShrine(dt) {
+    const P = this.player;
+    if (!this.shrine) {
+      this.shrineT -= dt;
+      if (this.shrineT <= 0 && !this.boss) {
+        const a = Math.random() * TAU, d = rand(520, 820);
+        this.shrine = { x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: 95, prog: 0, life: 45, t: 0 };
+        this.ui.toast('AN EMBER SHRINE STIRS', 'pickup');
+      }
+      return;
+    }
+    const sh = this.shrine;
+    sh.life -= dt; sh.t += dt;
+    const inside = Math.hypot(P.x - sh.x, P.y - sh.y) < sh.r;
+    sh.prog = Math.max(0, Math.min(1, sh.prog + (inside ? dt / 5 : -dt / 12)));
+    if (inside && Math.random() < dt * 25) {
+      const a = Math.random() * TAU;
+      this.spawnFx(T.dot, sh.x + Math.cos(a) * sh.r, sh.y + Math.sin(a) * sh.r, { life: 0.6, s0: 1.4, s1: 0, tint: 0x7af0ff, vx: -Math.cos(a) * 140, vy: -Math.sin(a) * 140, drag: 0 });
+    }
+    if (sh.prog >= 1) {
+      this.dropPickup('chest', sh.x, sh.y, 1);
+      this.burst(sh.x, sh.y, 60, [0x7af0ff, 0xffffff, 0xffd060], 500, 1.1);
+      this.shockwave(sh.x, sh.y, 0x7af0ff, 400, 0.6);
+      sfx.chestOpen();
+      this.ui.toast('SHRINE KINDLED', 'fusion');
+      // the dark answers: a ring of the current wave closes in
+      const pool = Object.keys(WAVES[this.waveIdx].pool);
+      this.runEvent({ type: 'ring', enemy: pool[(Math.random() * pool.length) | 0], count: 24 + Math.floor(this.time / 30) });
+      this.shrine = null; this.shrineT = rand(100, 140);
+    } else if (sh.life <= 0) {
+      this.shrine = null; this.shrineT = rand(60, 90);
+    }
+  }
+
+  drawShrine() {
+    const g = this.shrineG, sh = this.shrine;
+    g.clear();
+    if (!sh) return;
+    const fade = Math.min(1, sh.life / 3, sh.t * 2);
+    const pulse = 1 + Math.sin(sh.t * 4) * 0.04;
+    g.circle(sh.x, sh.y, sh.r * pulse).fill({ color: 0x2ad0ff, alpha: 0.08 * fade }).stroke({ color: 0x7af0ff, width: 3, alpha: 0.7 * fade });
+    g.circle(sh.x, sh.y, sh.r * 0.35).fill({ color: 0x7af0ff, alpha: 0.25 * fade });
+    if (sh.prog > 0) {
+      g.moveTo(sh.x + sh.r + 8, sh.y);
+      g.arc(sh.x, sh.y, sh.r + 8, 0, sh.prog * TAU).stroke({ color: 0xffd060, width: 6, alpha: 0.95 * fade });
+    }
+  }
+
   // edge arrows pointing at off-screen chests and bosses
   drawIndicators(sw, sh) {
     const g = this.indicators, P = this.player, z = this.zoom;
@@ -1511,6 +1565,7 @@ export class Game {
     };
     for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, 0xffcf4a, 10);
     if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, 0xff3a6a, 14);
+    if (this.shrine) mark(this.shrine.x, this.shrine.y, 0x7af0ff, 11);
   }
 
   destroy() {
