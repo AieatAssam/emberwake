@@ -306,6 +306,7 @@ export const META = {
   revival: { name: 'Second Wick', desc: 'Revive once at 50% health', max: 2, cost: 600, apply: (s, l) => (s.revivals += l) },
   reroll: { name: 'Shuffle', desc: '+2 rerolls per run', max: 3, cost: 120, apply: (s, l) => (s.rerolls += 2 * l) },
   banish: { name: 'Exile', desc: '+1 banish per run', max: 3, cost: 150, apply: (s, l) => (s.banishes += l) },
+  spark: { name: 'Second Spark', desc: 'Start each run with a random relic (per rank)', max: 2, cost: 700, apply: () => {} },
 };
 
 export function xpForLevel(level) {

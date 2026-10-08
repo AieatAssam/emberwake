@@ -195,6 +195,12 @@ export class Game {
     this.player.hp = this.stats.maxHp;
     this.rerolls = this.stats.rerolls; this.banishes = this.stats.banishes;
     this.addWeapon(this.char.weapon);
+    // Hearth: Second Spark grants random starting relics
+    for (let i = 0; i < (save.meta.spark || 0); i++) {
+      const pool = Object.keys(PASSIVES).filter((k) => !this.passives[k]);
+      if (pool.length) this.addPassive(pool[(Math.random() * pool.length) | 0]);
+    }
+    if (save.meta.spark) this.player.hp = this.stats.maxHp;
     if (this.daily) {
       this.addWeapon(this.daily.weapon);
       this.pacts.push(...this.daily.pacts);
