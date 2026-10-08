@@ -610,7 +610,7 @@ export class Game {
       this.shake = Math.max(this.shake, 10);
       this.burst(x, y, 40, [0xffd060, 0xffffff], 400, 1);
     }
-    this.dropPickup('gem', x, y, e.xp);
+    this.dropPickup('gem', x, y, e.xp / this.pressure);
     if (Math.random() < 0.012 * this.stats.luck) {
       const roll = weighted([['cinder', 62], ['heart', this.stats.noHeal ? 0 : 16], ['magnet', 5], ['bomb', 4], ['freeze', 4], ['flareorb', 7]]);
       this.dropPickup(roll, x + rand(-8, 8), y + rand(-8, 8), roll === 'cinder' ? 1 + ((Math.random() * 3) | 0) : 1);
@@ -696,7 +696,7 @@ export class Game {
   }
 
   gainXp(v) {
-    const mul = this.stats.growth * KINDLE_TIERS[this.kindleTier].mul;
+    const mul = this.stats.growth * (1 + (KINDLE_TIERS[this.kindleTier].mul - 1) * 0.5);
     this.xp += v * mul;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
@@ -1007,7 +1007,7 @@ export class Game {
     // floor top-up is bounded by the wave's own rate so fast killers can't farm infinite spawns
     // Gloam Pressure: if the horde is being erased faster than it arrives, the dark pushes harder
     // so a strong build always has a tide to carve through (bounded by MAX_ENEMIES).
-    if (t > 300 && alive < min * 0.4) this.pressure = Math.min(6, this.pressure + dt * 0.2);
+    if (t > 600 && alive < min * 0.4) this.pressure = Math.min(6, this.pressure + dt * 0.2);
     else if (alive > min * 0.8) this.pressure = Math.max(1, this.pressure - dt * 0.1);
     const late = this.pressure;
     this.spawnAcc += rate * (late - 1) * dt;
