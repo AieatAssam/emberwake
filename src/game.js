@@ -180,7 +180,8 @@ export class Game {
     this.chunks = new Map();
     this.chestQueue = [];
     this.pressure = 1;
-    this.maxFx = save.settings.lowfx ? Math.round(MAX_FX / 2) : MAX_FX;
+    this.maxFx = this.baseFx = save.settings.lowfx ? Math.round(MAX_FX / 2) : MAX_FX;
+    this.frameAvg = 1 / 60; this.qualT = 0;
     this.bossKills = {};
     this.featsEarned = [];
     this.featT = 0;
@@ -1479,7 +1480,19 @@ export class Game {
   }
 
   // ---------- render ----------
+  // adaptive quality: trim the particle budget when frames fall behind, restore when smooth
+  adaptQuality(rawDt) {
+    if (rawDt <= 0) return;
+    this.frameAvg += (rawDt - this.frameAvg) * 0.05;
+    this.qualT += rawDt;
+    if (this.qualT < 1) return;
+    this.qualT = 0;
+    if (this.frameAvg > 0.02) this.maxFx = Math.max(800, Math.round(this.maxFx * 0.85));
+    else if (this.frameAvg < 0.0175) this.maxFx = Math.min(this.baseFx, Math.round(this.maxFx * 1.08) + 20);
+  }
+
   render(rawDt) {
+    this.adaptQuality(rawDt);
     const P = this.player, z = this.zoom, sw = this.app.screen.width, sh = this.app.screen.height;
     let sx = 0, sy = 0;
     if (this.shake > 0 && save.settings.shake) {
