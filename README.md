@@ -1,5 +1,8 @@
 # EMBERWAKE
 
+[![CI](https://github.com/AieatAssam/emberwake/actions/workflows/ci.yml/badge.svg)](https://github.com/AieatAssam/emberwake/actions/workflows/ci.yml)
+[![Deploy](https://github.com/AieatAssam/emberwake/actions/workflows/deploy.yml/badge.svg)](https://github.com/AieatAssam/emberwake/actions/workflows/deploy.yml)
+
 **The sun is dead. You carry the last Ember.** Burn brighter than the Gloam — or be swallowed by it.
 
 A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batched `ParticleContainer`s), with every sprite, sound and music track generated procedurally in code.
@@ -32,5 +35,12 @@ level curve, kills, per-system frame cost, slow-frame breakdowns and what killed
 npm install
 npm run dev     # local dev server
 npm run build   # static build in dist/ (relative paths, GitHub Pages ready)
+npm run lint    # ESLint + Stylelint + html-validate, all with --max-warnings 0
 ```
+
+## Quality gates
+- **CI** (`.github/workflows/ci.yml`) runs on every push and PR: ESLint, Stylelint and html-validate
+  with warnings treated as errors, a production build, and a check that dev-only hooks never ship.
+- **Deploy** (`.github/workflows/deploy.yml`) lints before building and publishing to GitHub Pages.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly grouped updates for npm and GitHub Actions.
 Deploys automatically to GitHub Pages via `.github/workflows/deploy.yml` on push to `main`.

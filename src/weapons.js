@@ -136,7 +136,7 @@ export const BEHAVIORS = {
   // ---------- chain lightning ----------
   chain: {
     update(g, part, st, dt) {
-      const S = part.state, P = g.player;
+      const S = part.state;
       S.t = (S.t ?? 0.5) - dt;
       if (S.t > 0) return;
       S.t = st.cd;
@@ -259,7 +259,7 @@ export const BEHAVIORS = {
           const e = g.randomVisibleEnemy();
           const x = e ? e.x + rand(-20, 20) : P.x + rand(-250, 250), y = e ? e.y + rand(-20, 20) : P.y + rand(-200, 200);
           const R = 70 * st.area;
-          const warn = g.spawnFx(T.target, x, y, { life: 0.55 + i * 0.08, s0: R / 30, s1: R / 28, tint: 0xff6030, a: 0.7, drag: 0, add: true });
+          g.spawnFx(T.target, x, y, { life: 0.55 + i * 0.08, s0: R / 30, s1: R / 28, tint: 0xff6030, a: 0.7, drag: 0, add: true });
           const p = g.L.projAdd.add(T.meteor, x + 160, y - 420);
           p.scaleX = p.scaleY = 1.1 * Math.sqrt(st.area);
           S.falling.push({ x, y, t: 0.55 + i * 0.08, max: 0.55 + i * 0.08, p, R });

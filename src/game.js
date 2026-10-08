@@ -19,6 +19,14 @@ export const KINDLE_TIERS = [
 const MAX_ENEMIES = 1100;
 const MAX_FX = 2600;
 const GEM_CAP = 650;
+const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
+const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
+const ENEMY_COLORS = {
+  herald: 0xb8a8ff,
+  gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
+  beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
+  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070,
+};
 
 // ---------- particle layer with in-place compaction ----------
 class Layer {
@@ -367,7 +375,7 @@ export class Game {
       const w = this.weapons.find((x) => x.id === p.id);
       const def = WEAPONS[p.id];
       const lvl = w ? w.level + 1 : 1;
-      let desc = w ? describeDelta(def.levels[w.level - 1]) : def.desc;
+      const desc = w ? describeDelta(def.levels[w.level - 1]) : def.desc;
       const hint = fusionPartnersOf(p.id).map((fp) => {
         const has = this.weapons.find((x) => x.id === fp.partner);
         return `Fuses with ${WEAPONS[fp.partner].name}${has ? ' ✓' : ''} → ${save.fusions[fp.fusion] ? FUSIONS[fp.fusion].name : '???'}`;
@@ -598,7 +606,7 @@ export class Game {
     if (o) {
       if (o.w) o.w.dmgDone += dmg;
       if (o.knock && !e.boss) {
-        let dx = e.x - (o.fx ?? this.player.x), dy = e.y - (o.fy ?? this.player.y);
+        const dx = e.x - (o.fx ?? this.player.x), dy = e.y - (o.fy ?? this.player.y);
         const dl = Math.hypot(dx, dy) || 1;
         const k = o.knock * 14 * (1 - (e.d.knockRes || 0)) * (e.elite ? 0.3 : 1);
         e.kx += (dx / dl) * k; e.ky += (dy / dl) * k;
@@ -701,7 +709,7 @@ export class Game {
     if (type === 'gem') {
       if (this.gemCount >= GEM_CAP) {
         // overflow: pour value into the vault gem
-        if (this.vault && this.vault.alive) { this.vault.value += value; this.setGemTex(this.vault); return; }
+        if (this.vault && this.vault.alive) { this.vault.value += value; this.setGemTex(this.vault); return null; }
       }
     }
     let tex;
@@ -1146,8 +1154,8 @@ export class Game {
         const types = ['husk', 'sentinel', 'beetle', 'wraith', 'moth'];
         this.runEvent({ type, enemy: types[(Math.random() * types.length) | 0], count: 60 });
         if (!this.boss && Math.random() < 0.25) {
-          const pool = ['matron', 'colossus', 'herald'];
-          this.runEvent({ type: 'boss', enemy: pool[(Math.random() * pool.length) | 0] });
+          const bossPool = ['matron', 'colossus', 'herald'];
+          this.runEvent({ type: 'boss', enemy: bossPool[(Math.random() * bossPool.length) | 0] });
         }
       }
     }
@@ -1215,7 +1223,7 @@ export class Game {
     const P = this.player, es = this.enemies, ES = this.stats.enemySpeed;
     const farX = this.halfW * 2 + 200, farY = this.halfH * 2 + 200;
     const kd = Math.exp(-9 * dt);
-    let contactDmg = 0, contactSrc = '', contactBoss = null, contactE = null;
+    let contactDmg = 0, contactSrc = '', contactBoss = null;
     for (let i = es.length - 1; i >= 0; i--) {
       const e = es[i];
       if (!e.alive) { e.p = null; e.glow = null; this.enemyPool.push(e); es[i] = es[es.length - 1]; es.pop(); continue; }
@@ -1244,7 +1252,7 @@ export class Game {
         p.tint = 0x90e0ff;
       } else {
         if (!e.elite) p.tint = 0xffffff; else p.tint = 0xffe0a0;
-        let sp = e.speed * ES * (e.slowT > 0 ? 0.5 : 1);
+        const sp = e.speed * ES * (e.slowT > 0 ? 0.5 : 1);
         if (e.slowT > 0) { e.slowT -= dt; p.tint = 0xb0d8ff; }
         if (e.rush) { mvx = e.rush.x * sp * 2.4; mvy = e.rush.y * sp * 2.4; }
         else if (e.d.charge) {
@@ -1320,7 +1328,7 @@ export class Game {
       // contact damage
       const cdx = P.x - e.x, cdy = P.y - 10 - e.y, cr = e.r + P.r;
       if (e.d.chill && cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0) P.chillT = 1.6;
-      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactE = e; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
+      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
@@ -1552,9 +1560,9 @@ export class Game {
       const n = 5 + ((r() * 7) | 0);
       for (let i = 0; i < n; i++) {
         const dec = this.stage.decor;
-        let tot = 0; for (const k in dec) tot += dec[k];
+        let tot = 0; for (const dk in dec) tot += dec[dk];
         let v = r() * tot, name = 'grass';
-        for (const k in dec) { v -= dec[k]; if (v <= 0) { name = k; break; } }
+        for (const dk in dec) { v -= dec[dk]; if (v <= 0) { name = dk; break; } }
         const p = this.L.decor.add(T[name], cx * C + r() * C, cy * C + r() * C);
         p.anchorY = 0.85;
         if (r() < 0.5) p.scaleX = -1;
@@ -1650,7 +1658,7 @@ export class Game {
     if (this.pickups.some((p) => p.alive && p.type === 'gem') && show('gems', 'Gather the gems the dark leaves behind. They level you up.')) return;
     if (this.combo >= 12 && show('kindle', 'Keep killing to build your Kindle streak: more XP and cinders. Stop and it fades.')) return;
     if (this.flare >= 100 && show('flare', touch ? 'Your Flare is ready! Tap the ✹ button to unleash it.' : 'Your Flare is ready! Press SPACE to unleash it.')) return;
-    if (this.pickups.some((p) => p.alive && p.type === 'chest') && show('chest', 'A relic chest! Grab it for free upgrades. Golden arrows point to chests off-screen.')) return;
+    if (this.pickups.some((p) => p.alive && p.type === 'chest')) show('chest', 'A relic chest! Grab it for free upgrades. Golden arrows point to chests off-screen.');
   }
 
   checkFeats() {
@@ -1749,14 +1757,6 @@ function elementTint(id) {
   const w = WEAPONS[id] || (FUSIONS[id] && WEAPONS[FUSIONS[id].parents[0]]);
   return (tintCache[id] = (w && ELEMENT_TINT[w.element]) || 0xffffff);
 }
-const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
-const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
-const ENEMY_COLORS = {
-  herald: 0xb8a8ff,
-  gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
-  beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
-  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070,
-};
 function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', herald: 'THE GLOAM HERALD', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }
 function weighted(pairs) {

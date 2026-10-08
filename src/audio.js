@@ -1,5 +1,6 @@
 // Synthesized audio: no asset files. SFX are throttled so swarms don't turn into noise.
 let ctx = null, master = null, sfxBus = null, musicBus = null;
+let masterVol = 0.7, musicVol = 0.32;
 let muted = false, musicOn = true;
 const last = {};
 let noiseBuf = null;
@@ -20,7 +21,6 @@ export function initAudio() {
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
 
-let masterVol = 0.7, musicVol = 0.32;
 export function setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : masterVol; }
 // v in 0..1 from the settings sliders
 export function setVolumes(master01, music01) {

@@ -5,14 +5,27 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint:js": "eslint . --max-warnings 0",
+    "lint:css": "stylelint \"src/**/*.css\" --max-warnings 0",
+    "lint:html": "html-validate index.html --max-warnings 0",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:html"
   },
   "type": "module",
   "dependencies": {
     "pixi.js": "^8.22.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "html-validate": "^11.16.2",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0",
     "vite": "^8.3.3"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
 }

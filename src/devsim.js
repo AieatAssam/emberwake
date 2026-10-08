@@ -46,7 +46,7 @@ export function install(startRun, getGame) {
         const parts = {};
         for (const k in g.prof) parts[k] = +(g.prof[k] - before[k]).toFixed(1);
         spikes.push({ t: Math.round(g.time), ms: +d.toFixed(1), en: g.enemies.length, fx: g.fx.length, pr: g.projectiles.length, press: +(g.pressure || 1).toFixed(1), parts });
-        spikes.sort((a, b) => b.ms - a.ms);
+        spikes.sort((x, y) => y.ms - x.ms);
         if (spikes.length > 12) spikes.pop();
       }
       upd += d; if (step > 60) worst = Math.max(worst, d);
@@ -56,7 +56,7 @@ export function install(startRun, getGame) {
         log.push(`${Math.round(g.time)}s lv${g.level} hp${Math.round(P.hp)}/${Math.round(g.stats.maxHp)} minHp${Math.round(minHp)} en${g.enemies.length} kills${g.kills} press${(g.pressure||1).toFixed(1)} fx${g.fx.length} pr${g.projectiles.length} [${g.weapons.map((w) => w.id + ':' + w.level).join(',')}]`);
         minHp = 1e9;
       }
-      if (step % 300 === 0) await new Promise((r) => setTimeout(r, 0));
+      if (step % 300 === 0) await new Promise((r) => { setTimeout(r, 0); });
     }
     const frames = g.time * 60;
     const prof = {};

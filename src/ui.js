@@ -322,6 +322,7 @@ export class UI {
     }));
     this.bind({
       back: () => (fromPause ? this.showPause(this.game) : this.showTitle()),
+      // eslint-disable-next-line no-alert -- deliberate native confirmation for an irreversible wipe
       wipe: () => { if (confirm('Erase all progress?')) { resetSave(); this.showTitle(); } },
     });
     this.keyHandler = (e) => { if (e.code === 'Escape') (fromPause ? this.showPause(this.game) : this.showTitle()); };
@@ -515,6 +516,13 @@ export class UI {
     const reels = [...this.screen.querySelectorAll('.reel')];
     let done = 0, finished = false;
     const timers = [];
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      timers.forEach((t) => { clearInterval(t); clearTimeout(t); });
+      sfx.chestOpen();
+      this.screen.querySelector('[data-a="take"]').classList.remove('hidden');
+    };
     reels.forEach((r, i) => {
       const img = r.querySelector('img');
       let k = 0;
@@ -530,13 +538,6 @@ export class UI {
         if (++done === n) finish();
       }, 700 + i * 380 + (it_isFusion(res.items[i]) ? 600 : 0)));
     });
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      timers.forEach((t) => { clearInterval(t); clearTimeout(t); });
-      sfx.chestOpen();
-      this.screen.querySelector('[data-a="take"]').classList.remove('hidden');
-    };
     const take = () => {
       if (!finished) {
         // skip animation
@@ -643,7 +644,7 @@ export class UI {
     }).join('');
     // what can we afford now? (the hook for "one more run")
     const affordable = Object.entries(META).filter(([id, m]) => (save.meta[id] || 0) < m.max && save.cinders >= Math.round(m.cost * (1 + (save.meta[id] || 0) * 0.6))).length;
-    const nextChar = Object.entries(CHARACTERS).find(([id, c]) => !save.unlocked[id]);
+    const nextChar = Object.entries(CHARACTERS).find(([id]) => !save.unlocked[id]);
     this.open(`
       <div class="panel results ${win ? 'win' : ''}">
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
@@ -672,15 +673,17 @@ export class UI {
     const charId = g.charId;
     this.bind({
       share: (el) => {
-        const c = CHARACTERS[g.charId], st = STAGES[g.stageId];
+        const c = CHARACTERS[g.charId], stage = STAGES[g.stageId];
         const fused = g.weapons.filter((w) => w.fused).map((w) => FUSIONS[w.id].name);
-        const text = `Emberwake 🔥 ${c.name}, ${c.title} ${win ? 'broke the Eclipse' : 'survived'} ${fmtTime(g.time)} on ${st.name}`
+        const text = `Emberwake 🔥 ${c.name}, ${c.title} ${win ? 'broke the Eclipse' : 'survived'} ${fmtTime(g.time)} on ${stage.name}`
           + (g.heat ? ` (Heat ${g.heat})` : '') + (g.daily ? ` · Daily ${g.daily.key}` : '')
           + ` · LV ${g.level} · ${fmtNum(g.kills)} slain` + (fused.length ? ` · Ascended: ${fused.join(', ')}` : '')
           + (!win && !abandoned && g.lastHitBy ? ` · felled by ${srcName(g.lastHitBy)}` : '');
         const done = () => { el.textContent = 'Copied!'; setTimeout(() => (el.textContent = 'Share'), 1600); };
-        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => prompt('Copy your run:', text));
-        else prompt('Copy your run:', text);
+        // eslint-disable-next-line no-alert -- fallback lets the player copy manually when clipboard is unavailable
+        const manual = () => prompt('Copy your run:', text);
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, manual);
+        else manual();
       },
       again: () => { this.close(); g.daily ? this.h.startRun(g.daily.charId, g.daily.stageId, { daily: g.daily }) : this.h.startRun(charId); },
       hearth: () => { this.h.quitToTitle(); this.showHearth(); },

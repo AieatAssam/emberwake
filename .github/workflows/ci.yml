@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Every linter runs with --max-warnings 0: warnings fail the build.
+      - name: ESLint
+        run: npm run lint:js
+      - name: Stylelint
+        run: npm run lint:css
+      - name: html-validate
+        run: npm run lint:html
+      - name: Build
+        run: npm run build
+      - name: Dev-only code must not ship
+        run: |
+          if grep -lE "__sim|devsim|__game|__audio" dist/assets/*.js; then
+            echo "::error::dev-only hooks found in production bundle"; exit 1
+          fi
