@@ -16,6 +16,7 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 - **Gloam Pressure** — erase the horde faster than it arrives and the dark pushes harder, so a god-tier build always has a tide to carve through.
 - **The Hearth** — spend cinders on permanent upgrades and new Bearers.
 - **Stages** — The Gloam, The Ashfields and The Rimewood: distinct ground, enemy mixes and risk/reward multipliers, unlocked with cinders.
+- **Heat** — win a stage to unlock the next of 5 Heat levels: tougher, faster, denser runs for up to +150% cinders.
 - **Feats** — 15 achievements that pay cinders, with live unlock banners.
 - 5 Bearers, 15 weapons, 7 Ascensions, 15 relics, 9 enemy types, 3 bosses, 3 stages, endless mode.
 

@@ -110,6 +110,8 @@ export class Game {
     this.char = CHARACTERS[charId];
     this.stageId = STAGES[stageId] ? stageId : 'gloam';
     this.stage = STAGES[this.stageId];
+    // Heat: optional difficulty ladder, unlocked one level per win on this stage
+    this.heat = Math.max(0, Math.min(save.heatSel[this.stageId] || 0, save.heatMax[this.stageId] || 0));
 
     this.root = new Container();
     app.stage.addChild(this.root);
@@ -201,6 +203,8 @@ export class Game {
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
     s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
+    const h = this.heat || 0;
+    if (h) { s.enemyHp *= 1 + 0.25 * h; s.curse *= 1 + 0.1 * h; s.enemySpeed *= 1 + 0.04 * h; s.greed *= 1 + 0.3 * h; }
     if (s.overcharge) { /* not used */ }
     const oc = this.overcharge || 0;
     s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;

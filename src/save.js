@@ -7,6 +7,8 @@ const DEFAULT = {
   fusions: {},
   feats: {},
   stages: { gloam: true },
+  heatMax: {},
+  heatSel: {},
   lastStage: 'gloam',
   best: { time: 0, kills: 0, level: 0 },
   totals: { runs: 0, kills: 0, cinders: 0, wins: 0 },
@@ -20,7 +22,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      return { ...structuredClone(DEFAULT), ...s, feats: s.feats || {}, stages: { gloam: true, ...(s.stages || {}) }, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
+      return { ...structuredClone(DEFAULT), ...s, feats: s.feats || {}, stages: { gloam: true, ...(s.stages || {}) }, heatMax: s.heatMax || {}, heatSel: s.heatSel || {}, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
     }
   } catch { /* storage unavailable */ }
   return structuredClone(DEFAULT);

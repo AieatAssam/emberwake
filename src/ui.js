@@ -110,6 +110,12 @@ export class UI {
               <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
               ${open ? '' : `<div class="cost">${st.cost} ✦ ${save.cinders >= st.cost ? '· click to unlock' : ''}</div>`}</div></div>`;
           }).join('')}</div>
+          ${(() => {
+            const st = save.lastStage || 'gloam', mx = save.heatMax[st] || 0, cur = Math.min(save.heatSel[st] || 0, mx);
+            if (!mx) return `<div class="heat-row muted">Win on this stage to unlock <b>Heat</b> — harder runs for richer cinders.</div>`;
+            return `<div class="heat-row"><span>Heat</span>${Array.from({ length: mx + 1 }, (_, i) => `<button class="heat-btn ${i === cur ? 'on' : ''}" data-a="heat" data-h="${i}">${i}</button>`).join('')}
+              <em>${cur ? `+${cur * 25}% enemy health · +${cur * 10}% spawns · +${cur * 30}% cinders` : 'Standard difficulty'}</em></div>`;
+          })()}
           <div class="row">
             <button class="btn" data-a="back">Back</button>
             ${un ? `<button class="btn primary" data-a="go">Begin</button>`
@@ -119,6 +125,7 @@ export class UI {
         </div>`);
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
+        heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
           const id = el.dataset.id, st = STAGES[id];
           if (!save.stages[id]) {
@@ -511,6 +518,10 @@ export class UI {
     save.cinders += total;
     save.totals.runs++; save.totals.kills += g.kills; save.totals.cinders += total;
     if (win) save.totals.wins++;
+    let heatUnlocked = 0;
+    if (win && g.heat < 5 && (save.heatMax[g.stageId] || 0) <= g.heat) {
+      save.heatMax[g.stageId] = g.heat + 1; save.heatSel[g.stageId] = g.heat + 1; heatUnlocked = g.heat + 1;
+    }
     const newBest = g.time > save.best.time;
     save.best.time = Math.max(save.best.time, g.time);
     save.best.kills = Math.max(save.best.kills, g.kills);
@@ -527,6 +538,8 @@ export class UI {
       <div class="panel results ${win ? 'win' : ''}">
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
         ${newBest ? '<div class="newbest">NEW BEST TIME</div>' : ''}
+        ${heatUnlocked ? `<div class="newbest">HEAT ${heatUnlocked} UNLOCKED</div>` : ''}
+        ${g.heat ? `<div class="sub">${STAGES[g.stageId].name} · Heat ${g.heat}</div>` : ''}
         <div class="res-grid">
           <div><em>Survived</em><b>${fmtTime(g.time)}</b></div>
           <div><em>Level</em><b>${g.level}</b></div>
