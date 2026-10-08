@@ -1414,13 +1414,15 @@ export class Game {
       const ps = [];
       const n = 5 + ((r() * 7) | 0);
       for (let i = 0; i < n; i++) {
-        const v = r();
-        const name = v < 0.25 ? 'grass' : v < 0.42 ? 'rock1' : v < 0.55 ? 'rock0' : v < 0.68 ? 'flower' : v < 0.8 ? 'shroom' : v < 0.92 ? 'bones' : 'pillar';
+        const dec = this.stage.decor;
+        let tot = 0; for (const k in dec) tot += dec[k];
+        let v = r() * tot, name = 'grass';
+        for (const k in dec) { v -= dec[k]; if (v <= 0) { name = k; break; } }
         const p = this.L.decor.add(T[name], cx * C + r() * C, cy * C + r() * C);
         p.anchorY = 0.85;
         if (r() < 0.5) p.scaleX = -1;
         p.alpha = 0.85;
-        p.tint = this.stage.decorTint;
+        p.tint = this.stage.own && this.stage.own.includes(name) ? 0xffffff : this.stage.decorTint;
         ps.push(p);
       }
       this.chunks.set(k, ps);

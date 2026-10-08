@@ -648,6 +648,53 @@ function drawEnemies() {
 
 // ---------- decor ----------
 function drawDecor() {
+  // ---- Ashfields props ----
+  make('stump', 40, 44, (c) => {
+    shadow(c, 20, 39, 16, 4);
+    poly(c, [[8, 38], [10, 18], [14, 14], [26, 14], [30, 18], [32, 38]], '#2a1c16', OUT, 2.5);
+    c.strokeStyle = '#140c0a'; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(15, 18); c.lineTo(14, 36); c.moveTo(22, 17); c.lineTo(23, 37); c.stroke();
+    ellipse(c, 20, 15, 10, 3.5, '#4a3020', OUT, 2);
+    c.strokeStyle = '#ff7a20'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(11, 28); c.lineTo(14, 25); c.moveTo(27, 32); c.lineTo(29, 27); c.stroke();
+    poly(c, [[28, 20], [36, 8], [31, 19]], '#2a1c16', OUT, 1.5);
+  });
+  make('vent', 40, 26, (c) => {
+    glowDot(c, 20, 13, 16, 'rgba(255,110,30,0.6)');
+    ellipse(c, 20, 14, 15, 7, '#2a1a14', OUT, 2);
+    ellipse(c, 20, 14, 9, 4, radial(c, 20, 14, 9, [[0, '#fff0a0'], [0.4, '#ff8a20'], [1, '#6a1a04']]));
+    for (const [x, y] of [[9, 9], [31, 10], [14, 20]]) circle(c, x, y, 1.6, '#ffb040');
+  });
+  make('basalt', 34, 30, (c) => {
+    shadow(c, 17, 26, 15, 4);
+    poly(c, [[4, 26], [6, 12], [12, 6], [22, 8], [30, 14], [30, 26]], '#30282a', OUT, 2);
+    poly(c, [[12, 6], [22, 8], [18, 14], [10, 12]], '#463a3a');
+    c.strokeStyle = '#ff6a20'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(9, 20); c.lineTo(15, 17); c.lineTo(20, 22); c.stroke();
+  });
+  // ---- Rimewood props ----
+  make('pine', 44, 70, (c) => {
+    shadow(c, 22, 64, 16, 5);
+    c.fillStyle = '#3a2a22'; c.fillRect(19, 52, 6, 12);
+    for (let i = 0; i < 3; i++) {
+      const y = 14 + i * 14, w = 10 + i * 6;
+      poly(c, [[22, y - 12], [22 + w, y + 10], [22 - w, y + 10]], '#1e3a40', OUT, 2);
+      poly(c, [[22, y - 12], [22 + w * 0.55, y + 2], [22 - w * 0.6, y + 3]], '#e8f6ff');
+    }
+  });
+  make('icecluster', 36, 34, (c) => {
+    shadow(c, 18, 30, 14, 3.5);
+    glowDot(c, 18, 18, 16, 'rgba(140,220,255,0.35)');
+    for (const [x, h, w] of [[11, 18, 4], [19, 26, 5], [26, 14, 4]]) {
+      poly(c, [[x, 30 - h], [x + w, 30 - h * 0.35], [x + w * 0.4, 30], [x - w * 0.6, 30], [x - w, 30 - h * 0.35]], '#bfeaff', '#2a6a9a', 1.5);
+      poly(c, [[x, 30 - h], [x + w, 30 - h * 0.35], [x, 30 - h * 0.3]], '#f4fcff');
+    }
+  });
+  make('snowrock', 36, 28, (c) => {
+    shadow(c, 18, 24, 16, 4);
+    poly(c, [[4, 22], [8, 10], [18, 4], [30, 9], [33, 22]], '#3a4658', OUT, 2);
+    c.beginPath(); c.moveTo(7, 12); c.quadraticCurveTo(18, 1, 31, 10); c.quadraticCurveTo(20, 9, 7, 12);
+    c.fillStyle = '#eef8ff'; c.fill();
+  });
   make('rock0', 36, 28, (c) => {
     shadow(c, 18, 24, 16, 4);
     poly(c, [[4, 22], [8, 10], [18, 4], [30, 9], [33, 22]], '#3a3a4e', OUT, 2);
