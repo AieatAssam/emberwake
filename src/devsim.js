@@ -34,6 +34,7 @@ export function install(startRun, getGame) {
         for (const k of g.pickups) { if (!k.alive) continue; const d = (k.x - P.x) ** 2 + (k.y - P.y) ** 2; if (d < bd) { bd = d; best = k; } }
         if (best) { mx = best.x - P.x; my = best.y - P.y; }
       }
+      if (opts.stand) { mx = 0; my = 0; } // brawler mode: hold position and take the horde
       const ml = Math.hypot(mx, my) || 1, sp = g.stats.moveSpeed / 60;
       P.x += (mx / ml) * sp; P.y += (my / ml) * sp; P.fx = mx / ml; P.fy = my / ml;
       if (g.flare >= 100) g.triggerFlare();
