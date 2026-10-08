@@ -272,6 +272,12 @@ export class UI {
   }
 
   toast(text, kind = '') {
+    const box = $('#toasts');
+    // de-dupe: re-trigger an identical live toast instead of stacking copies
+    for (const t of box.children) {
+      if (t.textContent === text) { t.style.animation = 'none'; void t.offsetWidth; t.style.animation = ''; return; }
+    }
+    while (box.children.length >= 3) box.firstChild.remove();
     const el = document.createElement('div');
     el.className = 'toast ' + kind;
     el.textContent = text;

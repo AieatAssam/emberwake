@@ -24,7 +24,7 @@ export function install(startRun, getGame) {
       for (const e of g.enemies) {
         if (e.inert) continue;
         const dx = e.x - P.x, dy = e.y - P.y;
-        const rr = e.boss ? 320 : 170, w = e.boss ? 12 : 1;
+        const rr = e.boss ? 320 : e.elite ? 230 : 170, w = e.boss ? 12 : e.elite ? 5 : 1;
         if (dx * dx + dy * dy < rr * rr) { cx += dx * w; cy += dy * w; n += w; }
       }
       let mx = Math.cos(ang), my = Math.sin(ang);

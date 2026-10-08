@@ -80,7 +80,7 @@ export const WEAPONS = {
   sparkDrones: {
     name: 'Spark Drones', element: 'storm', behavior: 'drone',
     desc: 'Brass drones hover nearby and pepper enemies with sparks.',
-    base: { dmg: 6, cd: 0.65, amount: 1, speed: 560, pierce: 1, area: 1, knock: 2 },
+    base: { dmg: 8, cd: 0.55, amount: 1, speed: 560, pierce: 1, area: 1, knock: 2 },
     levels: L({ amount: 1 }, { dmg: 3 }, { cdMul: 0.85 }, { amount: 1 }, { pierce: 1, dmg: 3 }, { cdMul: 0.85 }, { amount: 2 }),
   },
   sunRing: {

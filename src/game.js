@@ -482,7 +482,7 @@ export class Game {
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     const e = {
       type, d, x, y, kx: 0, ky: 0, hp, maxHp: hp, alive: true, uid: uidCounter++,
-      speed: d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08), dmg: d.boss ? d.dmg : d.dmg * (elite ? 1.6 : 1) * (1 + this.time / 900),
+      speed: d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08), dmg: d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900),
       r: d.r * scale, scale, xp: d.xp * (elite ? 10 : 1), elite, boss: !!d.boss, inert: !!d.inert,
       flash: 0, slowT: 0, freezeT: 0, anim: Math.random() * 10, frame: 0, t: 0, state: 0, stT: d.boss ? 3.5 : rand(1, 3),
       dirX: 0, dirY: 0, rush: o.rush || null, life: o.life || 0, phase: Math.random() * TAU, _q: 0, glow: null,
@@ -1146,7 +1146,7 @@ export class Game {
 
       // contact damage
       const cdx = P.x - e.x, cdy = P.y - 10 - e.y, cr = e.r + P.r;
-      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss ? e : null; }
+      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
@@ -1166,8 +1166,9 @@ export class Game {
       if (contactBoss) {
         // bosses shove you clear instead of juggling you to death
         const bx = P.x - contactBoss.x, by = P.y - contactBoss.y, bl = Math.hypot(bx, by) || 1;
-        P.x += (bx / bl) * 70; P.y += (by / bl) * 70;
-        P.iframes = Math.max(P.iframes, 1.1);
+        const big = contactBoss.boss;
+        P.x += (bx / bl) * (big ? 70 : 45); P.y += (by / bl) * (big ? 70 : 45);
+        P.iframes = Math.max(P.iframes, big ? 1.1 : 0.8);
         this.shockwave(P.x, P.y, 0xff3a6a, 120, 0.3);
       }
     }
@@ -1234,7 +1235,24 @@ export class Game {
     }
   }
 
+  // Far-off gems condense into one rich gem so the field stays readable and fast.
+  consolidateGems() {
+    const P = this.player, fx = this.halfW * 1.6, fy = this.halfH * 1.6;
+    let sink = null, sum = 0;
+    for (const g of this.pickups) {
+      if (!g.alive || g.type !== 'gem' || g.attract) continue;
+      if (Math.abs(g.x - P.x) < fx && Math.abs(g.y - P.y) < fy) continue;
+      if (!sink) { sink = g; continue; }
+      sum += g.value;
+      g.alive = false; this.L.pickups.kill(g.p); this.gemCount--;
+      if (this.vault === g) this.vault = null;
+    }
+    if (sink && sum) { sink.value += sum; this.setGemTex(sink); }
+  }
+
   updatePickups(dt) {
+    this.gemT = (this.gemT || 0) - dt;
+    if (this.gemT <= 0) { this.gemT = 1; if (this.gemCount > 120) this.consolidateGems(); }
     const P = this.player, mag = this.stats.magnet, mag2 = mag * mag;
     const pk = this.pickups;
     for (let i = pk.length - 1; i >= 0; i--) {
