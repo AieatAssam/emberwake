@@ -240,6 +240,24 @@ function drawProjectiles() {
   make('icicle', 28, 12, (c) => {
     poly(c, [[0, 6], [8, 1], [28, 6], [8, 11]], '#d9f6ff', '#3b7ca8', 1.5);
   });
+  make('vortex', 128, 128, (c) => {
+    c.save(); c.translate(64, 64);
+    c.fillStyle = radial(c, 0, 0, 64, [[0, 'rgba(255,255,255,0.95)'], [0.12, 'rgba(200,140,255,0.9)'], [0.35, 'rgba(90,30,160,0.55)'], [1, 'rgba(20,0,40,0)']]);
+    c.beginPath(); c.arc(0, 0, 64, 0, TAU); c.fill();
+    for (let arm = 0; arm < 4; arm++) {
+      c.save(); c.rotate((arm / 4) * TAU);
+      c.beginPath();
+      for (let t = 0; t <= 1; t += 0.04) {
+        const r = 8 + t * 54, a = t * 3.4;
+        const x = Math.cos(a) * r, y = Math.sin(a) * r;
+        if (t === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.lineWidth = 5; c.strokeStyle = 'rgba(230,200,255,0.75)'; c.lineCap = 'round'; c.stroke();
+      c.restore();
+    }
+    circle(c, 0, 0, 7, '#0a0014', 'rgba(255,230,255,0.9)', 2);
+    c.restore();
+  });
   make('feather', 30, 14, (c) => {
     glowDot(c, 15, 7, 12, 'rgba(255,240,180,0.5)');
     ellipse(c, 15, 7, 13, 4, '#fff4d6', '#9a7a3a', 1.2);
@@ -780,6 +798,7 @@ function drawIcons() {
   I('sunRing', '#6a3a0a', (c) => { c.strokeStyle = '#ffcf6a'; c.lineWidth = 4; c.setLineDash([6, 4]); c.beginPath(); c.arc(24, 24, 15, 0, TAU); c.stroke(); glowDot(c, 24, 24, 10, 'rgba(255,180,60,0.9)'); });
   I('iceLance', '#0a2a4a', (c) => { blit(c, 'icicle', 24, 24, 1.3, -0.7); blit(c, 'icicle', 18, 32, 0.9, -0.7); });
   I('sanctum', '#5a4a0a', (c) => { blit(c, 'feather', 24, 18, 1); blit(c, 'feather', 22, 30, 1, 0.4); });
+  I('gravewell', '#2a0a4a', (c) => { blit(c, 'vortex', 24, 24, 0.36); });
   // fusions
   I('cataclysm', '#7a1a00', (c) => { blit(c, 'meteor', 24, 24, 1.05); blit(c, 'bolt', 34, 14, 0.8); blit(c, 'bolt', 12, 34, 0.7); });
   I('thousandEdges', '#003a6a', (c) => { for (let i = 0; i < 6; i++) blit(c, 'blade', 24 + Math.cos(i) * 13, 24 + Math.sin(i) * 13, 0.55, i); });

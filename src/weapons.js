@@ -465,6 +465,54 @@ export const BEHAVIORS = {
     },
   },
 
+  // ---------- gravity vortex ----------
+  vortex: {
+    update(g, part, st, dt) {
+      const S = part.state;
+      S.wells = S.wells || [];
+      S.t = (S.t ?? 1.2) - dt;
+      if (S.t <= 0) {
+        S.t = st.cd;
+        for (let i = 0; i < st.amount; i++) {
+          const e = g.randomVisibleEnemy();
+          if (!e) break;
+          const p = g.L.fxAdd.add(T.vortex, e.x, e.y);
+          p.alpha = 0;
+          S.wells.push({ x: e.x + rand(-30, 30), y: e.y + rand(-30, 30), t: 0, life: st.duration, R: 125 * st.area, p, rot: 0 });
+        }
+      }
+      for (let i = S.wells.length - 1; i >= 0; i--) {
+        const w = S.wells[i];
+        w.t += dt; w.life -= dt;
+        const grow = Math.min(1, w.t * 4);
+        w.p.x = w.x; w.p.y = w.y;
+        w.p.rotation -= dt * 6;
+        w.p.scaleX = w.p.scaleY = (w.R / 64) * grow * (1 + Math.sin(w.t * 9) * 0.04);
+        w.p.alpha = 0.85 * Math.min(grow, w.life * 3);
+        tmpA.length = 0;
+        g.grid.query(w.x, w.y, w.R, tmpA);
+        for (const e of tmpA) {
+          if (e.inert || e.boss) continue;
+          const dx = w.x - e.x, dy = w.y - e.y, d = Math.hypot(dx, dy) || 1;
+          const pull = 420 * (1 - (e.d.knockRes || 0) * 0.5);
+          e.kx += (dx / d) * pull * dt * 6; e.ky += (dy / d) * pull * dt * 6;
+          if (hitCd(S, e, g.time, 0.3)) g.damage(e, st.dmg, { w: part.w });
+        }
+        if (g.fx.length < 2400 && Math.random() < dt * 30) {
+          const a = Math.random() * TAU;
+          g.spawnFx(T.dot, w.x + Math.cos(a) * w.R, w.y + Math.sin(a) * w.R, { life: 0.4, s0: 1.2, s1: 0, tint: 0xc080ff, vx: -Math.cos(a) * w.R * 2.2, vy: -Math.sin(a) * w.R * 2.2, drag: 0 });
+        }
+        if (w.life <= 0) {
+          g.L.fxAdd.kill(w.p);
+          S.wells.splice(i, 1);
+          g.explodeAt(w.x, w.y, w.R * 0.7, st.dmg * 3.5, part.w, 0xc080ff, 18);
+          g.shake = Math.max(g.shake, 5);
+        }
+      }
+    },
+    dispose(g, part) { for (const w of part.state.wells || []) g.L.fxAdd.kill(w.p); },
+  },
+
   // ---------- radial quill burst ----------
   radial: {
     update(g, part, st, dt) {

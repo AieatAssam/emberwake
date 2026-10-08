@@ -95,6 +95,12 @@ export const WEAPONS = {
     base: { dmg: 12, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
     levels: L({ amount: 1 }, { dmg: 5 }, { pierce: 2 }, { amount: 1, cdMul: 0.9 }, { dmg: 7 }, { amount: 1 }, { amount: 2, pierce: 3 }),
   },
+  gravewell: {
+    name: 'Gravewell', element: 'void', behavior: 'vortex',
+    desc: 'Opens a vortex in the horde that drags foes inward, grinds them, then implodes.',
+    base: { dmg: 4, cd: 4.8, amount: 1, area: 1, duration: 2.2, knock: 0 },
+    levels: L({ dmg: 1 }, { area: 0.15 }, { duration: 0.5 }, { amount: 1 }, { dmg: 2, cdMul: 0.92 }, { area: 0.2 }, { amount: 1, dmg: 2 }),
+  },
   sanctum: {
     name: 'Sanctum Quills', element: 'holy', behavior: 'radial',
     desc: 'Bursts of radiant quills fan out in every direction.',
