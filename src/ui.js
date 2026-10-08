@@ -187,7 +187,7 @@ export class UI {
         <h3>Relics</h3><div class="mini-grid">${pas}</div>
         <h3>How the Gloam works</h3>
         <ul class="rules">
-          <li><b>Kindle</b> — every kill feeds a streak. Higher streaks multiply XP and cinders up to x4. Stop killing for ~3s and it gutters out.</li>
+          <li><b>Kindle</b> — every kill feeds a streak. Higher streaks multiply XP and cinders up to x2.5. Stop killing for ~3s and it gutters out.</li>
           <li><b>Flare</b> — kills charge your Flare. Press SPACE when full to unleash your Bearer's ultimate.</li>
           <li><b>Ascension</b> — two max-level partner weapons fuse at the next chest into one Ascended weapon, freeing a slot.</li>
           <li><b>Dark Pacts</b> — rare blood-red draft cards. Power at a price, for the rest of the run.</li>

@@ -216,7 +216,11 @@ export const BEHAVIORS = {
       S.qt -= dt;
       if (S.qt > 0) return;
       S.qt = 0.11; S.queue--;
-      const base = Math.atan2(P.fy, P.fx);
+      if (S.k === 0) {
+        const tg = g.nearestEnemy(P.x, P.y, 115 * st.area * 1.6);
+        S.aim = tg ? Math.atan2(tg.y - (P.y - 14), tg.x - P.x) : Math.atan2(P.fy, P.fx);
+      }
+      const base = S.aim;
       const k = S.k++;
       const offs = [0, Math.PI, Math.PI / 2, -Math.PI / 2, Math.PI / 4, -3 * Math.PI / 4];
       const a = base + offs[k % offs.length];

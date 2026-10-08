@@ -7,7 +7,7 @@ export const MAX_PASSIVES = 6;
 export const BASE_STATS = {
   maxHp: 100, regen: 0, armor: 0, moveSpeed: 150,
   might: 1, area: 1, projSpeed: 1, duration: 1, amount: 0, cooldown: 1,
-  magnet: 80, luck: 1, growth: 1, greed: 1, crit: 0.05, critMul: 2,
+  magnet: 95, luck: 1, growth: 1, greed: 1, crit: 0.05, critMul: 2,
   flareGain: 1, revivals: 0, curse: 1, enemyHp: 1, enemySpeed: 1, noHeal: false, overcharge: 0,
   rerolls: 0, banishes: 0, skips: 0,
 };
@@ -38,8 +38,8 @@ export const WEAPONS = {
   frostPulse: {
     name: 'Rime Pulse', element: 'frost', behavior: 'pulse',
     desc: 'A freezing shockwave bursts outward, chilling everything.',
-    base: { dmg: 9, cd: 2.4, area: 1, duration: 1.6, freeze: 0, knock: 14 },
-    levels: L({ area: 0.15 }, { dmg: 5 }, { cdMul: 0.85 }, { area: 0.2, freeze: 0.1 }, { dmg: 7 }, { cdMul: 0.85 }, { area: 0.25, dmg: 8, freeze: 0.15 }),
+    base: { dmg: 13, cd: 2.2, area: 1, duration: 1.6, freeze: 0, knock: 14 },
+    levels: L({ area: 0.15 }, { dmg: 7 }, { cdMul: 0.85 }, { area: 0.2, freeze: 0.1 }, { dmg: 7 }, { cdMul: 0.85 }, { area: 0.25, dmg: 8, freeze: 0.15 }),
   },
   wispSwarm: {
     name: 'Wisp Swarm', element: 'spirit', behavior: 'wisp',
@@ -205,7 +205,7 @@ export const CHARACTERS = {
 
 // tex: base frame name (frames 0/1 animate). r = collision radius.
 export const ENEMIES = {
-  gloomling: { tex: 'gloomling', hp: 9, speed: 54, dmg: 6, xp: 1, r: 13 },
+  gloomling: { tex: 'gloomling', hp: 9, speed: 52, dmg: 5, xp: 1, r: 13 },
   moth: { tex: 'moth', hp: 6, speed: 92, dmg: 5, xp: 1, r: 12, wobble: true, anim: 10 },
   husk: { tex: 'husk', hp: 48, speed: 38, dmg: 13, xp: 4, r: 21, knockRes: 0.6 },
   wraith: { tex: 'wraith', hp: 20, speed: 68, dmg: 9, xp: 2, r: 15, alpha: 0.88 },
@@ -222,22 +222,22 @@ export const ENEMIES = {
 
 // The Director: timeline (seconds). rate = spawns/sec, min = floor of alive enemies.
 export const WAVES = [
-  { at: 0, rate: 1.4, min: 12, pool: { gloomling: 1 } },
+  { at: 0, rate: 1.2, min: 10, pool: { gloomling: 1 } },
   { at: 30, rate: 2.4, min: 25, pool: { gloomling: 3, moth: 1 } },
-  { at: 60, rate: 3.2, min: 40, pool: { gloomling: 2, moth: 2 } },
+  { at: 60, rate: 3, min: 36, pool: { gloomling: 2, moth: 2 } },
   { at: 105, rate: 4, min: 55, pool: { gloomling: 2, moth: 2, husk: 1 } },
   { at: 150, rate: 5, min: 70, pool: { moth: 2, wraith: 2, husk: 1 } },
-  { at: 210, rate: 6, min: 90, pool: { gloomling: 2, splitter: 1.5, wraith: 2 } },
-  { at: 270, rate: 7, min: 110, pool: { wraith: 2, splitter: 1, spitter: 1, husk: 1 } },
-  { at: 330, rate: 8, min: 130, pool: { gloomling: 3, beetle: 1.5, spitter: 1 } },
-  { at: 400, rate: 9.5, min: 150, pool: { moth: 3, husk: 2, beetle: 1 } },
-  { at: 460, rate: 11, min: 175, pool: { wraith: 3, splitter: 2, spitter: 1.5 } },
-  { at: 530, rate: 12.5, min: 200, pool: { husk: 2, beetle: 2, moth: 3, sentinel: 0.3 } },
-  { at: 600, rate: 14, min: 230, pool: { gloomling: 3, wraith: 2, sentinel: 0.6, spitter: 1 } },
-  { at: 680, rate: 16, min: 260, pool: { splitter: 2, beetle: 2, husk: 2, sentinel: 0.8 } },
-  { at: 760, rate: 18, min: 300, pool: { moth: 4, wraith: 3, sentinel: 1, spitter: 1 } },
-  { at: 830, rate: 21, min: 340, pool: { husk: 3, beetle: 2, sentinel: 1.5, splitter: 2 } },
-  { at: 900, rate: 24, min: 380, pool: { gloomling: 2, moth: 2, husk: 2, wraith: 2, splitter: 2, beetle: 2, spitter: 1, sentinel: 2 } },
+  { at: 210, rate: 9, min: 135, pool: { gloomling: 2, splitter: 1.5, wraith: 2 } },
+  { at: 270, rate: 10.5, min: 165, pool: { wraith: 2, splitter: 1, spitter: 1, husk: 1 } },
+  { at: 330, rate: 12, min: 195, pool: { gloomling: 3, beetle: 1.5, spitter: 1 } },
+  { at: 400, rate: 14.2, min: 225, pool: { moth: 3, husk: 2, beetle: 1 } },
+  { at: 460, rate: 16.5, min: 262, pool: { wraith: 3, splitter: 2, spitter: 1.5 } },
+  { at: 530, rate: 18.8, min: 300, pool: { husk: 2, beetle: 2, moth: 3, sentinel: 0.3 } },
+  { at: 600, rate: 21, min: 345, pool: { gloomling: 3, wraith: 2, sentinel: 0.6, spitter: 1 } },
+  { at: 680, rate: 24, min: 390, pool: { splitter: 2, beetle: 2, husk: 2, sentinel: 0.8 } },
+  { at: 760, rate: 27, min: 450, pool: { moth: 4, wraith: 3, sentinel: 1, spitter: 1 } },
+  { at: 830, rate: 31.5, min: 510, pool: { husk: 3, beetle: 2, sentinel: 1.5, splitter: 2 } },
+  { at: 900, rate: 36, min: 570, pool: { gloomling: 2, moth: 2, husk: 2, wraith: 2, splitter: 2, beetle: 2, spitter: 1, sentinel: 2 } },
 ];
 
 export const EVENTS = [
@@ -288,14 +288,14 @@ export const META = {
 
 export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
-  if (level < 20) return Math.floor(6 + level * 9);
-  if (level < 40) return Math.floor(186 + (level - 20) * 14);
-  return Math.floor(466 + (level - 40) * 20);
+  if (level < 20) return Math.floor(5 + level * 6);
+  if (level < 40) return Math.floor(125 + (level - 20) * 16);
+  return Math.floor(445 + (level - 40) * 26);
 }
 
 export function enemyHpScale(t) {
   const m = t / 60;
-  let s = 1 + 0.13 * m + 0.014 * m * m;
+  let s = 1 + 0.2 * m + 0.032 * m * m;
   if (m > 15) s *= Math.pow(1.17, m - 15);
   return s;
 }

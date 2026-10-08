@@ -7,7 +7,7 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 ▶ **Play:** https://aieatassam.github.io/emberwake/
 
 ## What makes it Emberwake
-- **Kindle** — kills feed a streak multiplier (up to x4 XP & cinders). Stop killing and it gutters out.
+- **Kindle** — kills feed a streak multiplier (up to x2.5 XP & cinders). Stop killing and it gutters out.
 - **Flare** — each Bearer has an ultimate charged by kills (SPACE / gamepad A / touch button).
 - **Ascension** — two max-level partner weapons fuse at a chest into one Ascended weapon, *freeing a slot*.
 - **Dark Pacts** — rare draft cards that trade danger for permanent power.

@@ -13,8 +13,8 @@ import { save, persist } from './save.js';
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 export const KINDLE_TIERS = [
-  { at: 0, mul: 1 }, { at: 25, mul: 1.25 }, { at: 70, mul: 1.5 }, { at: 150, mul: 2 },
-  { at: 300, mul: 2.5 }, { at: 600, mul: 3 }, { at: 1200, mul: 4 },
+  { at: 0, mul: 1 }, { at: 25, mul: 1.15 }, { at: 70, mul: 1.3 }, { at: 150, mul: 1.5 },
+  { at: 300, mul: 1.75 }, { at: 600, mul: 2 }, { at: 1200, mul: 2.5 },
 ];
 const MAX_ENEMIES = 1100;
 const MAX_FX = 3500;
@@ -714,7 +714,7 @@ export class Game {
     const s = this.stats;
     const dmg = Math.max(1, amount * (1 - Math.min(0.5, s.armor * 0.03)) - s.armor);
     P.hp -= dmg;
-    P.iframes = 0.45; P.hurtT = 0.25;
+    P.iframes = 0.55; P.hurtT = 0.25;
     this.shake = Math.max(this.shake, 6);
     this.hurtFlash = 0.5;
     sfx.hurt();
@@ -966,7 +966,7 @@ export class Game {
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && e.alive) alive++;
     this.spawnAcc += rate * dt;
-    if (alive < min) this.spawnAcc += (min - alive) * dt * 2;
+    if (alive < min) this.spawnAcc += (min - alive) * dt * 4;
     let n = Math.floor(this.spawnAcc);
     this.spawnAcc -= n;
     n = Math.min(n, 30);
