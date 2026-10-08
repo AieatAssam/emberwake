@@ -173,3 +173,6 @@ export function startMusic() {
   musicTimer = setInterval(schedule, 40);
 }
 export function stopMusic() { clearInterval(musicTimer); musicTimer = null; }
+
+// read-only snapshot for dev verification
+export function audioDebug() { return { master: master && +master.gain.value.toFixed(3), music: musicBus && +musicBus.gain.value.toFixed(3) }; }

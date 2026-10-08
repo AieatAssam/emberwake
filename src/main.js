@@ -45,6 +45,7 @@ const ui = new UI({
 if (import.meta.env.DEV) {
   import('./devsim.js').then((m) => m.install((c) => ui.h.startRun(c), () => game));
   window.__atlas = atlasCanvas;
+  import('./audio.js').then((a) => { window.__audio = a.audioDebug; });
 }
 
 addEventListener('resize', () => game && game.resize());
