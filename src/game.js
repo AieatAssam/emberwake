@@ -2,7 +2,7 @@
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas } from './atlas.js';
 import {
-  BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS,
+  BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnerOf,
 } from './data.js';
 import { BEHAVIORS } from './weapons.js';
@@ -103,19 +103,21 @@ class Grid {
 let uidCounter = 1;
 
 export class Game {
-  constructor(app, ui, charId) {
+  constructor(app, ui, charId, stageId = 'gloam') {
     this.app = app;
     this.ui = ui;
     this.charId = charId;
     this.char = CHARACTERS[charId];
+    this.stageId = STAGES[stageId] ? stageId : 'gloam';
+    this.stage = STAGES[this.stageId];
 
     this.root = new Container();
     app.stage.addChild(this.root);
 
-    const groundTex = Texture.from(makeGroundCanvas());
+    const groundTex = Texture.from(makeGroundCanvas(this.stage.ground));
     groundTex.source.addressMode = 'repeat';
     this.ground = new TilingSprite({ texture: groundTex, width: app.screen.width, height: app.screen.height });
-    this.ground.tint = 0xb8b8d0;
+    this.ground.tint = this.stage.tint;
     this.root.addChild(this.ground);
 
     this.world = new Container();
@@ -192,6 +194,7 @@ export class Game {
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
+    s.enemyHp *= this.stage.hpMul; s.greed *= this.stage.greedMul; s.enemySpeed *= this.stage.speedMul;
     if (s.overcharge) { /* not used */ }
     const oc = this.overcharge || 0;
     s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
@@ -1019,7 +1022,7 @@ export class Game {
     this.spawnAcc -= n;
     n = Math.min(n, Math.round(12 * late));
     for (let i = 0; i < n; i++) {
-      const type = weightedObj(wave.pool);
+      const type = weightedObj(this.stagePool(wave));
       const sp = this.spawnPointOffscreen();
       this.spawnEnemy(type, sp.x, sp.y);
     }
@@ -1056,6 +1059,16 @@ export class Game {
         this.spawnEnemy('totem', P.x + Math.cos(a) * d, P.y + Math.sin(a) * d, { force: true });
       }
     }
+  }
+
+  // merge the stage's enemy bias into a wave pool (cached per wave)
+  stagePool(wave) {
+    if (wave._pools && wave._pools[this.stageId]) return wave._pools[this.stageId];
+    const pool = { ...wave.pool };
+    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530 };
+    for (const k in this.stage.bias) if (wave.at >= (unlockedAt[k] || 0)) pool[k] = (pool[k] || 0) + this.stage.bias[k];
+    (wave._pools || (wave._pools = {}))[this.stageId] = pool;
+    return pool;
   }
 
   runEvent(ev) {
@@ -1373,6 +1386,7 @@ export class Game {
         p.anchorY = 0.85;
         if (r() < 0.5) p.scaleX = -1;
         p.alpha = 0.85;
+        p.tint = this.stage.decorTint;
         ps.push(p);
       }
       this.chunks.set(k, ps);

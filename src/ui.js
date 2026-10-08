@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, MAX_WEAPON_LEVEL } from './data.js';
+import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, STAGES, MAX_WEAPON_LEVEL } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, initAudio, setMuted, setMusic } from './audio.js';
@@ -101,6 +101,15 @@ export class UI {
             <div>Starts with <b>${WEAPONS[c.weapon].name}</b> · ${c.bonus}</div>
             <div class="flare-desc">Flare — <b>${c.flareName}</b>: ${c.flareDesc}</div>
           </div>
+          <h3 class="stage-h">Stage</h3>
+          <div class="stage-grid">${Object.entries(STAGES).map(([id, st]) => {
+            const open = save.stages[id];
+            const cur = (save.lastStage || 'gloam') === id;
+            return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}">
+              <div class="stage-swatch" style="background:${st.ground.base}"><i style="background:${st.ground.blobs[0]}"></i><i style="background:${st.ground.blobs[2]}"></i></div>
+              <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
+              ${open ? '' : `<div class="cost">${st.cost} ✦ ${save.cinders >= st.cost ? '· click to unlock' : ''}</div>`}</div></div>`;
+          }).join('')}</div>
           <div class="row">
             <button class="btn" data-a="back">Back</button>
             ${un ? `<button class="btn primary" data-a="go">Begin</button>`
@@ -110,6 +119,14 @@ export class UI {
         </div>`);
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
+        stage: (el) => {
+          const id = el.dataset.id, st = STAGES[id];
+          if (!save.stages[id]) {
+            if (save.cinders < st.cost) return;
+            save.cinders -= st.cost; save.stages[id] = true; sfx.chestOpen();
+          }
+          save.lastStage = id; persist(); render();
+        },
         back: () => this.showTitle(),
         go: () => { this.close(); this.h.startRun(sel); },
         buy: () => {

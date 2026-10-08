@@ -26,11 +26,11 @@ setMusic(save.settings.music);
 let game = null;
 
 const ui = new UI({
-  startRun(charId) {
+  startRun(charId, stageId = save.lastStage || 'gloam') {
     if (game) { game.destroy(); game = null; }
     initAudio();
     startMusic();
-    game = new Game(app, ui, charId);
+    game = new Game(app, ui, charId, stageId);
     ui.beginRun(game);
     window.__game = game;
   },

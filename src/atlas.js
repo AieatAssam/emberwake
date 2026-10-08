@@ -719,18 +719,18 @@ function drawIcons() {
 }
 
 // ---------- ground tile (separate texture for TilingSprite) ----------
-export function makeGroundCanvas() {
+export function makeGroundCanvas(pal) {
   const S = 512;
   const g = document.createElement('canvas');
   g.width = S; g.height = S;
   const c = g.getContext('2d');
-  c.fillStyle = '#141a24';
+  c.fillStyle = pal.base;
   c.fillRect(0, 0, S, S);
   // tile-safe stamping: draw everything wrapped
   const stamp = (fn) => { for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { c.save(); c.translate(ox, oy); fn(); c.restore(); } };
   for (let i = 0; i < 70; i++) {
     const x = rnd() * S, y = rnd() * S, r = 30 + rnd() * 90;
-    const cols = ['rgba(30,44,52,0.5)', 'rgba(26,30,46,0.6)', 'rgba(36,38,40,0.35)', 'rgba(20,40,38,0.45)'];
+    const cols = pal.blobs;
     const col = cols[(rnd() * cols.length) | 0];
     stamp(() => { c.fillStyle = radial(c, x, y, r, [[0, col], [1, 'rgba(0,0,0,0)']]); c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); });
   }
@@ -739,7 +739,7 @@ export function makeGroundCanvas() {
     const x = rnd() * S, y = rnd() * S, w = 18 + rnd() * 26, h = 12 + rnd() * 16, a = rnd() * 0.6;
     stamp(() => {
       c.save(); c.translate(x, y); c.rotate(a);
-      c.fillStyle = 'rgba(60,62,80,0.35)'; c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 2;
+      c.fillStyle = pal.stone; c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 2;
       c.beginPath(); c.roundRect(-w / 2, -h / 2, w, h, 4); c.fill(); c.stroke();
       c.restore();
     });

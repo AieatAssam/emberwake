@@ -367,3 +367,25 @@ export const FEATS = {
   overcharge25: { name: 'Beyond the Limit', desc: 'Stack 25 Overcharges', reward: 300, check: (g) => (g.overcharge || 0) >= 25 },
   untouched: { name: 'Ghost of the Gloam', desc: 'Reach 3:00 without taking damage', reward: 150, check: (g) => g.time >= 180 && !g.dmgLog },
 };
+
+// Stages: same Director timeline, different ground, enemy mix and risk/reward.
+export const STAGES = {
+  gloam: {
+    name: 'The Gloam', desc: 'Moss-choked ruins at the edge of the dark. Where every Bearer begins.',
+    cost: 0, hpMul: 1, greedMul: 1, speedMul: 1, bias: {},
+    ground: { base: '#141a24', blobs: ['rgba(30,44,52,0.5)', 'rgba(26,30,46,0.6)', 'rgba(36,38,40,0.35)', 'rgba(20,40,38,0.45)'], stone: 'rgba(60,62,80,0.35)' },
+    tint: 0xb8b8d0, decorTint: 0xffffff, color: '#8ab0ff',
+  },
+  ashfields: {
+    name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. +40% enemy health, +50% cinders.',
+    cost: 600, hpMul: 1.4, greedMul: 1.5, speedMul: 1, bias: { husk: 1.5, beetle: 1.5, spitter: 0.5 },
+    ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
+    tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
+  },
+  rimewood: {
+    name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +80% enemy health, +15% enemy speed, x2 cinders.',
+    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, bias: { wraith: 2, moth: 1.5, sentinel: 0.6 },
+    ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
+    tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
+  },
+};
