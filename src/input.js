@@ -85,3 +85,24 @@ export function padButtons() {
   return r;
 }
 export function clearPressed() { pressed.clear(); }
+
+// Edge-triggered gamepad state for menu navigation (separate from in-run buttons)
+let menuPrev = {};
+export function padMenu() {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const now = { up: false, down: false, left: false, right: false, a: false, b: false };
+  for (const p of pads) {
+    if (!p) continue;
+    const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
+    now.up ||= !!p.buttons[12]?.pressed || ay < -0.6;
+    now.down ||= !!p.buttons[13]?.pressed || ay > 0.6;
+    now.left ||= !!p.buttons[14]?.pressed || ax < -0.6;
+    now.right ||= !!p.buttons[15]?.pressed || ax > 0.6;
+    now.a ||= !!p.buttons[0]?.pressed;
+    now.b ||= !!p.buttons[1]?.pressed;
+  }
+  const out = {};
+  for (const k in now) out[k] = now[k] && !menuPrev[k];
+  menuPrev = now;
+  return out;
+}

@@ -4,7 +4,7 @@ import { CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BES
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, initAudio, setMuted, setMusic } from './audio.js';
-import { clearPressed } from './input.js';
+import { clearPressed, padMenu } from './input.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -22,6 +22,36 @@ export class UI {
     addEventListener('keydown', (e) => this.keyHandler && this.keyHandler(e));
     $('#pausebtn').addEventListener('click', () => this.game && !this.modalOpen && this.showPause(this.game));
     $('#flarebtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.game && this.game.triggerFlare(); });
+    this.padIdx = 0;
+    const padLoop = () => { this.padNav(); requestAnimationFrame(padLoop); };
+    requestAnimationFrame(padLoop);
+  }
+
+  // Gamepad menu navigation: D-pad/stick moves a highlight over clickable elements, A selects, B backs out
+  padNav() {
+    if (!this.modalOpen) return;
+    const m = padMenu();
+    if (!(m.up || m.down || m.left || m.right || m.a || m.b)) return;
+    const els = [...this.screen.querySelectorAll('[data-a], input[type=checkbox]')].filter((el) => el.offsetParent && !el.disabled);
+    if (!els.length) return;
+    if (m.b) {
+      const back = this.screen.querySelector('[data-a="back"], [data-a="resume"]');
+      if (back) back.click(); else if (this.keyHandler) this.keyHandler({ code: 'Escape', key: 'Escape', preventDefault() {} });
+      return;
+    }
+    const cur = this.screen.querySelector('.pad-focus');
+    let i = cur ? els.indexOf(cur) : -1;
+    if (m.up || m.left) i = i <= 0 ? els.length - 1 : i - 1;
+    if (m.down || m.right) i = i < 0 || i >= els.length - 1 ? 0 : i + 1;
+    if (m.a) {
+      if (i < 0) i = 0;
+      els[i].click();
+      return;
+    }
+    if (cur) cur.classList.remove('pad-focus');
+    els[i].classList.add('pad-focus');
+    els[i].scrollIntoView({ block: 'nearest' });
+    sfx.hover();
   }
 
   open(html, cls = '') {

@@ -285,3 +285,6 @@ table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 .daily-rec { text-align: center; margin-top: 12px; color: var(--muted); }
 .daily-rec b { color: var(--ember2); }
 @media (max-width: 520px) { .daily-grid { flex-direction: column; text-align: center; } }
+
+/* gamepad focus */
+.pad-focus { outline: 3px solid var(--ember2) !important; outline-offset: 2px; box-shadow: 0 0 20px rgba(255, 210, 122, 0.55) !important; }
