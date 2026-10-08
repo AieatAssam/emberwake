@@ -822,6 +822,26 @@ export class Game {
         this.shockwave(P.x, P.y, 0xff3040, 600, 0.6);
         this.burst(P.x, P.y, 60, [0xff2030, 0xff8080], 500, 1);
         break;
+      case 'toll': {
+        this.flash(0xffd27a, 0.6);
+        const dmg = (40 + this.level * 8) * might;
+        for (const e of this.enemies) {
+          if (!e.alive || e.inert || !this.inView(e.x, e.y, 40)) continue;
+          if (!e.boss) e.freezeT = Math.max(e.freezeT, 2);
+        }
+        // three expanding rings of sound, each striking once
+        this.novas = this.novas || [];
+        for (let k = 0; k < 3; k++) {
+          setTimeout(() => {
+            if (this.dead) return;
+            this.novas.push({ x: P.x, y: P.y, r: 0, max: 800, dmg: dmg * (1 + k * 0.25), hit: new Set(), t: 0 });
+            this.shockwave(P.x, P.y, 0xffc860, 800, 0.8);
+            sfx.pulse();
+          }, k * 260);
+        }
+        this.burst(P.x, P.y - 20, 60, [0xffd27a, 0xffffff], 600, 1);
+        break;
+      }
       case 'moonfall': {
         this.flash(0xd0b0ff, 0.6);
         this.buffs.invuln = 3;

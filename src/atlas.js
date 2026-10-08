@@ -412,6 +412,35 @@ function drawCharacters() {
     c.fillStyle = '#140808'; c.fillRect(25, 18, 14, 4);
     eye(c, 29, 20, 1.4, '#ff3030'); eye(c, 35, 20, 1.4, '#ff3030');
   });
+  // Brannoc — The Bellwright: stout bronze-smith with a great bell strapped to his back
+  makeChar('bellwright', (c) => {
+    shadow(c, 32, 58, 20, 5);
+    // the bell, behind him
+    c.save(); c.translate(43, 26);
+    c.beginPath(); c.moveTo(-9, -12); c.quadraticCurveTo(-11, 6, -15, 12); c.lineTo(15, 12); c.quadraticCurveTo(11, 6, 9, -12); c.quadraticCurveTo(0, -18, -9, -12);
+    c.fillStyle = lin(c, -15, 0, 15, 0, [[0, '#7a4a18'], [0.45, '#e0a040'], [1, '#6a3a10']]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    c.fillStyle = '#ffd27a'; c.fillRect(-14, 8, 28, 3);
+    circle(c, 0, 15, 3, '#4a2a0a', OUT, 1.5);
+    c.restore();
+    legs(c, 30, 58, '#3a2a1e');
+    // stout body with leather apron
+    c.fillStyle = '#5a4a3e'; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(16, 28, 30, 24, 8); c.fill(); c.stroke();
+    poly(c, [[21, 31], [41, 31], [39, 52], [23, 52]], '#7a4a2a');
+    c.fillStyle = '#c08a40'; c.fillRect(21, 38, 20, 3);
+    // strap across chest
+    c.strokeStyle = '#3a2214'; c.lineWidth = 3; c.beginPath(); c.moveTo(18, 30); c.lineTo(42, 46); c.stroke();
+    // head: broad, braided beard
+    c.fillStyle = '#e0b898'; c.beginPath(); c.roundRect(20, 12, 20, 18, 7); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
+    poly(c, [[20, 22], [40, 22], [37, 34], [30, 38], [23, 34]], '#c06a2a', OUT, 2);
+    c.strokeStyle = '#8a4418'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(27, 25); c.lineTo(28, 34); c.moveTo(33, 25); c.lineTo(32, 34); c.stroke();
+    c.fillStyle = '#3a2a22'; c.beginPath(); c.roundRect(19, 9, 22, 7, 3); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
+    eye(c, 26, 19, 1.4, '#ffcf6a'); eye(c, 34, 19, 1.4, '#ffcf6a');
+    // hammer in hand
+    c.strokeStyle = '#4a3020'; c.lineWidth = 3; c.beginPath(); c.moveTo(14, 46); c.lineTo(10, 34); c.stroke();
+    c.fillStyle = '#9aa0b0'; c.beginPath(); c.roundRect(4, 29, 12, 7, 2); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
+  });
   // Lune — Moon Dancer: lithe, flowing violet scarf, moon circlet
   makeChar('dancer', (c) => {
     shadow(c, 32, 58, 16, 5);

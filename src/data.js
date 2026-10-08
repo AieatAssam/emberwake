@@ -207,6 +207,12 @@ export const CHARACTERS = {
     flare: 'moonfall', flareName: 'Moonfall', flareDesc: 'Twelve glaives spiral out, then you blink untouchable for 3s.',
     color: '#c9a0ff',
   },
+  bellwright: {
+    name: 'Brannoc', title: 'The Bellwright', sprite: 'bellwright', weapon: 'gravewell', cost: 1600,
+    bonus: '+25% max health, +15% area, -10% move speed', apply: (s) => { s.maxHp *= 1.25; s.area += 0.15; s.moveSpeed *= 0.9; },
+    flare: 'toll', flareName: 'Great Toll', flareDesc: 'Ring the bell: every foe on screen is stunned for 2s and struck by three rings of sound.',
+    color: '#ffb347',
+  },
 };
 
 // tex: base frame name (frames 0/1 animate). r = collision radius.
