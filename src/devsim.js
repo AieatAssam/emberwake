@@ -14,7 +14,7 @@ export function install(startRun, getGame) {
     ui.showChest = (gg, res) => gg.applyChest(res);
     ui.showResults = () => {};
     ui.showVictory = () => {};
-    const log = [];
+    const log = [], spikes = [];
     let ang = 0, minHp = 1e9, upd = 0, worst = 0;
     const t0 = performance.now();
     for (let step = 0; step < secs * 60 && !g.dead; step++) {
@@ -37,9 +37,15 @@ export function install(startRun, getGame) {
       const ml = Math.hypot(mx, my) || 1, sp = g.stats.moveSpeed / 60;
       P.x += (mx / ml) * sp; P.y += (my / ml) * sp; P.fx = mx / ml; P.fy = my / ml;
       if (g.flare >= 100) g.triggerFlare();
+      const before = { ...g.prof };
       const a = performance.now();
       g.update(1 / 60);
       const d = performance.now() - a;
+      if (d > 8 && step > 60 && spikes.length < 12) {
+        const parts = {};
+        for (const k in g.prof) parts[k] = +(g.prof[k] - before[k]).toFixed(1);
+        spikes.push({ t: Math.round(g.time), ms: +d.toFixed(1), en: g.enemies.length, fx: g.fx.length, parts });
+      }
       upd += d; if (step > 60) worst = Math.max(worst, d);
       minHp = Math.min(minHp, P.hp);
       if (step % 30 === 0) for (const k in g.L) g.L[k].flush();
@@ -56,7 +62,7 @@ export function install(startRun, getGame) {
       dead: g.dead, victory: g.victory, time: Math.round(g.time), level: g.level, kills: g.kills,
       msPerUpdate: (upd / frames).toFixed(3), worstMs: worst.toFixed(2), prof, wallMs: Math.round(performance.now() - t0),
       weapons: g.weapons.map((w) => `${w.id}:${w.level} dmg${Math.round(w.dmgDone)}`), passives: g.passives, pacts: g.pacts,
-      overcharge: g.overcharge || 0, killedBy: g.lastHitBy, dmgTaken: g.dmgLog, log,
+      overcharge: g.overcharge || 0, killedBy: g.lastHitBy, dmgTaken: g.dmgLog, spikes, log,
     };
   };
 }

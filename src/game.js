@@ -153,7 +153,8 @@ export class Game {
     this.flashAlpha = 0; this.flashColor = 0xffffff;
 
     this.grid = new Grid(64);
-    this.qa = []; this.qb = [];
+    this.qa = []; this.qb = []; this.qExp = []; this.qNova = [];
+    this.fxPool = []; this.projPool = []; this.numPool = [];
 
     // state
     this.time = 0; this.kills = 0; this.level = 1; this.xp = 0; this.xpNext = xpForLevel(1);
@@ -431,10 +432,10 @@ export class Game {
     const p = layer.add(tex, x, y);
     p.tint = o.tint ?? 0xffffff;
     p.rotation = o.rot ?? 0;
-    const f = {
-      p, layer, vx: o.vx || 0, vy: o.vy || 0, life: o.life, max: o.life, drag: o.drag ?? 3, grav: o.grav || 0,
-      s0: o.s0 ?? 1, s1: o.s1 ?? 0, a0: o.a ?? 1, spin: o.spin || 0, sx: o.sx || 0,
-    };
+    const f = this.fxPool.pop() || {};
+    f.p = p; f.layer = layer; f.vx = o.vx || 0; f.vy = o.vy || 0; f.life = o.life; f.max = o.life;
+    f.drag = o.drag ?? 3; f.grav = o.grav || 0; f.s0 = o.s0 ?? 1; f.s1 = o.s1 ?? 0; f.a0 = o.a ?? 1;
+    f.spin = o.spin || 0; f.sx = o.sx || 0;
     p.scaleX = f.sx || f.s0; p.scaleY = f.s0; p.alpha = f.a0;
     this.fx.push(f);
     return f;
@@ -455,7 +456,9 @@ export class Game {
     if (!save.settings.numbers || this.numbers.length > 140) return;
     const str = String(Math.max(1, Math.round(val))) + (crit ? '!' : '');
     const sc = crit ? 0.8 : 0.55;
-    const parts = [];
+    const n = this.numPool.pop() || { parts: [] };
+    const parts = n.parts;
+    parts.length = 0;
     const w = 11 * sc * 1.4;
     for (let i = 0; i < str.length; i++) {
       const p = this.L.nums.add(T['d' + str[i]], x + (i - (str.length - 1) / 2) * w, y);
@@ -463,7 +466,8 @@ export class Game {
       p.tint = crit ? 0xffd040 : 0xffffff;
       parts.push(p);
     }
-    this.numbers.push({ parts, x, y, vy: -60, life: 0.7, sc, w });
+    n.x = x; n.y = y; n.vy = -60; n.life = 0.7; n.sc = sc; n.w = w;
+    this.numbers.push(n);
   }
 
   // ---------- enemies ----------
@@ -796,21 +800,22 @@ export class Game {
     const p = (o.layer || this.L.projAdd).add(o.tex, o.x, o.y);
     p.scaleX = p.scaleY = o.scale || 1;
     if (o.tint != null) p.tint = o.tint;
-    const pr = {
-      p, layer: o.layer || this.L.projAdd, x: o.x, y: o.y, vx: o.vx, vy: o.vy, life: o.life, max: o.life,
-      dmg: o.dmg, pierce: o.pierce || 1, r: o.r || 8, w: o.w || null, hits: new Map(), rehit: o.rehit || 0,
-      homing: o.homing || 0, target: o.target || null, explode: o.explode || 0, freeze: o.freeze || 0, slow: o.slow || 0,
-      knock: o.knock || 0, spin: o.spin || 0, faceVel: !!o.faceVel, returnTo: !!o.returnTo, retT: o.retT || 0,
-      curve: o.curve || 0, trail: o.trail || 0, trailTint: o.trailTint ?? 0xffffff, trailT: 0, alive: true,
-      speed: Math.hypot(o.vx, o.vy), onHit: o.onHit || null, scale: o.scale || 1, fade: !!o.fade, accel: o.accel || 0,
-    };
+    const pr = this.projPool.pop() || { hits: new Map() };
+    pr.hits.clear();
+    pr.p = p; pr.layer = o.layer || this.L.projAdd; pr.x = o.x; pr.y = o.y; pr.vx = o.vx; pr.vy = o.vy;
+    pr.life = o.life; pr.max = o.life; pr.dmg = o.dmg; pr.pierce = o.pierce || 1; pr.r = o.r || 8; pr.w = o.w || null;
+    pr.rehit = o.rehit || 0; pr.homing = o.homing || 0; pr.target = o.target || null; pr.explode = o.explode || 0;
+    pr.freeze = o.freeze || 0; pr.slow = o.slow || 0; pr.knock = o.knock || 0; pr.spin = o.spin || 0;
+    pr.faceVel = !!o.faceVel; pr.returnTo = !!o.returnTo; pr.retT = o.retT || 0; pr.curve = o.curve || 0;
+    pr.trail = o.trail || 0; pr.trailTint = o.trailTint ?? 0xffffff; pr.trailT = 0; pr.alive = true;
+    pr.speed = Math.hypot(o.vx, o.vy); pr.onHit = o.onHit || null; pr.scale = o.scale || 1; pr.fade = !!o.fade; pr.accel = o.accel || 0;
     if (pr.faceVel) p.rotation = Math.atan2(pr.vy, pr.vx);
     this.projectiles.push(pr);
     return pr;
   }
 
   explodeAt(x, y, radius, dmg, w, tint = 0xff8030, knock = 12) {
-    const list = this.enemiesIn(x, y, radius, []);
+    const list = this.enemiesIn(x, y, radius, this.qExp);
     for (const e of list) this.damage(e, dmg, { w, knock, fx: x, fy: y });
     this.spawnFx(T.glow, x, y, { life: 0.3, s0: radius / 40, s1: radius / 18, tint, a: 0.9 });
     this.shockwave(x, y, tint, radius, 0.3);
@@ -827,6 +832,8 @@ export class Game {
       if (pr.life <= 0 || !pr.alive) {
         if (pr.explode && pr.alive) this.explodeAt(pr.x, pr.y, pr.explode, pr.dmg * 0.7, pr.w);
         pr.layer.kill(pr.p);
+        pr.p = null; pr.target = null; pr.w = null; pr.onHit = null;
+        this.projPool.push(pr);
         prs[i] = prs[prs.length - 1]; prs.pop();
         continue;
       }
@@ -959,7 +966,7 @@ export class Game {
     for (let i = this.novas.length - 1; i >= 0; i--) {
       const n = this.novas[i];
       n.t += dt; n.r = n.max * Math.min(1, n.t / 0.8);
-      const list = this.enemiesIn(n.x, n.y, n.r, []);
+      const list = this.enemiesIn(n.x, n.y, n.r, this.qNova);
       for (const e of list) {
         if (n.hit.has(e.uid)) continue;
         n.hit.add(e.uid);
@@ -1284,7 +1291,7 @@ export class Game {
     for (let i = fx.length - 1; i >= 0; i--) {
       const f = fx[i];
       f.life -= dt;
-      if (f.life <= 0) { f.layer.kill(f.p); fx[i] = fx[fx.length - 1]; fx.pop(); continue; }
+      if (f.life <= 0) { f.layer.kill(f.p); f.p = null; this.fxPool.push(f); fx[i] = fx[fx.length - 1]; fx.pop(); continue; }
       const k = Math.exp(-f.drag * dt);
       f.vx *= k; f.vy = f.vy * k + f.grav * dt;
       const p = f.p;
@@ -1299,7 +1306,7 @@ export class Game {
     for (let i = nums.length - 1; i >= 0; i--) {
       const n = nums[i];
       n.life -= dt;
-      if (n.life <= 0) { for (const p of n.parts) this.L.nums.kill(p); nums[i] = nums[nums.length - 1]; nums.pop(); continue; }
+      if (n.life <= 0) { for (const p of n.parts) this.L.nums.kill(p); this.numPool.push(n); nums[i] = nums[nums.length - 1]; nums.pop(); continue; }
       n.y += n.vy * dt; n.vy *= Math.exp(-4 * dt);
       const pop = n.life > 0.6 ? 1 + (n.life - 0.6) * 6 : 1;
       const a = Math.min(1, n.life * 3);
