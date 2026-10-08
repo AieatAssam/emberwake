@@ -587,6 +587,50 @@ function drawEnemies() {
     c.strokeStyle = '#ff3a6a'; c.lineWidth = 3; c.beginPath(); c.arc(0, 18, 20, 0.2, Math.PI - 0.2); c.stroke();
     c.restore();
   });
+  // Cinder Imp — squat ember-bodied imp with a flame tuft (Ashfields)
+  for (const f of [0, 1]) make('imp' + f, 40, 42, (c) => {
+    shadow(c, 20, 38, 11, 3.5);
+    const hop = f ? -2 : 0;
+    c.save(); c.translate(0, hop);
+    // flame tuft
+    c.fillStyle = radial(c, 20, 10, 12, [[0, '#fff2a0'], [0.4, '#ffb030'], [1, 'rgba(255,80,0,0)']]);
+    c.beginPath(); c.moveTo(14, 16); c.quadraticCurveTo(13 + f * 2, 4, 20, 1); c.quadraticCurveTo(26 - f * 2, 6, 26, 16); c.fill();
+    // horns
+    poly(c, [[12, 15], [8, 6], [15, 12]], '#2a1410', OUT, 1.5);
+    poly(c, [[28, 15], [32, 6], [25, 12]], '#2a1410', OUT, 1.5);
+    // body
+    c.beginPath(); c.ellipse(20, 25, 11, 11, 0, 0, TAU);
+    c.fillStyle = radial(c, 17, 21, 14, [[0, '#ff9a40'], [0.6, '#c43a10'], [1, '#5a1406']]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    // ember cracks
+    c.strokeStyle = '#ffd060'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(14, 30); c.lineTo(17, 27); c.lineTo(15, 24); c.moveTo(26, 29); c.lineTo(23, 27); c.stroke();
+    // stubby arms
+    ellipse(c, 8, 27 + (f ? -2 : 1), 3, 4, '#a8300c', OUT, 1.5);
+    ellipse(c, 32, 27 + (f ? 1 : -2), 3, 4, '#a8300c', OUT, 1.5);
+    eye(c, 16, 23, 1.8, '#fff060'); eye(c, 24, 23, 1.8, '#fff060');
+    c.strokeStyle = OUT; c.lineWidth = 1.5; c.beginPath(); c.arc(20, 28, 3.5, 0.3, Math.PI - 0.3); c.stroke();
+    c.restore();
+  });
+  // Frost Wisp — drifting pale flame of ice with orbiting crystal shards (Rimewood)
+  for (const f of [0, 1]) make('frostwisp' + f, 44, 48, (c) => {
+    shadow(c, 22, 44, 9, 3);
+    glowDot(c, 22, 22, 20, 'rgba(140,220,255,0.45)');
+    c.save(); c.translate(22, 24);
+    c.beginPath(); c.moveTo(0, -20 + f * 2);
+    c.bezierCurveTo(10, -10, 12, 4, 6, 11); c.quadraticCurveTo(0, 15, -6, 11);
+    c.bezierCurveTo(-12, 4, -10, -10, 0, -20 + f * 2);
+    c.fillStyle = lin(c, 0, -20, 0, 14, [[0, 'rgba(235,250,255,0.95)'], [0.5, 'rgba(150,215,255,0.9)'], [1, 'rgba(60,120,190,0.85)']]); c.fill();
+    c.lineWidth = 2; c.strokeStyle = 'rgba(15,40,70,0.9)'; c.stroke();
+    ellipse(c, 0, 2, 6, 7, 'rgba(10,30,60,0.85)');
+    eye(c, -2.5, 1, 1.5, '#e0f8ff'); eye(c, 2.5, 1, 1.5, '#e0f8ff');
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * TAU + f * 0.5;
+      const x = Math.cos(a) * 15, y = Math.sin(a) * 9 + 4;
+      poly(c, [[x, y - 4], [x + 2.5, y], [x, y + 4], [x - 2.5, y]], '#e8faff', '#3a7aa8', 1);
+    }
+    c.restore();
+  });
   // Gloom Totem — breakable crystal obelisk that holds loot
   make('totem', 40, 60, (c) => {
     shadow(c, 20, 54, 15, 4);
@@ -598,7 +642,8 @@ function drawEnemies() {
   // White flash variants
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
-    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem']) makeWhite(n);
+    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem',
+    'imp0', 'imp1', 'frostwisp0', 'frostwisp1']) makeWhite(n);
 }
 
 // ---------- decor ----------

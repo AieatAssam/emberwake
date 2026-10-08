@@ -178,7 +178,7 @@ export class Game {
     this.prof = { weapons: 0, proj: 0, enemies: 0, fx: 0, pickups: 0, grid: 0 };
     this.weaponUid = 0;
 
-    this.player = { x: 0, y: 0, hp: 100, iframes: 0, fx: 1, fy: 0, moving: false, bob: 0, hurtT: 0, r: 14 };
+    this.player = { x: 0, y: 0, hp: 100, iframes: 0, chillT: 0, fx: 1, fy: 0, moving: false, bob: 0, hurtT: 0, r: 14 };
     this.recalcStats();
     this.player.hp = this.stats.maxHp;
     this.rerolls = this.stats.rerolls; this.banishes = this.stats.banishes;
@@ -624,6 +624,12 @@ export class Game {
       const roll = weighted([['cinder', 62], ['heart', this.stats.noHeal ? 0 : 16], ['magnet', 5], ['bomb', 4], ['freeze', 4], ['flareorb', 7]]);
       this.dropPickup(roll, x + rand(-8, 8), y + rand(-8, 8), roll === 'cinder' ? 1 + ((Math.random() * 3) | 0) : 1);
     }
+    if (e.d.deathBurst) {
+      this._shotSrc = 'imp-ember';
+      const off = Math.random() * TAU;
+      for (let k = 0; k < 6; k++) { const a = off + (k / 6) * TAU; this.enemyShot(x, y, Math.cos(a) * 95, Math.sin(a) * 95, e.dmg * 0.6, T.bolt, 0.8); }
+      this._shotSrc = null;
+    }
     if (e.d.split) {
       for (let i = 0; i < e.d.splitCount; i++) {
         const a = (i / e.d.splitCount) * TAU;
@@ -918,7 +924,8 @@ export class Game {
     if (pad.flare) this.triggerFlare();
     if (!this.dead) {
       const mv = moveVector();
-      const spd = S.moveSpeed * (this.buffs.bloodrage > 0 ? 1.3 : 1);
+      if (P.chillT > 0) P.chillT -= dt;
+      const spd = S.moveSpeed * (this.buffs.bloodrage > 0 ? 1.3 : 1) * (P.chillT > 0 ? 0.75 : 1);
       P.x += mv.x * spd * dt; P.y += mv.y * spd * dt;
       P.moving = mv.x !== 0 || mv.y !== 0;
       if (P.moving) { const l = Math.hypot(mv.x, mv.y); P.fx = mv.x / l; P.fy = mv.y / l; }
@@ -1069,7 +1076,7 @@ export class Game {
   stagePool(wave) {
     if (wave._pools && wave._pools[this.stageId]) return wave._pools[this.stageId];
     const pool = { ...wave.pool };
-    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530 };
+    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530, imp: 90, frostwisp: 90 };
     for (const k in this.stage.bias) if (wave.at >= (unlockedAt[k] || 0)) pool[k] = (pool[k] || 0) + this.stage.bias[k];
     (wave._pools || (wave._pools = {}))[this.stageId] = pool;
     return pool;
@@ -1204,6 +1211,7 @@ export class Game {
 
       // contact damage
       const cdx = P.x - e.x, cdy = P.y - 10 - e.y, cr = e.r + P.r;
+      if (e.d.chill && cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0) P.chillT = 1.6;
       if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
 
       // visuals
@@ -1274,10 +1282,10 @@ export class Game {
     }
   }
 
-  enemyShot(x, y, vx, vy, dmg) {
+  enemyShot(x, y, vx, vy, dmg, tex = T.orb, scale = 1.3) {
     if (this.enemyShots.length > 400) return;
-    const p = this.L.projAdd.add(T.orb, x, y);
-    p.scaleX = p.scaleY = 1.3;
+    const p = this.L.projAdd.add(tex, x, y);
+    p.scaleX = p.scaleY = scale;
     this.enemyShots.push({ x, y, vx, vy, dmg, life: 6, p, src: this._shotSrc || 'shot' });
   }
   updateEnemyShots(dt) {
@@ -1423,7 +1431,7 @@ export class Game {
     ps.texture = T[this.char.sprite + (step > 0.35 ? '_s1' : step < -0.35 ? '_s2' : '')];
     if (P.fx !== 0) ps.scale.x = P.fx < 0 ? -1 : 1;
     ps.scale.y = 1 + Math.sin(P.bob * 0.5) * (P.moving ? 0 : 0.02);
-    ps.tint = P.hurtT > 0 ? 0xff6060 : this.buffs.bloodrage > 0 ? 0xff9090 : 0xffffff;
+    ps.tint = P.hurtT > 0 ? 0xff6060 : P.chillT > 0 ? 0x9ad8ff : this.buffs.bloodrage > 0 ? 0xff9090 : 0xffffff;
     ps.alpha = P.iframes > 0 && Math.floor(this.time * 20) % 2 ? 0.6 : (this.buffs.invuln > 0 ? 0.55 : 1);
     const kt = this.kindleTier;
     this.playerGlow.x = P.x; this.playerGlow.y = P.y - 14;
@@ -1496,6 +1504,7 @@ export class Game {
 const ENEMY_COLORS = {
   gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
+  imp: 0xff8a30, frostwisp: 0xa8e8ff,
 };
 function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }

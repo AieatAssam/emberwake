@@ -217,6 +217,8 @@ export const ENEMIES = {
   matron: { tex: 'matron', hp: 4200, speed: 58, dmg: 20, xp: 250, r: 58, boss: true, knockRes: 1, summon: 'broodling' },
   colossus: { tex: 'colossus', hp: 16000, speed: 46, dmg: 40, xp: 600, r: 75, boss: true, knockRes: 1, slam: true },
   tyrant: { tex: 'tyrant', hp: 90000, speed: 62, dmg: 60, xp: 2500, r: 85, boss: true, knockRes: 1, nova: true, final: true },
+  imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
+  frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
 };
 
@@ -378,13 +380,13 @@ export const STAGES = {
   },
   ashfields: {
     name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. +40% enemy health, +50% cinders.',
-    cost: 600, hpMul: 1.4, greedMul: 1.5, speedMul: 1, bias: { husk: 1.5, beetle: 1.5, spitter: 0.5 },
+    cost: 600, hpMul: 1.4, greedMul: 1.5, speedMul: 1, bias: { husk: 1.5, beetle: 1.5, spitter: 0.5, imp: 1.4 },
     ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
     tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
   },
   rimewood: {
     name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +80% enemy health, +15% enemy speed, x2 cinders.',
-    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, bias: { wraith: 2, moth: 0.8, sentinel: 0.6 },
+    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, bias: { wraith: 1.6, moth: 0.8, sentinel: 0.6, frostwisp: 1.6 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
   },
