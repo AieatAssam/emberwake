@@ -1,5 +1,5 @@
 import { Application } from 'pixi.js';
-import { buildAtlas } from './atlas.js';
+import { buildAtlas, atlasCanvas } from './atlas.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
 import { initInput, consumePressed, padButtons } from './input.js';
@@ -42,6 +42,7 @@ const ui = new UI({
 
 if (import.meta.env.DEV) {
   import('./devsim.js').then((m) => m.install((c) => ui.h.startRun(c), () => game));
+  window.__atlas = atlasCanvas;
 }
 
 addEventListener('resize', () => game && game.resize());

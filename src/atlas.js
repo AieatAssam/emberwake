@@ -1,12 +1,15 @@
 // Procedural sprite atlas. Every sprite in Emberwake is drawn here with Canvas2D
 // into ONE texture source, so all ParticleContainers can batch from it.
-import { Texture, Rectangle } from 'pixi.js';
+import { Texture, Rectangle, CanvasSource } from 'pixi.js';
 
-const SIZE = 2048;
+// Logical atlas size; the backing canvas is supersampled SS× for crisp sprites on
+// HiDPI screens and camera zoom. Pixi maps it back via the source's resolution.
+const SIZE = 2048, SIZE_H = 1280;
+export const SS = 2;
 export const atlasCanvas = document.createElement('canvas');
-atlasCanvas.width = SIZE;
-atlasCanvas.height = SIZE;
-const actx = atlasCanvas.getContext('2d');
+atlasCanvas.width = SIZE * SS;
+atlasCanvas.height = SIZE_H * SS;
+const actx = atlasCanvas.getContext('2d', { willReadFrequently: true });
 
 const frames = {};
 export const T = {};
@@ -15,6 +18,7 @@ const PAD = 2;
 
 function alloc(w, h) {
   if (sx + w + PAD > SIZE) { sx = 0; sy += sh + PAD; sh = 0; }
+  if (sy + h > SIZE_H) console.warn('atlas overflow', w, h);
   const r = { x: sx, y: sy, w, h };
   sx += w + PAD;
   sh = Math.max(sh, h);
@@ -24,26 +28,29 @@ function alloc(w, h) {
 function make(name, w, h, draw) {
   const r = alloc(w, h);
   actx.save();
+  actx.translate(r.x * SS, r.y * SS);
+  actx.scale(SS, SS);
   actx.beginPath();
-  actx.rect(r.x, r.y, w, h);
+  actx.rect(0, 0, w, h);
   actx.clip();
-  actx.translate(r.x, r.y);
   draw(actx, w, h);
   actx.restore();
   frames[name] = r;
   return r;
 }
 
-// White silhouette of an existing frame (used for hit flashes)
+// Hit-flash variant of a frame: solid body pixels turn white, while soft pixels
+// (drop shadows, glows, coronas) keep their colour so flashes read as the creature.
 function makeWhite(name) {
   const src = frames[name];
   const r = alloc(src.w, src.h);
-  actx.save();
-  actx.drawImage(atlasCanvas, src.x, src.y, src.w, src.h, r.x, r.y, src.w, src.h);
-  actx.globalCompositeOperation = 'source-atop';
-  actx.fillStyle = '#fff';
-  actx.fillRect(r.x, r.y, src.w, src.h);
-  actx.restore();
+  const img = actx.getImageData(src.x * SS, src.y * SS, src.w * SS, src.h * SS);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const a = d[i + 3];
+    if (a > 150) { const k = (a - 150) / 105; d[i] += (255 - d[i]) * k; d[i + 1] += (255 - d[i + 1]) * k; d[i + 2] += (255 - d[i + 2]) * k; }
+  }
+  actx.putImageData(img, r.x * SS, r.y * SS);
   frames[name + '_w'] = r;
 }
 
@@ -652,7 +659,7 @@ function drawIcons() {
   const blit = (c, frame, x, y, s = 1, rot = 0) => {
     const f = frames[frame];
     c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s);
-    c.drawImage(atlasCanvas, f.x, f.y, f.w, f.h, -f.w / 2, -f.h / 2, f.w, f.h);
+    c.drawImage(atlasCanvas, f.x * SS, f.y * SS, f.w * SS, f.h * SS, -f.w / 2, -f.h / 2, f.w, f.h);
     c.restore();
   };
   // weapons
@@ -766,9 +773,7 @@ export function buildAtlas() {
   drawDecor();
   drawDigits();
   drawIcons();
-  const base = Texture.from(atlasCanvas);
-  const source = base.source;
-  source.scaleMode = 'linear';
+  const source = new CanvasSource({ resource: atlasCanvas, resolution: SS, scaleMode: 'linear', autoGenerateMipmaps: false });
   for (const k in frames) {
     const f = frames[k];
     T[k] = new Texture({ source, frame: new Rectangle(f.x, f.y, f.w, f.h) });
@@ -782,8 +787,8 @@ export function iconURL(name) {
   const f = frames['icon_' + name] || frames[name];
   if (!f) return '';
   const cv = document.createElement('canvas');
-  cv.width = f.w; cv.height = f.h;
-  cv.getContext('2d').drawImage(atlasCanvas, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+  cv.width = f.w * SS; cv.height = f.h * SS;
+  cv.getContext('2d').drawImage(atlasCanvas, f.x * SS, f.y * SS, f.w * SS, f.h * SS, 0, 0, f.w * SS, f.h * SS);
   return (iconCache[name] = cv.toDataURL());
 }
 export function spriteURL(name, scale = 1) {
@@ -794,6 +799,6 @@ export function spriteURL(name, scale = 1) {
   cv.width = f.w * scale; cv.height = f.h * scale;
   const c = cv.getContext('2d');
   c.imageSmoothingEnabled = true;
-  c.drawImage(atlasCanvas, f.x, f.y, f.w, f.h, 0, 0, f.w * scale, f.h * scale);
+  c.drawImage(atlasCanvas, f.x * SS, f.y * SS, f.w * SS, f.h * SS, 0, 0, f.w * scale, f.h * scale);
   return (iconCache[key] = cv.toDataURL());
 }
