@@ -17,7 +17,7 @@ export const KINDLE_TIERS = [
   { at: 300, mul: 1.75 }, { at: 600, mul: 2 }, { at: 1200, mul: 2.5 },
 ];
 const MAX_ENEMIES = 1100;
-const MAX_FX = 3500;
+const MAX_FX = 2600;
 const GEM_CAP = 650;
 
 // ---------- particle layer with in-place compaction ----------
@@ -928,7 +928,7 @@ export class Game {
       }
     }
 
-    this.deathFxBudget = 18;
+    this.deathFxBudget = Math.round(18 / this.pressure);
     // grid
     const pf = this.prof, now = performance.now.bind(performance);
     let t0 = now();
@@ -1007,7 +1007,8 @@ export class Game {
     // floor top-up is bounded by the wave's own rate so fast killers can't farm infinite spawns
     // Gloam Pressure: if the horde is being erased faster than it arrives, the dark pushes harder
     // so a strong build always has a tide to carve through (bounded by MAX_ENEMIES).
-    if (t > 600 && alive < min * 0.4) this.pressure = Math.min(6, this.pressure + dt * 0.2);
+    if (this.boss) this.pressure = Math.max(1, this.pressure - dt * 1.5); // the tide recedes for a duel
+    else if (t > 600 && alive < min * 0.4) this.pressure = Math.min(6, this.pressure + dt * 0.2);
     else if (alive > min * 0.8) this.pressure = Math.max(1, this.pressure - dt * 0.1);
     const late = this.pressure;
     this.spawnAcc += rate * (late - 1) * dt;
@@ -1150,6 +1151,14 @@ export class Game {
           }
         } else if (e.boss) {
           mvx = dx * sp; mvy = dy * sp;
+          if (dist > Math.max(this.halfW, this.halfH) * 1.6) {
+            // bosses leap after a fleeing Bearer and land just off-screen
+            const lp = this.spawnPointOffscreen(40);
+            this.shockwave(e.x, e.y, 0xff3a6a, 200, 0.4);
+            e.x = lp.x; e.y = lp.y;
+            this.shockwave(e.x, e.y, 0xff3a6a, 260, 0.5);
+            this.shake = Math.max(this.shake, 8);
+          }
           this.bossAI(e, dt, dx, dy, dist);
         } else {
           mvx = dx * sp; mvy = dy * sp;
