@@ -1033,6 +1033,17 @@ export function makeVignetteCanvas() {
   return g;
 }
 
+// white edge glow (transparent centre): tinted + additive for hurt flashes and the Kindle glow
+export function makeEdgeGlowCanvas() {
+  const S = 512;
+  const g = document.createElement('canvas');
+  g.width = S; g.height = S;
+  const c = g.getContext('2d');
+  c.fillStyle = radial(c, S / 2, S / 2, S * 0.72, [[0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,0)'], [0.82, 'rgba(255,255,255,0.35)'], [1, 'rgba(255,255,255,0.8)']]);
+  c.fillRect(0, 0, S, S);
+  return g;
+}
+
 export function buildAtlas() {
   drawFX();
   drawProjectiles();

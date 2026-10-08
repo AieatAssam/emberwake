@@ -1,6 +1,6 @@
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
-import { T, makeGroundCanvas, makeVignetteCanvas } from './atlas.js';
+import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
 import {
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf,
@@ -160,9 +160,14 @@ export class Game {
 
     this.vignette = new Sprite(Texture.from(makeVignetteCanvas()));
     this.root.addChild(this.vignette);
-    this.hurtVignette = new Sprite(this.vignette.texture);
+    const edgeTex = Texture.from(makeEdgeGlowCanvas());
+    this.hurtVignette = new Sprite(edgeTex);
     this.hurtVignette.tint = 0xff0020; this.hurtVignette.alpha = 0; this.hurtVignette.blendMode = 'add';
     this.root.addChild(this.hurtVignette);
+    // Kindle glow: screen edges warm as the kill streak climbs
+    this.kindleGlow = new Sprite(edgeTex);
+    this.kindleGlow.tint = 0xff7a20; this.kindleGlow.alpha = 0; this.kindleGlow.blendMode = 'add';
+    this.root.addChildAt(this.kindleGlow, this.root.getChildIndex(this.hurtVignette));
     this.indicators = new Graphics();
     this.root.addChild(this.indicators);
     this.flashG = new Graphics();
@@ -432,6 +437,7 @@ export class Game {
     this.ground.width = w; this.ground.height = h;
     this.vignette.width = w; this.vignette.height = h;
     this.hurtVignette.width = w; this.hurtVignette.height = h;
+    this.kindleGlow.width = w; this.kindleGlow.height = h;
     this.halfW = w / this.zoom / 2; this.halfH = h / this.zoom / 2;
   }
   inView(x, y, m = 0) {
@@ -1623,6 +1629,9 @@ export class Game {
     // screen overlays
     this.hurtFlash = Math.max(0, (this.hurtFlash || 0) - rawDt * 2);
     const low = 1 - P.hp / this.stats.maxHp;
+    const kt2 = this.kindleTier, target = kt2 >= 2 ? Math.min(0.42, (kt2 - 1) * 0.08) * (kt2 >= 5 ? 0.85 + Math.sin(this.time * 5) * 0.15 : 1) : 0;
+    this.kindleGlow.alpha += (target - this.kindleGlow.alpha) * Math.min(1, rawDt * 3);
+    this.kindleGlow.tint = kt2 >= 5 ? 0xffc040 : 0xff7a20;
     this.hurtVignette.alpha = Math.max(this.hurtFlash, low > 0.6 ? (low - 0.6) * 1.5 * (0.7 + Math.sin(this.time * 6) * 0.3) : 0);
     this.flashAlpha = Math.max(0, this.flashAlpha - rawDt * 2.2);
     this.flashG.clear();
