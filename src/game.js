@@ -194,7 +194,7 @@ export class Game {
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
-    s.enemyHp *= this.stage.hpMul; s.greed *= this.stage.greedMul; s.enemySpeed *= this.stage.speedMul;
+    s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
     if (s.overcharge) { /* not used */ }
     const oc = this.overcharge || 0;
     s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
@@ -489,12 +489,16 @@ export class Game {
     const elite = !!o.elite;
     let hp = d.hp;
     if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
-    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * (elite ? 14 : 1);
+    // stage difficulty ramps in over the first 3 minutes so every stage has a fair opening
+    const ramp = Math.min(1, this.time / 180);
+    const stHp = 1 + (this.stage.hpMul - 1) * ramp, stSpd = 1 + (this.stage.speedMul - 1) * ramp;
+    if (d.boss) hp *= stHp;
+    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
-    e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08);
+    e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
     e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900);
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;

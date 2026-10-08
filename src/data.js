@@ -384,7 +384,7 @@ export const STAGES = {
   },
   rimewood: {
     name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +80% enemy health, +15% enemy speed, x2 cinders.',
-    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, bias: { wraith: 2, moth: 1.5, sentinel: 0.6 },
+    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, bias: { wraith: 2, moth: 0.8, sentinel: 0.6 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
   },
