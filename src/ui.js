@@ -242,43 +242,57 @@ export class UI {
   // ================= IN-RUN =================
   beginRun(game) {
     this.game = game;
+    this._hud = {};
     this.hud.classList.remove('hidden');
     this.lastInv = '';
     $('#flarebtn').style.display = matchMedia('(pointer: coarse)').matches ? 'block' : 'none';
   }
 
+  // write-through cache: DOM is touched only when a displayed value actually changes
+  set(sel, prop, val) {
+    const c = this._hud || (this._hud = {});
+    const key = sel + '|' + prop;
+    if (c[key] === val) return;
+    c[key] = val;
+    const el = this._els?.[sel] || ((this._els || (this._els = {}))[sel] = document.querySelector(sel));
+    if (prop === 'text') el.textContent = val;
+    else if (prop === 'w') el.style.width = val;
+    else if (prop[0] === '.') el.classList.toggle(prop.slice(1), val);
+    else el.dataset[prop] = val;
+  }
+
   updateHUD(g) {
     if (!g) return;
-    $('#xpfill').style.width = (Math.min(1, g.xp / g.xpNext) * 100).toFixed(1) + '%';
-    $('#lvl').textContent = 'LV ' + g.level;
-    $('#timer').textContent = fmtTime(g.time);
-    $('#timer').classList.toggle('endless', g.time > 900);
-    $('#kills').textContent = fmtNum(g.kills);
-    $('#cinders').textContent = fmtNum(g.cinders);
+    this.set('#xpfill', 'w', (Math.min(1, g.xp / g.xpNext) * 100).toFixed(1) + '%');
+    this.set('#lvl', 'text', 'LV ' + g.level);
+    this.set('#timer', 'text', fmtTime(g.time));
+    this.set('#timer', '.endless', g.time > 900);
+    this.set('#kills', 'text', fmtNum(g.kills));
+    this.set('#cinders', 'text', fmtNum(g.cinders));
     // kindle
-    const kd = $('#kindle');
-    if (g.combo >= 10) {
-      kd.classList.add('on');
+    const on = g.combo >= 10;
+    this.set('#kindle', '.on', on);
+    if (on) {
       const tier = KINDLE_TIERS[g.kindleTier];
-      kd.dataset.tier = g.kindleTier;
-      kd.querySelector('.mul').textContent = 'x' + +tier.mul.toFixed(2);
-      kd.querySelector('.cnt').textContent = g.combo + ' streak';
-      kd.querySelector('.bar > div').style.width = Math.max(0, (g.comboT / 2.8) * 100) + '%';
+      this.set('#kindle', 'tier', String(g.kindleTier));
+      this.set('#kindle .mul', 'text', 'x' + +tier.mul.toFixed(2));
+      this.set('#kindle .cnt', 'text', g.combo + ' streak');
+      this.set('#kindle .bar > div', 'w', Math.max(0, Math.round((g.comboT / 2.8) * 50) * 2) + '%');
       const next = KINDLE_TIERS[g.kindleTier + 1];
-      kd.querySelector('.next').textContent = next ? `next x${next.mul} @ ${next.at}` : 'MAX';
-    } else kd.classList.remove('on');
+      this.set('#kindle .next', 'text', next ? `next x${next.mul} @ ${next.at}` : 'MAX');
+    }
     // flare
-    const fl = $('#flare');
-    fl.querySelector('.fill').style.width = g.flare + '%';
-    fl.classList.toggle('ready', g.flare >= 100);
-    $('#flarebtn').classList.toggle('ready', g.flare >= 100);
+    this.set('#flare .fill', 'w', Math.round(g.flare) + '%');
+    this.set('#flare', '.ready', g.flare >= 100);
+    this.set('#flarebtn', '.ready', g.flare >= 100);
     // boss
-    const bb = $('#bossbar');
-    if (g.boss && g.boss.alive) {
-      bb.classList.add('on');
-      bb.querySelector('.fill').style.width = Math.max(0, (g.boss.hp / g.boss.maxHp) * 100) + '%';
-      bb.querySelector('.name').textContent = { matron: 'The Brood Matron', colossus: 'The Cinder Colossus', tyrant: 'The Eclipse Tyrant' }[g.boss.type];
-    } else bb.classList.remove('on');
+    const boss = g.boss && g.boss.alive ? g.boss : null;
+    this.set('#bossbar', '.on', !!boss);
+    if (boss) {
+      this.set('#bossbar .fill', 'w', Math.max(0, (boss.hp / boss.maxHp) * 100).toFixed(1) + '%');
+      this.set('#bossbar .name', 'text', { matron: 'The Brood Matron', colossus: 'The Cinder Colossus', tyrant: 'The Eclipse Tyrant' }[boss.type]);
+    }
+    if ((this._invTick = (this._invTick || 0) + 1) % 15 !== 0) return;
     // inventory (only rebuild on change)
     const sig = g.weapons.map((w) => w.id + w.level).join() + '|' + Object.entries(g.passives).map(([k, v]) => k + v).join() + '|' + g.pacts.join();
     if (sig !== this.lastInv) {

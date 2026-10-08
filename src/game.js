@@ -141,6 +141,9 @@ export class Game {
     this.L.projAdd = new Layer(this.world, 'add');
     this.L.fx = new Layer(this.world);
     this.L.fxAdd = new Layer(this.world, 'add');
+    // the Bearer and health bar render above all effects so they never vanish in the spectacle
+    this.world.addChild(this.playerSprite);
+    this.world.addChild(this.hpBar);
     this.L.nums = new Layer(this.world);
 
     this.vignette = new Sprite(Texture.from(makeVignetteCanvas()));
@@ -460,7 +463,7 @@ export class Game {
     this.spawnFx(T.ring, x, y, { life, s0: 0.1, s1: radius / 58, tint, a: 0.9, drag: 0 });
   }
   dmgNumber(x, y, val, crit) {
-    if (!save.settings.numbers || this.numbers.length > 140) return;
+    if (!save.settings.numbers || this.numbers.length > 120 || (this.pressure > 2 && !crit)) return;
     const str = String(Math.max(1, Math.round(val))) + (crit ? '!' : '');
     const sc = crit ? 0.8 : 0.55;
     const n = this.numPool.pop() || { parts: [] };
