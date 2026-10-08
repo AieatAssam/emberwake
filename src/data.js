@@ -8,7 +8,7 @@ export const BASE_STATS = {
   maxHp: 100, regen: 0, armor: 0, moveSpeed: 150,
   might: 1, area: 1, projSpeed: 1, duration: 1, amount: 0, cooldown: 1,
   magnet: 95, luck: 1, growth: 1, greed: 1, crit: 0.05, critMul: 2,
-  flareGain: 1, revivals: 0, curse: 1, enemyHp: 1, enemySpeed: 1, noHeal: false, overcharge: 0,
+  flareGain: 1, thorns: 0, revivals: 0, curse: 1, enemyHp: 1, enemySpeed: 1, noHeal: false, overcharge: 0,
   rerolls: 0, banishes: 0, skips: 0,
 };
 
@@ -170,6 +170,8 @@ export const PASSIVES = {
   armor: { name: 'Bark Plate', desc: '+1 armor, +3% damage taken reduction', max: 5, apply: (s, l) => (s.armor += l) },
   growth: { name: 'Sage Tome', desc: '+8% experience', max: 5, apply: (s, l) => (s.growth += 0.08 * l) },
   greed: { name: 'Gilded Tooth', desc: '+15% cinders', max: 5, apply: (s, l) => (s.greed += 0.15 * l) },
+  reservoir: { name: 'Ember Reservoir', desc: '+20% Flare charge rate', max: 5, apply: (s, l) => (s.flareGain += 0.2 * l) },
+  thorns: { name: 'Thorn Mail', desc: 'Melee attackers take 150% of the damage they deal', max: 5, apply: (s, l) => (s.thorns += 1.5 * l) },
 };
 
 // Dark Pacts: rare, risky draft cards. Max 3 per run.

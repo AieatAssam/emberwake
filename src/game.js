@@ -1189,7 +1189,7 @@ export class Game {
     const P = this.player, es = this.enemies, ES = this.stats.enemySpeed;
     const farX = this.halfW * 2 + 200, farY = this.halfH * 2 + 200;
     const kd = Math.exp(-9 * dt);
-    let contactDmg = 0, contactSrc = '', contactBoss = null;
+    let contactDmg = 0, contactSrc = '', contactBoss = null, contactE = null;
     for (let i = es.length - 1; i >= 0; i--) {
       const e = es[i];
       if (!e.alive) { e.p = null; e.glow = null; this.enemyPool.push(e); es[i] = es[es.length - 1]; es.pop(); continue; }
@@ -1294,7 +1294,7 @@ export class Game {
       // contact damage
       const cdx = P.x - e.x, cdy = P.y - 10 - e.y, cr = e.r + P.r;
       if (e.d.chill && cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0) P.chillT = 1.6;
-      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
+      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactE = e; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss || e.elite ? e : null; }
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
@@ -1313,7 +1313,13 @@ export class Game {
       if (e.affix === 'vampiric' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.025 * dt);
     }
     if (contactDmg > 0 && P.iframes <= 0) {
+      const hpBefore = P.hp;
       this.hurtPlayer(contactDmg, 'touch:' + contactSrc);
+      // Thorn Mail: reflect a share of the blow back at the attacker
+      if (this.stats.thorns > 0 && contactE && contactE.alive && P.hp < hpBefore) {
+        this.damage(contactE, (hpBefore - P.hp) * this.stats.thorns * (contactE.boss ? 0.5 : 1));
+        this.burst(contactE.x, contactE.y - 10, 8, [0xd8e8c0, 0x9ab07a], 220, 0.6, 'shard');
+      }
       if (contactBoss) {
         // bosses shove you clear instead of juggling you to death
         const bx = P.x - contactBoss.x, by = P.y - contactBoss.y, bl = Math.hypot(bx, by) || 1;
