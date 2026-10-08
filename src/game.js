@@ -501,8 +501,10 @@ export class Game {
     // stage difficulty ramps in over the first 3 minutes so every stage has a fair opening
     const ramp = Math.min(1, this.time / 180);
     const h = (this.heat || 0) * ramp;
-    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + 0.25 * h), stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
-    if (d.boss) hp *= stHp;
+    // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
+    const heatHp = 1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60);
+    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
+    if (d.boss) hp *= stHp * (1 + 0.3 * (this.heat || 0));
     else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
@@ -1076,7 +1078,7 @@ export class Game {
     }
     // periodic elites between scripted ones
     this.eliteT += dt;
-    if (t > 120 && this.eliteT > Math.max(25, 60 - t / 30)) {
+    if (t > 120 && this.eliteT > Math.max(18, 60 - t / 30) / (1 + 0.15 * (this.heat || 0))) {
       this.eliteT = 0;
       const types = Object.keys(wave.pool);
       const sp = this.spawnPointOffscreen(40);
