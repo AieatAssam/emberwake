@@ -410,8 +410,8 @@ export const BEHAVIORS = {
           d.t = st.cd;
           const ang = Math.atan2(tg.y - 8 - d.y, tg.x - d.x);
           g.addProjectile({
-            tex: T.bolt, x: d.x, y: d.y, vx: Math.cos(ang) * st.speed, vy: Math.sin(ang) * st.speed, life: 1.1,
-            dmg: st.dmg, pierce: st.pierce, r: 7, scale: 0.55, w: part.w, tint: 0x80f0ff, knock: st.knock,
+            tex: T.zap0, frames: [T.zap0, T.zap1], x: d.x, y: d.y, vx: Math.cos(ang) * st.speed, vy: Math.sin(ang) * st.speed, life: 1.1,
+            dmg: st.dmg, pierce: st.pierce, r: 7, scale: 0.9, w: part.w, knock: st.knock, spin: 9,
           });
           g.spawnFx(T.glow, d.x, d.y, { life: 0.1, s0: 0.4, s1: 0.1, tint: 0x80f0ff });
         }

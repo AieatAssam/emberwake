@@ -226,6 +226,19 @@ function drawProjectiles() {
     circle(c, 2.6, -1.8, 1.2, '#0a3a34'); circle(c, 2.6, 1.8, 1.2, '#0a3a34');
     c.restore();
   });
+  // Drone spark: cyan core with jagged electric arcs, two crackle frames
+  for (const f of [0, 1]) make('zap' + f, 22, 22, (c) => {
+    glowDot(c, 11, 11, 11, 'rgba(110,230,255,0.75)');
+    c.strokeStyle = '#e8fdff'; c.lineWidth = 1.4; c.lineCap = 'round';
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * TAU + (f ? 0.6 : 0.1);
+      c.beginPath(); c.moveTo(11, 11);
+      c.lineTo(11 + Math.cos(a + 0.4) * 5, 11 + Math.sin(a + 0.4) * 5);
+      c.lineTo(11 + Math.cos(a - 0.2) * 9, 11 + Math.sin(a - 0.2) * 9);
+      c.stroke();
+    }
+    circle(c, 11, 11, 3.2, '#ffffff');
+  });
   make('wisp', 28, 28, (c) => {
     glowDot(c, 14, 14, 14, 'rgba(140,255,230,0.8)');
     circle(c, 14, 14, 5, '#e6fff9');
