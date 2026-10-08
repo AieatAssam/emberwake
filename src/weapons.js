@@ -162,7 +162,9 @@ export const BEHAVIORS = {
       if (S.t <= 0) {
         S.t = st.cd;
         const max = 165 * st.area;
-        S.rings.push({ x: P.x, y: P.y - 12, r: 0, max, hit: new Set() });
+        const R = (S.ringPool && S.ringPool.pop()) || { hit: new Set() };
+        R.x = P.x; R.y = P.y - 12; R.r = 0; R.max = max; R.hit.clear();
+        S.rings.push(R);
         g.shockwave(P.x, P.y - 12, 0x9ae8ff, max, 0.42);
         g.spawnFx(T.glow, P.x, P.y - 12, { life: 0.3, s0: max / 50, s1: max / 30, tint: 0x4ab0ff, a: 0.35 });
         for (let i = 0; i < 18 && g.fx.length < 2800; i++) {
@@ -182,7 +184,7 @@ export const BEHAVIORS = {
           g.damage(e, st.dmg, { w: part.w, knock: st.knock, fx: R.x, fy: R.y, freeze: st.freeze, slow: st.duration });
           if (st.zap && Math.random() < 0.18 && e.alive) chainFrom(g, e, 3, st.dmg * 0.8, part.w, 160, 0xffffff);
         }
-        if (R.r >= R.max) S.rings.splice(i, 1);
+        if (R.r >= R.max) { S.rings.splice(i, 1); (S.ringPool || (S.ringPool = [])).push(R); }
       }
     },
   },

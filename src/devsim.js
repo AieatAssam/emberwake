@@ -14,7 +14,7 @@ export function install(startRun, getGame) {
     ui.showChest = (gg, res) => gg.applyChest(res);
     ui.showResults = () => {};
     ui.showVictory = () => {};
-    const log = [], spikes = [];
+    const log = [], spikes = [], before = {};
     let ang = 0, minHp = 1e9, upd = 0, worst = 0;
     const t0 = performance.now();
     for (let step = 0; step < secs * 60 && !g.dead; step++) {
@@ -37,14 +37,16 @@ export function install(startRun, getGame) {
       const ml = Math.hypot(mx, my) || 1, sp = g.stats.moveSpeed / 60;
       P.x += (mx / ml) * sp; P.y += (my / ml) * sp; P.fx = mx / ml; P.fy = my / ml;
       if (g.flare >= 100) g.triggerFlare();
-      const before = { ...g.prof };
+      for (const k in g.prof) before[k] = g.prof[k];
       const a = performance.now();
       g.update(1 / 60);
       const d = performance.now() - a;
-      if (d > 8 && step > 60 && spikes.length < 12) {
+      if (d > 8 && step > 600 && (spikes.length < 12 || d > spikes[spikes.length - 1].ms)) {
         const parts = {};
         for (const k in g.prof) parts[k] = +(g.prof[k] - before[k]).toFixed(1);
-        spikes.push({ t: Math.round(g.time), ms: +d.toFixed(1), en: g.enemies.length, fx: g.fx.length, parts });
+        spikes.push({ t: Math.round(g.time), ms: +d.toFixed(1), en: g.enemies.length, fx: g.fx.length, pr: g.projectiles.length, press: +(g.pressure || 1).toFixed(1), parts });
+        spikes.sort((a, b) => b.ms - a.ms);
+        if (spikes.length > 12) spikes.pop();
       }
       upd += d; if (step > 60) worst = Math.max(worst, d);
       minHp = Math.min(minHp, P.hp);
