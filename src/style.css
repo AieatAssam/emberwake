@@ -310,3 +310,8 @@ table.records td img.sil { filter: brightness(0); }
 /* death recap */
 .death-recap { margin: 8px auto 0; max-width: 520px; font-size: 13px; color: var(--muted); }
 .death-recap b { color: #ff8a9a; }
+
+/* volume sliders */
+.slider { display: grid; grid-template-columns: 130px 1fr 48px; align-items: center; gap: 10px; padding: 6px 4px; font-size: 15px; }
+.slider input { accent-color: var(--ember); width: 100%; }
+.slider b { text-align: right; color: var(--ember2); font-size: 13px; }

@@ -3,7 +3,7 @@ import { buildAtlas, atlasCanvas } from './atlas.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
 import { initInput, consumePressed, padButtons } from './input.js';
-import { initAudio, startMusic, setMuted, setMusic, setTheme } from './audio.js';
+import { initAudio, startMusic, setMuted, setMusic, setTheme, setVolumes } from './audio.js';
 import { save } from './save.js';
 import './style.css';
 
@@ -20,6 +20,7 @@ document.getElementById('game').appendChild(app.canvas);
 
 buildAtlas();
 initInput();
+setVolumes(save.settings.volume / 100, save.settings.musicVolume / 100);
 setMuted(save.settings.muted);
 setMusic(save.settings.music);
 

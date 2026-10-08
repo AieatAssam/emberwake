@@ -9,20 +9,27 @@ export function initAudio() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   ctx = new AC();
-  master = ctx.createGain(); master.gain.value = muted ? 0 : 0.7;
+  master = ctx.createGain(); master.gain.value = muted ? 0 : masterVol;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -16; comp.ratio.value = 6;
   master.connect(comp).connect(ctx.destination);
   sfxBus = ctx.createGain(); sfxBus.gain.value = 0.55; sfxBus.connect(master);
-  musicBus = ctx.createGain(); musicBus.gain.value = musicOn ? 0.32 : 0; musicBus.connect(master);
+  musicBus = ctx.createGain(); musicBus.gain.value = musicOn ? musicVol : 0; musicBus.connect(master);
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
 
-export function setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : 0.7; }
+let masterVol = 0.7, musicVol = 0.32;
+export function setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : masterVol; }
+// v in 0..1 from the settings sliders
+export function setVolumes(master01, music01) {
+  masterVol = 0.7 * master01; musicVol = 0.32 * music01;
+  if (master) master.gain.value = muted ? 0 : masterVol;
+  if (musicBus) musicBus.gain.value = musicOn ? musicVol : 0;
+}
 export function isMuted() { return muted; }
-export function setMusic(on) { musicOn = on; if (musicBus) musicBus.gain.value = on ? 0.32 : 0; }
+export function setMusic(on) { musicOn = on; if (musicBus) musicBus.gain.value = on ? musicVol : 0; }
 export function isMusicOn() { return musicOn; }
 
 function throttle(key, ms) {

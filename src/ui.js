@@ -3,7 +3,7 @@ import { iconURL, spriteURL } from './atlas.js';
 import { CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
-import { sfx, initAudio, setMuted, setMusic } from './audio.js';
+import { sfx, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
 import { clearPressed, padMenu } from './input.js';
 
 const $ = (s) => document.querySelector(s);
@@ -305,9 +305,15 @@ export class UI {
     this.open(`
       <div class="panel">
         <h2>Settings</h2>
+        <label class="slider"><span>Master volume</span><input type="range" min="0" max="100" step="5" data-v="volume" value="${st.volume}"><b>${st.volume}%</b></label>
+        <label class="slider"><span>Music volume</span><input type="range" min="0" max="100" step="5" data-v="musicVolume" value="${st.musicVolume}"><b>${st.musicVolume}%</b></label>
         ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}
         <div class="row"><button class="btn" data-a="back">Back</button>${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
       </div>`);
+    this.screen.querySelectorAll('input[data-v]').forEach((el) => el.addEventListener('input', () => {
+      st[el.dataset.v] = +el.value; el.nextElementSibling.textContent = el.value + '%'; persist();
+      setVolumes(st.volume / 100, st.musicVolume / 100);
+    }));
     this.screen.querySelectorAll('input[data-k]').forEach((el) => el.addEventListener('change', () => {
       st[el.dataset.k] = el.checked; persist();
       setMuted(st.muted); setMusic(st.music);
