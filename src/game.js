@@ -515,7 +515,7 @@ export class Game {
     const h = (this.heat || 0) * ramp;
     // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
     const heatHp = 1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60);
-    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
+    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
     if (d.boss) hp *= stHp * (1 + 0.3 * (this.heat || 0));
     else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
