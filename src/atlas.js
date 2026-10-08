@@ -213,6 +213,19 @@ function drawProjectiles() {
     c.lineWidth = 1.5; c.strokeStyle = '#0d2a3a'; c.stroke();
     c.restore();
   });
+  // Wisp spirit: teal teardrop with tiny eyes, pointing right (+x), two flutter frames
+  for (const f of [0, 1]) make('spirit' + f, 36, 24, (c) => {
+    c.save(); c.translate(24, 12);
+    glowDot(c, 0, 0, 12, 'rgba(120,255,220,0.55)');
+    const w = f ? 2.5 : -2.5;
+    c.beginPath(); c.moveTo(8, 0);
+    c.bezierCurveTo(7, -7, -6, -6 + w, -20, w);
+    c.bezierCurveTo(-6, 6 + w, 7, 7, 8, 0);
+    c.fillStyle = lin(c, -20, 0, 8, 0, [[0, 'rgba(60,200,180,0)'], [0.5, 'rgba(110,240,210,0.85)'], [1, '#e6fff9']]); c.fill();
+    circle(c, 1, 0, 5.5, '#c8fff2');
+    circle(c, 2.6, -1.8, 1.2, '#0a3a34'); circle(c, 2.6, 1.8, 1.2, '#0a3a34');
+    c.restore();
+  });
   make('wisp', 28, 28, (c) => {
     glowDot(c, 14, 14, 14, 'rgba(140,255,230,0.8)');
     circle(c, 14, 14, 5, '#e6fff9');

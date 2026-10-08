@@ -200,7 +200,7 @@ export const BEHAVIORS = {
         const a = Math.random() * TAU;
         const tg = g.randomVisibleEnemy();
         g.addProjectile({
-          tex: T.wisp, x: P.x, y: P.y - 18, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, life: st.duration,
+          tex: T.spirit0, frames: [T.spirit0, T.spirit1], faceVel: true, x: P.x, y: P.y - 18, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, life: st.duration,
           dmg: st.dmg, pierce: st.pierce, r: 10 * st.area, scale: Math.sqrt(st.area) * (st.explode ? 1.3 : 1), w: part.w,
           homing: 3.2, target: tg, explode: st.explode * st.area, trail: 0.04, trailTint: 0x80ffe0, knock: st.knock, fade: true,
         }).speed = st.speed;
