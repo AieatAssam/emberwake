@@ -722,6 +722,19 @@ function drawEnemies() {
     }
     c.restore();
   });
+  // Mire Lurker — bog creature: mossy hump with lantern-eyes (Drowned Marsh). Frame 0 surfaced, frame 1 mid-sink
+  for (const f of [0, 1]) make('lurker' + f, 48, 40, (c) => {
+    c.fillStyle = 'rgba(40,70,60,0.5)'; c.beginPath(); c.ellipse(24, 33, 20, 5, 0, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(160,220,200,0.45)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(24, 33, 21, 6, 0, 0, TAU); c.stroke();
+    const top = f ? 20 : 8;
+    c.beginPath(); c.moveTo(6, 33); c.bezierCurveTo(6, top, 42, top, 42, 33); c.closePath();
+    c.fillStyle = lin(c, 0, top, 0, 33, [[0, '#4a6a3a'], [1, '#1e3024']]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    for (const [x, y] of [[15, top + 8], [30, top + 6], [23, top + 3]]) circle(c, x, y, 2.4, '#7a9a4a');
+    c.strokeStyle = '#2a4a2a'; c.lineWidth = 2; c.beginPath(); c.moveTo(12, top + 10); c.quadraticCurveTo(10, top + 16, 13, 30); c.stroke();
+    if (!f) { eye(c, 18, top + 12, 2.2, '#d0ff60'); eye(c, 30, top + 12, 2.2, '#d0ff60'); }
+    else { eye(c, 19, top + 9, 1.6, '#d0ff60'); eye(c, 29, top + 9, 1.6, '#d0ff60'); }
+  });
   // Gloom Totem — breakable crystal obelisk that holds loot
   make('totem', 40, 60, (c) => {
     shadow(c, 20, 54, 15, 4);
@@ -734,7 +747,7 @@ function drawEnemies() {
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
     'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem',
-    'imp0', 'imp1', 'frostwisp0', 'frostwisp1']) makeWhite(n);
+    'imp0', 'imp1', 'frostwisp0', 'frostwisp1', 'lurker0', 'lurker1']) makeWhite(n);
 }
 
 // ---------- decor ----------
@@ -785,6 +798,34 @@ function drawDecor() {
     poly(c, [[4, 22], [8, 10], [18, 4], [30, 9], [33, 22]], '#3a4658', OUT, 2);
     c.beginPath(); c.moveTo(7, 12); c.quadraticCurveTo(18, 1, 31, 10); c.quadraticCurveTo(20, 9, 7, 12);
     c.fillStyle = '#eef8ff'; c.fill();
+  });
+  // ---- Drowned Marsh props ----
+  make('reeds', 30, 40, (c) => {
+    c.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const x = 6 + i * 3.6, h = 18 + ((i * 7) % 13);
+      c.strokeStyle = i % 2 ? '#3a5a34' : '#2e4a2c'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(x, 38); c.quadraticCurveTo(x + (i % 3 - 1) * 4, 38 - h * 0.6, x + (i % 3 - 1) * 5, 38 - h); c.stroke();
+      if (i % 2 === 0) ellipse(c, x + (i % 3 - 1) * 5, 38 - h + 3, 1.8, 4.5, '#5a3a24', OUT, 1);
+    }
+  });
+  make('lilypad', 34, 20, (c) => {
+    c.beginPath(); c.ellipse(17, 10, 15, 8, 0, 0.35, TAU - 0.15); c.lineTo(17, 10); c.closePath();
+    c.fillStyle = '#2e5a3a'; c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.5; c.stroke();
+    c.strokeStyle = '#4a7a50'; c.lineWidth = 1; c.beginPath(); c.moveTo(17, 10); c.lineTo(6, 8); c.moveTo(17, 10); c.lineTo(22, 16); c.stroke();
+    glowDot(c, 24, 8, 6, 'rgba(255,200,230,0.5)');
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU; circle(c, 24 + Math.cos(a) * 2.6, 8 + Math.sin(a) * 2.6, 2, '#ffd6ea'); }
+    circle(c, 24, 8, 1.4, '#fff2a0');
+  });
+  make('sunklantern', 30, 40, (c) => {
+    c.fillStyle = 'rgba(40,70,60,0.45)'; c.beginPath(); c.ellipse(15, 34, 13, 4, 0, 0, TAU); c.fill();
+    glowDot(c, 15, 18, 14, 'rgba(200,255,120,0.5)');
+    c.save(); c.translate(15, 22); c.rotate(-0.25);
+    c.fillStyle = '#3a3a30'; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.beginPath(); c.roundRect(-6, -10, 12, 16, 2); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(210,255,140,0.85)'; c.fillRect(-4, -7, 8, 9);
+    c.beginPath(); c.moveTo(-5, -10); c.lineTo(0, -15); c.lineTo(5, -10); c.stroke();
+    c.restore();
   });
   make('rock0', 36, 28, (c) => {
     shadow(c, 18, 24, 16, 4);

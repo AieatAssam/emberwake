@@ -527,7 +527,7 @@ export class Game {
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.boss ? 3.5 : rand(1, 3); e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
-    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.affix = null;
+    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.affix = null; e.sunk = false;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
     e.p.scaleX = e.p.scaleY = scale;
@@ -571,7 +571,7 @@ export class Game {
 
   damage(e, amount, o = null) {
     if (!e.alive) return 0;
-    let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1);
+    let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1);
     let crit = false;
     if (Math.random() < this.stats.crit) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
@@ -1144,7 +1144,7 @@ export class Game {
   stagePool(wave) {
     if (wave._pools && wave._pools[this.stageId]) return wave._pools[this.stageId];
     const pool = { ...wave.pool };
-    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530, imp: 90, frostwisp: 90 };
+    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530, imp: 90, frostwisp: 90, lurker: 150, splitter: 210 };
     for (const k in this.stage.bias) if (wave.at >= (unlockedAt[k] || 0)) pool[k] = (pool[k] || 0) + this.stage.bias[k];
     (wave._pools || (wave._pools = {}))[this.stageId] = pool;
     return pool;
@@ -1257,6 +1257,12 @@ export class Game {
           this.bossAI(e, dt, dx, dy, dist);
         } else {
           mvx = dx * sp; mvy = dy * sp;
+          if (e.d.submerge) {
+            // cycle: sink (fast, faint, resists damage) -> surface near the Bearer (exposed)
+            e.stT -= dt;
+            if (e.stT <= 0) { e.sunk = !e.sunk; e.stT = e.sunk ? rand(1.8, 2.6) : rand(1.6, 2.2); if (!e.sunk) this.shockwave(e.x, e.y, 0x8ad070, 60, 0.35); }
+            if (e.sunk) { mvx *= 1.4; mvy *= 1.4; }
+          }
           if (e.d.wobble) { const w = Math.sin(e.t * 6 + e.phase) * sp * 0.7; mvx += -dy * w; mvy += dx * w; }
         }
       }
@@ -1294,6 +1300,7 @@ export class Game {
       p.scaleX = e.scale * face * (2 - squash);
       p.scaleY = e.scale * squash;
       if (e.d.alpha) p.alpha = e.d.alpha * (0.75 + Math.sin(e.t * 5 + e.phase) * 0.25);
+      if (e.d.submerge) { p.alpha = e.sunk ? 0.22 : 1; p.texture = e.flash > 0 ? e.d._w[e.sunk ? 1 : 0] : e.d._t[e.sunk ? 1 : 0]; }
       if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.alpha = 0.45 + Math.sin(e.t * 4) * 0.15; }
       if (e.affix === 'vampiric' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.025 * dt);
     }
@@ -1673,7 +1680,7 @@ const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, vola
 const ENEMY_COLORS = {
   gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
-  imp: 0xff8a30, frostwisp: 0xa8e8ff,
+  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070,
 };
 function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }

@@ -236,6 +236,7 @@ export const ENEMIES = {
   tyrant: { tex: 'tyrant', hp: 90000, speed: 62, dmg: 60, xp: 2500, r: 85, boss: true, knockRes: 1, nova: true, final: true },
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
+  lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
 };
 
@@ -420,6 +421,13 @@ export const STAGES = {
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
     decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'],
   },
+  marsh: {
+    name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. +110% enemy health, +10% speed, x2.5 cinders.',
+    cost: 2500, hpMul: 2.1, greedMul: 2.5, speedMul: 1.1, bias: { lurker: 1.8, splitter: 1, spitter: 0.6, moth: 0.6 },
+    ground: { base: '#0e1612', blobs: ['rgba(30,60,44,0.55)', 'rgba(20,34,30,0.6)', 'rgba(60,90,60,0.22)', 'rgba(10,30,30,0.55)'], stone: 'rgba(60,80,64,0.3)' },
+    tint: 0xa8c8b0, decorTint: 0xb0e0c0, color: '#8ad8a0',
+    decor: { reeds: 24, lilypad: 18, sunklantern: 8, rock1: 14, bones: 14, grass: 14, pillar: 4 }, own: ['reeds', 'lilypad', 'sunklantern'],
+  },
 };
 
 // Bestiary lore (original). Keys match ENEMIES.
@@ -435,6 +443,7 @@ export const BESTIARY = {
   sentinel: { name: 'Sentinel', lore: 'A spined eye that watches the late hours of the night. Tough enough to outlast lesser builds.' },
   imp: { name: 'Cinder Imp', lore: 'Ashfields pests that burst into embers when slain. Kill them at range.' },
   frostwisp: { name: 'Frost Wisp', lore: 'Rimewood spirits whose touch steals the warmth from your legs.' },
+  lurker: { name: 'Mire Lurker', lore: 'Sinks beneath the black water and rises at your heels. Strike when it surfaces.' },
   matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },

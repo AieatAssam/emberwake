@@ -106,6 +106,7 @@ let musicTimer = null, step = 0, intensity = 0, nextTime = 0;
 const THEMES = {
   gloam: { bpm: 128, roots: [45, 45, 41, 43], arp: [0, 3, 7, 10, 12, 10, 7, 3], bass: 'sawtooth', lead: 'square', bell: false, drive: 1 },
   ashfields: { bpm: 142, roots: [40, 41, 40, 38], arp: [0, 1, 5, 7, 12, 7, 5, 1], bass: 'sawtooth', lead: 'sawtooth', bell: false, drive: 1.5 },
+  marsh: { bpm: 96, roots: [43, 46, 41, 39], arp: [0, 3, 10, 12, 15, 12, 10, 3], bass: 'sine', lead: 'triangle', bell: true, drive: 0.8 },
   rimewood: { bpm: 108, roots: [50, 46, 48, 43], arp: [0, 7, 14, 15, 19, 15, 14, 7], bass: 'triangle', lead: 'sine', bell: true, drive: 0.6 },
 };
 let theme = THEMES.gloam;
