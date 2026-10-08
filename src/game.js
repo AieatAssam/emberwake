@@ -1070,6 +1070,15 @@ export class Game {
       this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
     }
     this.checkHints();
+    // Ascension readiness: flag partner weapons in the HUD and announce once per fusion
+    this.fuseCheckT = (this.fuseCheckT || 0) - rawDt;
+    if (this.fuseCheckT <= 0) {
+      this.fuseCheckT = 0.5;
+      const ready = this.availableFusions();
+      this.readyParents = ready.flatMap((fid) => FUSIONS[fid].parents);
+      this.announced = this.announced || {};
+      for (const fid of ready) if (!this.announced[fid]) { this.announced[fid] = true; this.ui.toast('ASCENSION READY: open a chest', 'fusion'); sfx.kindleUp(5); }
+    }
     this.featT -= rawDt;
     if (this.featT <= 0) { this.featT = 0.5; this.checkFeats(); }
     setIntensity(Math.min(1, this.time / 600 + this.kindleTier * 0.08 + (this.boss ? 0.3 : 0)));

@@ -382,10 +382,11 @@ export class UI {
     }
     if ((this._invTick = (this._invTick || 0) + 1) % 15 !== 0) return;
     // inventory (only rebuild on change)
-    const sig = g.weapons.map((w) => w.id + w.level).join() + '|' + Object.entries(g.passives).map(([k, v]) => k + v).join() + '|' + g.pacts.join();
+    const sig = (g.readyParents || []).join() + '#' + g.weapons.map((w) => w.id + w.level).join() + '|' + Object.entries(g.passives).map(([k, v]) => k + v).join() + '|' + g.pacts.join();
     if (sig !== this.lastInv) {
       this.lastInv = sig;
-      const wi = g.weapons.map((w) => `<div class="slot ${w.fused ? 'fused' : ''} ${w.level >= MAX_WEAPON_LEVEL && !w.fused ? 'max' : ''}"><img src="${iconURL(w.id)}"><span>${w.fused ? '★' : w.level}</span></div>`).join('');
+      const ready = new Set(g.readyParents || []);
+      const wi = g.weapons.map((w) => `<div class="slot ${w.fused ? 'fused' : ''} ${w.level >= MAX_WEAPON_LEVEL && !w.fused ? 'max' : ''} ${ready.has(w.id) ? 'ready' : ''}"><img src="${iconURL(w.id)}"><span>${w.fused ? '★' : w.level}</span>${ready.has(w.id) ? '<i class="fuse-badge">⚗</i>' : ''}</div>`).join('');
       const pi = Object.entries(g.passives).map(([k, v]) => `<div class="slot small ${v >= PASSIVES[k].max ? 'max' : ''}"><img src="${iconURL(k)}"><span>${v}</span></div>`).join('');
       const pc = g.pacts.map(() => `<div class="slot small pact"><img src="${iconURL('pact')}"></div>`).join('');
       $('#inv').innerHTML = `<div class="inv-row">${wi}</div><div class="inv-row">${pi}${pc}</div>`;

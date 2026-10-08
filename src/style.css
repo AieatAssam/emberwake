@@ -319,3 +319,8 @@ table.records td img.sil { filter: brightness(0); }
 /* Dawn variant toggle */
 .dawn-btn { pointer-events: auto; margin-top: 6px; font: 600 11px var(--ui); letter-spacing: 1px; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 210, 122, 0.4); background: transparent; color: var(--muted); cursor: pointer; }
 .dawn-btn.on { background: linear-gradient(180deg, #ffd27a, #ff9a3a); color: #1a0800; border-color: #fff3c0; box-shadow: 0 0 10px rgba(255, 190, 80, 0.6); }
+
+/* Ascension-ready weapons */
+.slot.ready { border-color: #fff3c0; animation: fuseReady 0.9s ease-in-out infinite alternate; }
+@keyframes fuseReady { from { box-shadow: 0 0 4px rgba(255, 207, 74, 0.6); } to { box-shadow: 0 0 14px #ffcf4a, 0 0 22px rgba(255, 140, 40, 0.7); } }
+.fuse-badge { position: absolute; left: -4px; top: -6px; font-style: normal; font-size: 13px; line-height: 1; filter: drop-shadow(0 0 3px #ffcf4a); }
