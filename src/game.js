@@ -146,6 +146,8 @@ export class Game {
     this.hurtVignette = new Sprite(this.vignette.texture);
     this.hurtVignette.tint = 0xff0020; this.hurtVignette.alpha = 0; this.hurtVignette.blendMode = 'add';
     this.root.addChild(this.hurtVignette);
+    this.indicators = new Graphics();
+    this.root.addChild(this.indicators);
     this.flashG = new Graphics();
     this.root.addChild(this.flashG);
     this.flashAlpha = 0; this.flashColor = 0xffffff;
@@ -165,6 +167,8 @@ export class Game {
     this.boss = null; this.victory = false; this.endless = false; this.dead = false;
     this.paused = false;
     this.chunks = new Map();
+    this.chestQueue = [];
+    this.prof = { weapons: 0, proj: 0, enemies: 0, fx: 0, pickups: 0, grid: 0 };
     this.weaponUid = 0;
 
     this.player = { x: 0, y: 0, hp: 100, iframes: 0, fx: 1, fy: 0, moving: false, bob: 0, hurtT: 0, r: 14 };
@@ -473,14 +477,14 @@ export class Game {
     }
     const elite = !!o.elite;
     let hp = d.hp;
-    if (d.boss) hp = d.hp * (0.55 + this.level * 0.045) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
+    if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
     else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     const e = {
       type, d, x, y, kx: 0, ky: 0, hp, maxHp: hp, alive: true, uid: uidCounter++,
-      speed: d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08), dmg: d.dmg * (elite ? 1.6 : 1) * (1 + this.time / 900),
+      speed: d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08), dmg: d.boss ? d.dmg : d.dmg * (elite ? 1.6 : 1) * (1 + this.time / 900),
       r: d.r * scale, scale, xp: d.xp * (elite ? 10 : 1), elite, boss: !!d.boss, inert: !!d.inert,
-      flash: 0, slowT: 0, freezeT: 0, anim: Math.random() * 10, frame: 0, t: 0, state: 0, stT: rand(1, 3),
+      flash: 0, slowT: 0, freezeT: 0, anim: Math.random() * 10, frame: 0, t: 0, state: 0, stT: d.boss ? 3.5 : rand(1, 3),
       dirX: 0, dirY: 0, rush: o.rush || null, life: o.life || 0, phase: Math.random() * TAU, _q: 0, glow: null,
     };
     e.p = this.L.enemies.add(d._t[0], x, y);
@@ -675,12 +679,10 @@ export class Game {
         this.ui.toast('STILLWATER', 'pickup');
         break;
       case 'flareorb': this.flare = Math.min(100, this.flare + 50); sfx.pickup(); break;
-      case 'chest': {
+      case 'chest':
         sfx.pickup();
-        const res = this.rollChest(pk.value);
-        this.ui.showChest(this, res);
+        this.chestQueue.push(pk.value);
         break;
-      }
     }
   }
 
@@ -708,9 +710,11 @@ export class Game {
     }
   }
 
-  hurtPlayer(amount) {
+  hurtPlayer(amount, src = '?') {
     const P = this.player;
     if (P.iframes > 0 || this.buffs.invuln > 0 || this.dead) return;
+    (this.dmgLog || (this.dmgLog = {}))[src] = (this.dmgLog[src] || 0) + amount;
+    this.lastHitBy = src;
     const s = this.stats;
     const dmg = Math.max(1, amount * (1 - Math.min(0.5, s.armor * 0.03)) - s.armor);
     P.hp -= dmg;
@@ -913,21 +917,29 @@ export class Game {
     }
 
     // grid
+    const pf = this.prof, now = performance.now.bind(performance);
+    let t0 = now();
     this.grid.clear();
     const es = this.enemies;
     for (let i = 0; i < es.length; i++) if (es[i].alive) this.grid.insert(es[i]);
 
+    let t1 = now(); pf.grid += t1 - t0; t0 = t1;
     if (!this.dead) {
       this.director(dt);
       for (const w of this.weapons) for (const part of w.parts) BEHAVIORS[part.behavior].update(this, part, this.eff(part), dt);
     }
     this.updateNovas(dt);
+    t1 = now(); pf.weapons += t1 - t0; t0 = t1;
     this.updateProjectiles(dt);
+    t1 = now(); pf.proj += t1 - t0; t0 = t1;
     this.updateEnemies(dt);
     this.updateEnemyShots(dt);
+    t1 = now(); pf.enemies += t1 - t0; t0 = t1;
     this.updatePickups(dt);
+    t1 = now(); pf.pickups += t1 - t0; t0 = t1;
     this.updateFx(dt);
     this.updateDecor();
+    pf.fx += now() - t0;
 
     // level-ups (pause & draft)
     if (this.pendingLevels > 0 && !this.dead && !this.ui.modalOpen) {
@@ -936,6 +948,8 @@ export class Game {
       this.shockwave(P.x, P.y, 0x80d0ff, 400, 0.5);
       this.burst(P.x, P.y, 40, [0x80d0ff, 0xffffff, 0xffd060], 420, 0.9);
       this.ui.showLevelUp(this);
+    } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
+      this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
     }
     setIntensity(Math.min(1, this.time / 600 + this.kindleTier * 0.08 + (this.boss ? 0.3 : 0)));
   }
@@ -966,10 +980,11 @@ export class Game {
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && e.alive) alive++;
     this.spawnAcc += rate * dt;
-    if (alive < min) this.spawnAcc += (min - alive) * dt * 4;
+    // floor top-up is bounded by the wave's own rate so fast killers can't farm infinite spawns
+    if (alive < min) this.spawnAcc += Math.min((min - alive) * 2, rate * 2.5) * dt;
     let n = Math.floor(this.spawnAcc);
     this.spawnAcc -= n;
-    n = Math.min(n, 30);
+    n = Math.min(n, 12);
     for (let i = 0; i < n; i++) {
       const type = weightedObj(wave.pool);
       const sp = this.spawnPointOffscreen();
@@ -1043,7 +1058,7 @@ export class Game {
     const P = this.player, es = this.enemies, ES = this.stats.enemySpeed;
     const farX = this.halfW * 2 + 200, farY = this.halfH * 2 + 200;
     const kd = Math.exp(-9 * dt);
-    let contactDmg = 0;
+    let contactDmg = 0, contactSrc = '', contactBoss = null;
     for (let i = es.length - 1; i >= 0; i--) {
       const e = es[i];
       if (!e.alive) { es[i] = es[es.length - 1]; es.pop(); continue; }
@@ -1094,13 +1109,14 @@ export class Game {
           const want = dist > 280 ? 1 : dist < 200 ? -0.6 : 0;
           mvx = dx * sp * want + -dy * sp * 0.3; mvy = dy * sp * want + dx * sp * 0.3;
           e.stT -= dt;
-          if (e.stT <= 0 && dist < 520) {
-            e.stT = e.elite ? 1.2 : 2.6;
+          if (e.stT <= 0 && dist < 420 && this.inView(e.x, e.y, -30)) {
+            e.stT = e.elite ? 1.8 : rand(3.2, 4.2);
             const n = e.elite ? 5 : 1;
             for (let k = 0; k < n; k++) {
               const a = Math.atan2(dy, dx) + (k - (n - 1) / 2) * 0.22;
-              this.enemyShot(e.x, e.y - 10, Math.cos(a) * 170, Math.sin(a) * 170, e.dmg * 0.8);
+              this.enemyShot(e.x, e.y - 10, Math.cos(a) * 140, Math.sin(a) * 140, e.dmg * 0.6);
             }
+            this.spawnFx(T.glow, e.x, e.y - 10, { life: 0.25, s0: 0.4, s1: 1, tint: 0xd060ff, a: 0.8 });
           }
         } else if (e.boss) {
           mvx = dx * sp; mvy = dy * sp;
@@ -1130,7 +1146,7 @@ export class Game {
 
       // contact damage
       const cdx = P.x - e.x, cdy = P.y - 10 - e.y, cr = e.r + P.r;
-      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0) contactDmg = Math.max(contactDmg, e.dmg);
+      if (cdx * cdx + cdy * cdy < cr * cr && e.freezeT <= 0 && e.dmg > contactDmg) { contactDmg = e.dmg; contactSrc = e.type + (e.elite ? '*' : ''); contactBoss = e.boss ? e : null; }
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
@@ -1145,12 +1161,22 @@ export class Game {
       if (e.d.alpha) p.alpha = e.d.alpha * (0.75 + Math.sin(e.t * 5 + e.phase) * 0.25);
       if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.alpha = 0.45 + Math.sin(e.t * 4) * 0.15; }
     }
-    if (contactDmg > 0) this.hurtPlayer(contactDmg);
+    if (contactDmg > 0 && P.iframes <= 0) {
+      this.hurtPlayer(contactDmg, 'touch:' + contactSrc);
+      if (contactBoss) {
+        // bosses shove you clear instead of juggling you to death
+        const bx = P.x - contactBoss.x, by = P.y - contactBoss.y, bl = Math.hypot(bx, by) || 1;
+        P.x += (bx / bl) * 70; P.y += (by / bl) * 70;
+        P.iframes = Math.max(P.iframes, 1.1);
+        this.shockwave(P.x, P.y, 0xff3a6a, 120, 0.3);
+      }
+    }
   }
 
   bossAI(e, dt, dx, dy, dist) {
     e.stT -= dt;
     if (e.stT > 0) return;
+    this._shotSrc = 'shot:' + e.type;
     if (e.d.summon) {
       e.stT = 4;
       for (let k = 0; k < 8; k++) {
@@ -1161,7 +1187,7 @@ export class Game {
       this.shockwave(e.x, e.y, 0xd070ff, 200, 0.4);
       for (let k = 0; k < 10; k++) {
         const a = (k / 10) * TAU;
-        this.enemyShot(e.x, e.y, Math.cos(a) * 150, Math.sin(a) * 150, e.dmg * 0.5);
+        this.enemyShot(e.x, e.y, Math.cos(a) * 140, Math.sin(a) * 140, e.dmg * 0.35);
       }
     } else if (e.d.slam) {
       e.stT = 4.5;
@@ -1172,7 +1198,7 @@ export class Game {
         const a = (k / 20) * TAU;
         this.enemyShot(e.x, e.y, Math.cos(a) * 200, Math.sin(a) * 200, e.dmg * 0.5);
       }
-      if (dist < 200) this.hurtPlayer(e.dmg);
+      if (dist < 200) this.hurtPlayer(e.dmg, 'slam');
     } else if (e.d.nova) {
       e.stT = 3;
       e.spiral = (e.spiral || 0) + 0.4;
@@ -1181,6 +1207,7 @@ export class Game {
         this.enemyShot(e.x, e.y, Math.cos(a) * 190, Math.sin(a) * 190, e.dmg * 0.45);
       }
       this.shockwave(e.x, e.y, 0xff3a6a, 300, 0.5);
+      this._shotSrc = null;
       if (Math.random() < 0.5) for (let k = 0; k < 3; k++) {
         const sp = this.spawnPointOffscreen();
         this.spawnEnemy('sentinel', sp.x, sp.y, { force: true });
@@ -1192,7 +1219,7 @@ export class Game {
     if (this.enemyShots.length > 400) return;
     const p = this.L.projAdd.add(T.orb, x, y);
     p.scaleX = p.scaleY = 1.3;
-    this.enemyShots.push({ x, y, vx, vy, dmg, life: 6, p });
+    this.enemyShots.push({ x, y, vx, vy, dmg, life: 6, p, src: this._shotSrc || 'shot' });
   }
   updateEnemyShots(dt) {
     const P = this.player, s = this.enemyShots;
@@ -1202,7 +1229,7 @@ export class Game {
       b.p.x = b.x; b.p.y = b.y; b.p.rotation += dt * 5;
       const dx = P.x - b.x, dy = P.y - 12 - b.y;
       let dead = b.life <= 0;
-      if (!dead && dx * dx + dy * dy < 18 * 18) { this.hurtPlayer(b.dmg); dead = true; }
+      if (!dead && dx * dx + dy * dy < 18 * 18) { this.hurtPlayer(b.dmg, b.src); dead = true; }
       if (dead) { this.L.projAdd.kill(b.p); s[i] = s[s.length - 1]; s.pop(); }
     }
   }
@@ -1336,6 +1363,8 @@ export class Game {
       hb.rect(P.x - 17, P.y + 9, 34 * r, 3).fill(r > 0.5 ? 0x5aff8a : r > 0.25 ? 0xffd040 : 0xff4050);
     }
 
+    this.drawIndicators(sw, sh);
+
     // screen overlays
     this.hurtFlash = Math.max(0, (this.hurtFlash || 0) - rawDt * 2);
     const low = 1 - P.hp / this.stats.maxHp;
@@ -1346,6 +1375,25 @@ export class Game {
 
     for (const k in this.L) this.L[k].flush();
     this.ui.updateHUD(this);
+  }
+
+  // edge arrows pointing at off-screen chests and bosses
+  drawIndicators(sw, sh) {
+    const g = this.indicators, P = this.player, z = this.zoom;
+    g.clear();
+    const mark = (x, y, color, size) => {
+      if (this.inView(x, y, -10)) return;
+      const dx = (x - P.x) * z, dy = (y - P.y) * z;
+      const m = 34, hw = sw / 2 - m, hh = sh / 2 - m;
+      const k = Math.min(hw / Math.abs(dx || 1e-6), hh / Math.abs(dy || 1e-6));
+      const ex = sw / 2 + dx * k, ey = sh / 2 + dy * k, a = Math.atan2(dy, dx);
+      const pulse = 1 + Math.sin(this.time * 8) * 0.12;
+      const s = size * pulse, c = Math.cos(a), si = Math.sin(a);
+      g.poly([ex + c * s * 1.4, ey + si * s * 1.4, ex - c * s * 0.6 - si * s, ey - si * s * 0.6 + c * s,
+        ex - c * s * 0.6 + si * s, ey - si * s * 0.6 - c * s]).fill({ color, alpha: 0.9 }).stroke({ color: 0x000000, width: 2, alpha: 0.6 });
+    };
+    for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, 0xffcf4a, 10);
+    if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, 0xff3a6a, 14);
   }
 
   destroy() {

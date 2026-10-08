@@ -40,6 +40,10 @@ const ui = new UI({
   },
 });
 
+if (import.meta.env.DEV) {
+  import('./devsim.js').then((m) => m.install((c) => ui.h.startRun(c), () => game));
+}
+
 addEventListener('resize', () => game && game.resize());
 addEventListener('keydown', (e) => {
   if (!game || game.dead) return;

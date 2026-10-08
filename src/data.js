@@ -20,7 +20,7 @@ export const WEAPONS = {
   emberBolt: {
     name: 'Ember Bolt', element: 'fire', behavior: 'bolt',
     desc: 'Hurls seeking fireballs at the nearest foe.',
-    base: { dmg: 10, cd: 0.95, amount: 1, speed: 460, pierce: 1, area: 1, duration: 1.6, knock: 6 },
+    base: { dmg: 11, cd: 0.8, amount: 1, speed: 460, pierce: 1, area: 1, duration: 1.6, knock: 6 },
     levels: L({ amount: 1 }, { dmg: 5 }, { amount: 1, cdMul: 0.9 }, { pierce: 1 }, { amount: 1 }, { dmg: 8 }, { amount: 1, pierce: 1 }),
   },
   haloBlades: {
@@ -214,7 +214,7 @@ export const ENEMIES = {
   beetle: { tex: 'beetle', hp: 34, speed: 50, dmg: 14, xp: 3, r: 18, charge: true, knockRes: 0.4 },
   spitter: { tex: 'spitter', hp: 24, speed: 40, dmg: 8, xp: 3, r: 16, ranged: true },
   sentinel: { tex: 'sentinel', hp: 140, speed: 44, dmg: 18, xp: 10, r: 23, knockRes: 0.8 },
-  matron: { tex: 'matron', hp: 4200, speed: 58, dmg: 25, xp: 250, r: 58, boss: true, knockRes: 1, summon: 'broodling' },
+  matron: { tex: 'matron', hp: 4200, speed: 58, dmg: 20, xp: 250, r: 58, boss: true, knockRes: 1, summon: 'broodling' },
   colossus: { tex: 'colossus', hp: 16000, speed: 46, dmg: 40, xp: 600, r: 75, boss: true, knockRes: 1, slam: true },
   tyrant: { tex: 'tyrant', hp: 90000, speed: 62, dmg: 60, xp: 2500, r: 85, boss: true, knockRes: 1, nova: true, final: true },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
@@ -224,11 +224,11 @@ export const ENEMIES = {
 export const WAVES = [
   { at: 0, rate: 1.2, min: 10, pool: { gloomling: 1 } },
   { at: 30, rate: 2.4, min: 25, pool: { gloomling: 3, moth: 1 } },
-  { at: 60, rate: 3, min: 36, pool: { gloomling: 2, moth: 2 } },
-  { at: 105, rate: 4, min: 55, pool: { gloomling: 2, moth: 2, husk: 1 } },
-  { at: 150, rate: 5, min: 70, pool: { moth: 2, wraith: 2, husk: 1 } },
-  { at: 210, rate: 9, min: 135, pool: { gloomling: 2, splitter: 1.5, wraith: 2 } },
-  { at: 270, rate: 10.5, min: 165, pool: { wraith: 2, splitter: 1, spitter: 1, husk: 1 } },
+  { at: 60, rate: 2.4, min: 30, pool: { gloomling: 2, moth: 2 } },
+  { at: 105, rate: 3, min: 42, pool: { gloomling: 2, moth: 2, husk: 1 } },
+  { at: 150, rate: 3.8, min: 55, pool: { moth: 2, wraith: 2, husk: 1 } },
+  { at: 210, rate: 6, min: 90, pool: { gloomling: 2, splitter: 1.5, wraith: 2 } },
+  { at: 270, rate: 8, min: 120, pool: { wraith: 2, splitter: 1, spitter: 0.5, husk: 1 } },
   { at: 330, rate: 12, min: 195, pool: { gloomling: 3, beetle: 1.5, spitter: 1 } },
   { at: 400, rate: 14.2, min: 225, pool: { moth: 3, husk: 2, beetle: 1 } },
   { at: 460, rate: 16.5, min: 262, pool: { wraith: 3, splitter: 2, spitter: 1.5 } },
@@ -288,9 +288,9 @@ export const META = {
 
 export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
-  if (level < 20) return Math.floor(5 + level * 6);
-  if (level < 40) return Math.floor(125 + (level - 20) * 16);
-  return Math.floor(445 + (level - 40) * 26);
+  if (level < 20) return Math.floor(4 + level * 4);
+  if (level < 40) return Math.floor(84 + (level - 20) * 14);
+  return Math.floor(364 + (level - 40) * 24);
 }
 
 export function enemyHpScale(t) {
