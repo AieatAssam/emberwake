@@ -33,7 +33,7 @@ const ui = new UI({
     startMusic();
     game = new Game(app, ui, charId, stageId, opts);
     ui.beginRun(game);
-    window.__game = game;
+    if (import.meta.env.DEV) window.__game = game;
   },
   quitToTitle() {
     if (game) { game.destroy(); game = null; }
