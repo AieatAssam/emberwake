@@ -9,7 +9,8 @@ const PRISM = [0xff6a8a, 0xffd060, 0x6affc0, 0x6ac0ff, 0xc08aff];
 
 export function lightning(g, x1, y1, x2, y2, tint = 0xbfe0ff, width = 1) {
   const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
-  const n = Math.max(2, Math.min(7, Math.round(len / 40)));
+  const busy = g.fx.length > g.maxFx * 0.5; // under load: coarser bolts, no end glow
+  const n = busy ? 2 : Math.max(2, Math.min(7, Math.round(len / 40)));
   const nx = -dy / (len || 1), ny = dx / (len || 1);
   let px = x1, py = y1;
   for (let i = 1; i <= n; i++) {
@@ -21,7 +22,7 @@ export function lightning(g, x1, y1, x2, y2, tint = 0xbfe0ff, width = 1) {
     });
     px = qx; py = qy;
   }
-  g.spawnFx(T.glow, x2, y2, { life: 0.2, s0: 0.8, s1: 0.2, tint });
+  if (!busy) g.spawnFx(T.glow, x2, y2, { life: 0.2, s0: 0.8, s1: 0.2, tint });
 }
 
 function chainFrom(g, start, jumps, dmg, w, range, tint) {
@@ -163,7 +164,7 @@ export const BEHAVIORS = {
         S.t = st.cd;
         const max = 165 * st.area;
         const R = (S.ringPool && S.ringPool.pop()) || { hit: new Set() };
-        R.x = P.x; R.y = P.y - 12; R.r = 0; R.max = max; R.hit.clear();
+        R.x = P.x; R.y = P.y - 12; R.r = 0; R.max = max; R.zaps = 0; R.hit.clear();
         S.rings.push(R);
         g.shockwave(P.x, P.y - 12, 0x9ae8ff, max, 0.42);
         g.spawnFx(T.glow, P.x, P.y - 12, { life: 0.3, s0: max / 50, s1: max / 30, tint: 0x4ab0ff, a: 0.35 });
@@ -182,7 +183,7 @@ export const BEHAVIORS = {
           if (R.hit.has(e.uid)) continue;
           R.hit.add(e.uid);
           g.damage(e, st.dmg, { w: part.w, knock: st.knock, fx: R.x, fy: R.y, freeze: st.freeze, slow: st.duration });
-          if (st.zap && Math.random() < 0.18 && e.alive) chainFrom(g, e, 3, st.dmg * 0.8, part.w, 160, 0xffffff);
+          if (st.zap && (R.zaps || 0) < 6 && Math.random() < 0.18 && e.alive) { R.zaps = (R.zaps || 0) + 1; chainFrom(g, e, 3, st.dmg * 0.8, part.w, 160, 0xffffff); }
         }
         if (R.r >= R.max) { S.rings.splice(i, 1); (S.ringPool || (S.ringPool = [])).push(R); }
       }
