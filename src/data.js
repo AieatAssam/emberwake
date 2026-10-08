@@ -290,7 +290,7 @@ export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
   if (level < 20) return Math.floor(4 + level * 4);
   if (level < 40) return Math.floor(84 + (level - 20) * 14);
-  return Math.floor(364 + (level - 40) * 24);
+  return Math.floor(364 + (level - 40) * 42);
 }
 
 export function enemyHpScale(t) {

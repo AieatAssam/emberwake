@@ -169,6 +169,7 @@ export class Game {
     this.paused = false;
     this.chunks = new Map();
     this.chestQueue = [];
+    this.pressure = 1;
     this.prof = { weapons: 0, proj: 0, enemies: 0, fx: 0, pickups: 0, grid: 0 };
     this.weaponUid = 0;
 
@@ -579,7 +580,7 @@ export class Game {
     // death fx
     const col = ENEMY_COLORS[e.type] || 0xb080ff;
     const big = e.boss ? 4 : e.elite ? 2 : 1;
-    if (this.fx.length < MAX_FX * 0.8 || big > 1) {
+    if ((this.fx.length < MAX_FX * 0.8 && this.deathFxBudget-- > 0) || big > 1) {
       this.burst(x, y, 5 * big, [col, 0xffffff], 160 * big, 0.6, 'shard');
       this.spawnFx(T.glow, x, y, { life: 0.22, s0: 0.5 * big * e.scale, s1: 1.4 * big * e.scale, tint: col, a: 0.8 });
       this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: 0x302040, a: 0.5, add: false, vy: -20 });
@@ -923,6 +924,7 @@ export class Game {
       }
     }
 
+    this.deathFxBudget = 18;
     // grid
     const pf = this.prof, now = performance.now.bind(performance);
     let t0 = now();
@@ -951,10 +953,19 @@ export class Game {
     // level-ups (pause & draft)
     if (this.pendingLevels > 0 && !this.dead && !this.ui.modalOpen) {
       this.pendingLevels--;
-      sfx.levelup();
-      this.shockwave(P.x, P.y, 0x80d0ff, 400, 0.5);
-      this.burst(P.x, P.y, 40, [0x80d0ff, 0xffffff, 0xffd060], 420, 0.9);
-      this.ui.showLevelUp(this);
+      const choices = this.buildChoices();
+      if (choices.every((c) => c.kind === 'overcharge' || c.kind === 'heal' || c.kind === 'cinderBag')) {
+        // fully maxed build: power keeps climbing without interrupting the carnage
+        this.applyChoice(choices.find((c) => c.kind === 'overcharge'));
+        sfx.kindleUp(Math.min(6, (this.overcharge || 0) % 7));
+        this.shockwave(P.x, P.y, 0xffd060, 260, 0.35);
+        this.ui.toast('OVERCHARGE', 'kindle');
+      } else {
+        sfx.levelup();
+        this.shockwave(P.x, P.y, 0x80d0ff, 400, 0.5);
+        this.burst(P.x, P.y, 40, [0x80d0ff, 0xffffff, 0xffd060], 420, 0.9);
+        this.ui.showLevelUp(this, choices);
+      }
     } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
       this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
     }
@@ -988,10 +999,16 @@ export class Game {
     for (const e of this.enemies) if (!e.inert && e.alive) alive++;
     this.spawnAcc += rate * dt;
     // floor top-up is bounded by the wave's own rate so fast killers can't farm infinite spawns
-    if (alive < min) this.spawnAcc += Math.min((min - alive) * 2, rate * 2.5) * dt;
+    // Gloam Pressure: if the horde is being erased faster than it arrives, the dark pushes harder
+    // so a strong build always has a tide to carve through (bounded by MAX_ENEMIES).
+    if (t > 300 && alive < min * 0.4) this.pressure = Math.min(6, this.pressure + dt * 0.2);
+    else if (alive > min * 0.8) this.pressure = Math.max(1, this.pressure - dt * 0.1);
+    const late = this.pressure;
+    this.spawnAcc += rate * (late - 1) * dt;
+    if (alive < min) this.spawnAcc += Math.min((min - alive) * 2, rate * 2.5 * late) * dt;
     let n = Math.floor(this.spawnAcc);
     this.spawnAcc -= n;
-    n = Math.min(n, 12);
+    n = Math.min(n, Math.round(12 * late));
     for (let i = 0; i < n; i++) {
       const type = weightedObj(wave.pool);
       const sp = this.spawnPointOffscreen();

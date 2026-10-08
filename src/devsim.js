@@ -50,7 +50,7 @@ export function install(startRun, getGame) {
       minHp = Math.min(minHp, P.hp);
       if (step % 30 === 0) for (const k in g.L) g.L[k].flush();
       if (step % 3600 === 0) {
-        log.push(`${Math.round(g.time)}s lv${g.level} hp${Math.round(P.hp)}/${Math.round(g.stats.maxHp)} minHp${Math.round(minHp)} en${g.enemies.length} kills${g.kills} fx${g.fx.length} pr${g.projectiles.length} [${g.weapons.map((w) => w.id + ':' + w.level).join(',')}]`);
+        log.push(`${Math.round(g.time)}s lv${g.level} hp${Math.round(P.hp)}/${Math.round(g.stats.maxHp)} minHp${Math.round(minHp)} en${g.enemies.length} kills${g.kills} press${(g.pressure||1).toFixed(1)} fx${g.fx.length} pr${g.projectiles.length} [${g.weapons.map((w) => w.id + ':' + w.level).join(',')}]`);
         minHp = 1e9;
       }
       if (step % 300 === 0) await new Promise((r) => setTimeout(r, 0));

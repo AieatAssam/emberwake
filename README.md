@@ -12,7 +12,8 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 - **Ascension** — two max-level partner weapons fuse at a chest into one Ascended weapon, *freeing a slot*.
 - **Dark Pacts** — rare draft cards that trade danger for permanent power.
 - **Totems** — breakable obelisks hiding magnets, bombs, frost, healing and flare charge.
-- **Overcharge** — once everything is maxed, power keeps climbing forever.
+- **Overcharge** — once everything is maxed, every level-up auto-applies stacking power. Forever.
+- **Gloam Pressure** — erase the horde faster than it arrives and the dark pushes harder, so a god-tier build always has a tide to carve through.
 - **The Hearth** — spend cinders on permanent upgrades and new Bearers.
 - 5 Bearers, 14 weapons, 7 Ascensions, 15 relics, 9 enemy types, 3 bosses, endless mode.
 
@@ -20,6 +21,10 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 WASD / arrows · SPACE flare · ESC pause · 1–4 pick upgrade · R reroll · B banish. Gamepad and touch supported.
 
 ## Dev
+In `npm run dev`, the console exposes a headless balance simulator:
+`await __sim(900, 'warden')` runs the real game loop with a kiting bot and reports
+level curve, kills, per-system frame cost, slow-frame breakdowns and what killed you.
+
 ```bash
 npm install
 npm run dev     # local dev server

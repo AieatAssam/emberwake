@@ -291,8 +291,8 @@ export class UI {
   }
 
   // ---------- level up ----------
-  showLevelUp(g) {
-    let choices = g.buildChoices();
+  showLevelUp(g, pre = null) {
+    let choices = pre || g.buildChoices();
     let banishMode = false;
     const render = () => {
       const cards = choices.map((c, i) => `
