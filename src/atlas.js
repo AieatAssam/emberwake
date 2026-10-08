@@ -836,6 +836,7 @@ function drawIcons() {
   I('eclipseDisc', '#3a0a3a', (c) => { circle(c, 24, 24, 15, '#05010a', '#ffb060', 3); blit(c, 'glaive', 24, 24, 0.6); });
   I('hiveFoundry', '#3a3a0a', (c) => { blit(c, 'drone', 30, 18, 0.9); blit(c, 'mine', 16, 32, 0.8); });
   I('glacierSpire', '#0a3a6a', (c) => { for (let i = 0; i < 5; i++) blit(c, 'icicle', 24, 24, 1, (i / 5) * TAU); });
+  I('eventHorizon', '#1a0430', (c) => { blit(c, 'vortex', 24, 26, 0.34); blit(c, 'meteor', 32, 14, 0.55); blit(c, 'meteor', 13, 16, 0.4); });
   // passives
   I('might', '#6a1a0a', (c) => { glowDot(c, 24, 24, 18, 'rgba(255,90,40,0.9)'); poly(c, [[24, 10], [33, 24], [24, 38], [15, 24]], '#ffb070', OUT, 2); });
   I('haste', '#3a3a4a', (c) => { circle(c, 24, 24, 14, '#d0d8e8', OUT, 2.5); c.strokeStyle = OUT; c.lineWidth = 2.5; c.beginPath(); c.moveTo(24, 24); c.lineTo(24, 14); c.moveTo(24, 24); c.lineTo(31, 28); c.stroke(); });

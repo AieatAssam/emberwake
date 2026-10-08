@@ -3,7 +3,7 @@ import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, 
 import { T, makeGroundCanvas, makeVignetteCanvas } from './atlas.js';
 import {
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
-  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnerOf,
+  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf,
 } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity } from './audio.js';
@@ -343,12 +343,10 @@ export class Game {
       const def = WEAPONS[p.id];
       const lvl = w ? w.level + 1 : 1;
       let desc = w ? describeDelta(def.levels[w.level - 1]) : def.desc;
-      const fp = fusionPartnerOf(p.id);
-      let hint = '';
-      if (fp) {
+      const hint = fusionPartnersOf(p.id).map((fp) => {
         const has = this.weapons.find((x) => x.id === fp.partner);
-        hint = `Fuses with ${WEAPONS[fp.partner].name}${has ? ' ✓' : ''} → ${save.fusions[fp.fusion] ? FUSIONS[fp.fusion].name : '???'}`;
-      }
+        return `Fuses with ${WEAPONS[fp.partner].name}${has ? ' ✓' : ''} → ${save.fusions[fp.fusion] ? FUSIONS[fp.fusion].name : '???'}`;
+      }).join(' · or · ');
       return { ...p, name: def.name, level: lvl, isNew: !w, desc, hint, icon: p.id, max: lvl >= MAX_WEAPON_LEVEL };
     }
     if (p.kind === 'passive') {

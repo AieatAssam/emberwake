@@ -147,6 +147,11 @@ export const FUSIONS = {
     desc: 'Radiant ice erupts in every direction, freezing solid.',
     boost: { iceLance: { dmgMul: 1.9, amount: 3, freeze: 0.25 }, sanctum: { dmgMul: 1.8, amount: 8, pierce: 3, freeze: 0.2 } },
   },
+  eventHorizon: {
+    name: 'Event Horizon', parents: ['gravewell', 'starfall'],
+    desc: 'Vortices drag the horde into a single knot while the sky falls on it.',
+    boost: { gravewell: { dmgMul: 1.8, amount: 2, areaMul: 1.3 }, starfall: { dmgMul: 1.7, amount: 3, areaMul: 1.25, cdMul: 0.8 } },
+  },
 };
 
 export const PASSIVES = {
@@ -353,6 +358,16 @@ export function fusionFor(a, b) {
     if ((p[0] === a && p[1] === b) || (p[0] === b && p[1] === a)) return id;
   }
   return null;
+}
+// every fusion a weapon can join (a weapon may have more than one recipe)
+export function fusionPartnersOf(id) {
+  const out = [];
+  for (const fid in FUSIONS) {
+    const p = FUSIONS[fid].parents;
+    if (p[0] === id) out.push({ fusion: fid, partner: p[1] });
+    else if (p[1] === id) out.push({ fusion: fid, partner: p[0] });
+  }
+  return out;
 }
 export function fusionPartnerOf(id) {
   for (const fid in FUSIONS) {
