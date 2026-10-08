@@ -1006,6 +1006,7 @@ export class Game {
     }
 
     this.deathFxBudget = Math.round(18 / this.pressure);
+    this.glintBudget = this.fx.length < this.maxFx * 0.5 ? 3 : 0;
     // grid
     const pf = this.prof, now = performance.now.bind(performance);
     let t0 = now();
@@ -1421,6 +1422,12 @@ export class Game {
       p.x = g.x;
       p.y = g.y + (g.type === 'gem' ? Math.sin(g.t * 4 + g.x) * 2 : Math.sin(g.t * 3) * 3);
       if (g.type === 'chest' && Math.random() < dt * 6) this.spawnFx(T.spark, g.x + rand(-18, 18), g.y + rand(-20, 6), { life: 0.6, s0: 0.5, s1: 0, tint: 0xffd060, vy: -40 });
+      // occasional tier-coloured glints on visible gems (budgeted per frame)
+      else if (g.type === 'gem' && this.glintBudget > 0 && Math.random() < dt * 0.6 && this.inView(g.x, g.y, -20)) {
+        this.glintBudget--;
+        const v = g.value, tint = v >= 200 ? 0xffe080 : v >= 40 ? 0xe0a0ff : v >= 10 ? 0xff9aa8 : v >= 3 ? 0xa0ffb8 : 0xbfe6ff;
+        this.spawnFx(T.spark, g.x + rand(-4, 4), g.y - 6 + rand(-4, 4), { life: 0.35, s0: 0.7, s1: 0, tint, rot: Math.random(), spin: 4, drag: 0 });
+      }
     }
   }
 
