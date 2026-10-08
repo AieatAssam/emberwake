@@ -299,3 +299,10 @@ table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 /* records */
 table.records td img { width: 30px; height: 30px; object-fit: contain; }
 table.records td img.sil { filter: brightness(0); }
+
+/* pause run context */
+.run-ctx { display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: center; margin: -4px 0 12px; font-size: 13px; font-weight: 600; }
+.run-ctx span { padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+.heat-tag { color: #ff7a3a; border-color: rgba(255,122,58,.4) !important; }
+.daily-tag { color: var(--ember2); }
+.oc-tag { color: var(--fusion); }

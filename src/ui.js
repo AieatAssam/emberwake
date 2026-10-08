@@ -556,6 +556,13 @@ export class UI {
     this.open(`
       <div class="panel">
         <h2>Paused</h2>
+        <div class="run-ctx">
+          <span style="color:${STAGES[g.stageId].color}">${STAGES[g.stageId].name}</span>
+          ${g.heat ? `<span class="heat-tag">Heat ${g.heat}</span>` : ''}
+          ${g.daily ? `<span class="daily-tag">Daily ${g.daily.key}</span>` : ''}
+          ${g.pacts.map((p) => `<span class="pactname" title="${esc(PACTS[p].desc)}">${PACTS[p].name}</span>`).join('')}
+          ${g.overcharge ? `<span class="oc-tag">Overcharge ×${g.overcharge}</span>` : ''}
+        </div>
         <table class="dmg"><tr><th></th><th>Weapon</th><th></th><th>Damage</th><th>DPS</th></tr>${rows}</table>
         ${this.buildSummary(g)}
         <div class="row">
