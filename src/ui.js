@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL } from './data.js';
+import { CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, initAudio, setMuted, setMusic } from './audio.js';
@@ -52,6 +52,7 @@ export class UI {
         <div class="lineup">${Object.entries(CHARACTERS).map(([id, c], i) => `<img class="${s.unlocked[id] ? '' : 'locked'}" style="--c:${c.color};animation-delay:${i * -0.4}s" src="${spriteURL(c.sprite, 2)}" alt="${c.name}" title="${s.unlocked[id] ? c.name + ', ' + c.title : 'Locked'}">`).join('')}</div>
         <div class="menu">
           <button class="btn primary" data-a="play">Kindle a Run</button>
+          <button class="btn" data-a="daily">Daily Ember ${save.daily[dailyConfig().key] ? '<small>✓ today</small>' : '<small>+100 ✦</small>'}</button>
           <button class="btn" data-a="hearth">The Hearth <small>${s.cinders} ✦</small></button>
           <button class="btn" data-a="codex">Codex</button>
           <button class="btn" data-a="settings">Settings</button>
@@ -61,6 +62,7 @@ export class UI {
       </div>`, 'title');
     this.bind({
       play: () => this.showCharSelect(),
+      daily: () => this.showDaily(),
       hearth: () => this.showHearth(),
       codex: () => this.showCodex(),
       settings: () => this.showSettings(),
@@ -150,6 +152,34 @@ export class UI {
       };
     };
     render();
+  }
+
+  // ================= DAILY EMBER =================
+  showDaily() {
+    const d = dailyConfig(), c = CHARACTERS[d.charId], st = STAGES[d.stageId], rec = save.daily[d.key];
+    const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+    this.open(`
+      <div class="panel">
+        <h2>Daily Ember</h2>
+        <div class="sub">${d.key} · the same fixed setup for every Bearer today</div>
+        <div class="daily-grid">
+          <img src="${spriteURL(c.sprite, 2)}" alt="">
+          <div>
+            <div><b style="color:${c.color}">${c.name}, ${c.title}</b>${save.unlocked[d.charId] ? '' : ' <small class="trial">free trial</small>'}</div>
+            <div>Stage: <b>${st.name}</b></div>
+            <div>Bonus weapon: <img class="inl" src="${iconURL(d.weapon)}"> <b>${WEAPONS[d.weapon].name}</b></div>
+            <div>Sworn pacts: ${d.pacts.map((p) => `<b class="pactname">${PACTS[p].name}</b>`).join(', ')}</div>
+            <div class="mdesc">${d.pacts.map((p) => PACTS[p].desc).join(' · ')}</div>
+          </div>
+        </div>
+        <div class="daily-rec">${rec ? `Today's best: <b>${fmt(rec.time)}</b> · ${rec.kills} slain` : 'First run today pays <b>+100 ✦</b>'}</div>
+        <div class="row"><button class="btn" data-a="back">Back</button><button class="btn primary" data-a="go">Begin</button></div>
+      </div>`);
+    this.bind({
+      back: () => this.showTitle(),
+      go: () => { this.close(); this.h.startRun(d.charId, d.stageId, { daily: d }); },
+    });
+    this.keyHandler = (e) => { if (e.code === 'Escape') this.showTitle(); };
   }
 
   // ================= HEARTH (meta shop) =================
@@ -522,6 +552,13 @@ export class UI {
     const bonus = Math.round((Math.floor(g.time / 60) * 6 + g.kills / 80) * g.stats.greed) + (win ? 300 : 0);
     const total = g.cinders + bonus;
     save.cinders += total;
+    let dailyBonus = 0;
+    if (g.daily) {
+      const prev = save.daily[g.daily.key];
+      if (!prev) dailyBonus = 100;
+      save.daily[g.daily.key] = { time: Math.max(prev ? prev.time : 0, g.time), kills: Math.max(prev ? prev.kills : 0, g.kills) };
+      save.cinders += dailyBonus;
+    }
     save.totals.runs++; save.totals.kills += g.kills; save.totals.cinders += total;
     Object.assign(save.seen, g.seenRun);
     if (win) save.totals.wins++;
@@ -546,6 +583,7 @@ export class UI {
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
         ${newBest ? '<div class="newbest">NEW BEST TIME</div>' : ''}
         ${heatUnlocked ? `<div class="newbest">HEAT ${heatUnlocked} UNLOCKED</div>` : ''}
+        ${g.daily ? `<div class="sub">Daily Ember ${g.daily.key}${dailyBonus ? ` · first run bonus <b>+${dailyBonus} ✦</b>` : ''}</div>` : ''}
         ${g.heat ? `<div class="sub">${STAGES[g.stageId].name} · Heat ${g.heat}</div>` : ''}
         <div class="res-grid">
           <div><em>Survived</em><b>${fmtTime(g.time)}</b></div>
@@ -565,7 +603,7 @@ export class UI {
       </div>`, 'dim');
     const charId = g.charId;
     this.bind({
-      again: () => { this.close(); this.h.startRun(charId); },
+      again: () => { this.close(); g.daily ? this.h.startRun(g.daily.charId, g.daily.stageId, { daily: g.daily }) : this.h.startRun(charId); },
       hearth: () => { this.h.quitToTitle(); this.showHearth(); },
       title: () => { this.h.quitToTitle(); this.showTitle(); },
     });

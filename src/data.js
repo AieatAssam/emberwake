@@ -439,3 +439,21 @@ export const BESTIARY = {
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
 };
+
+// Daily Ember: a deterministic setup derived from the calendar date (same for everyone that day)
+export function dailyKey(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+export function dailyConfig(key = dailyKey()) {
+  let h = 2166136261;
+  for (const ch of key) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const r = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; };
+  const pick = (arr) => arr[Math.floor(r() * arr.length)];
+  const charId = pick(Object.keys(CHARACTERS));
+  const stageId = pick(Object.keys(STAGES));
+  const weapon = pick(Object.keys(WEAPONS).filter((w) => w !== CHARACTERS[charId].weapon));
+  const pactIds = Object.keys(PACTS);
+  const pacts = [pick(pactIds)];
+  if (r() < 0.5) { const p2 = pick(pactIds.filter((p) => p !== pacts[0])); pacts.push(p2); }
+  return { key, charId, stageId, weapon, pacts };
+}

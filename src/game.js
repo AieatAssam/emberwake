@@ -103,7 +103,7 @@ class Grid {
 let uidCounter = 1;
 
 export class Game {
-  constructor(app, ui, charId, stageId = 'gloam') {
+  constructor(app, ui, charId, stageId = 'gloam', opts = {}) {
     this.app = app;
     this.ui = ui;
     this.charId = charId;
@@ -111,7 +111,8 @@ export class Game {
     this.stageId = STAGES[stageId] ? stageId : 'gloam';
     this.stage = STAGES[this.stageId];
     // Heat: optional difficulty ladder, unlocked one level per win on this stage
-    this.heat = Math.max(0, Math.min(save.heatSel[this.stageId] || 0, save.heatMax[this.stageId] || 0));
+    this.daily = opts.daily || null;
+    this.heat = this.daily ? 0 : Math.max(0, Math.min(save.heatSel[this.stageId] || 0, save.heatMax[this.stageId] || 0));
 
     this.root = new Container();
     app.stage.addChild(this.root);
@@ -194,6 +195,12 @@ export class Game {
     this.player.hp = this.stats.maxHp;
     this.rerolls = this.stats.rerolls; this.banishes = this.stats.banishes;
     this.addWeapon(this.char.weapon);
+    if (this.daily) {
+      this.addWeapon(this.daily.weapon);
+      this.pacts.push(...this.daily.pacts);
+      this.recalcStats();
+      this.player.hp = this.stats.maxHp;
+    }
     this.zoom = 1;
     this.resize();
   }

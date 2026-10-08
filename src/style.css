@@ -275,3 +275,13 @@ table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 .card.mini.beast img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
 .card.mini.beast.unseen img { filter: brightness(0) drop-shadow(0 0 4px rgba(255,255,255,.2)); }
 .card.mini.beast.unseen b { color: var(--muted); }
+
+/* daily */
+.daily-grid { display: flex; gap: 14px; align-items: center; line-height: 1.8; font-size: 14px; }
+.daily-grid > img { width: 110px; height: 110px; filter: drop-shadow(0 0 14px rgba(255,160,80,.5)); flex: none; }
+.daily-grid .inl { width: 18px; height: 18px; vertical-align: middle; border-radius: 3px; }
+.pactname { color: #ff6a8a; }
+.trial { color: var(--fusion); border: 1px solid var(--fusion); border-radius: 5px; padding: 0 5px; font-size: 10px; }
+.daily-rec { text-align: center; margin-top: 12px; color: var(--muted); }
+.daily-rec b { color: var(--ember2); }
+@media (max-width: 520px) { .daily-grid { flex-direction: column; text-align: center; } }
