@@ -1124,7 +1124,10 @@ export class Game {
         const type = pool[(Math.random() * pool.length) | 0];
         const types = ['husk', 'sentinel', 'beetle', 'wraith', 'moth'];
         this.runEvent({ type, enemy: types[(Math.random() * types.length) | 0], count: 60 });
-        if (Math.random() < 0.25) this.runEvent({ type: 'boss', enemy: ['matron', 'colossus'][(Math.random() * 2) | 0] });
+        if (!this.boss && Math.random() < 0.25) {
+          const pool = ['matron', 'colossus', 'herald'];
+          this.runEvent({ type: 'boss', enemy: pool[(Math.random() * pool.length) | 0] });
+        }
       }
     }
     // periodic elites between scripted ones
