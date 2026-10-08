@@ -421,3 +421,21 @@ export const STAGES = {
     decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'],
   },
 };
+
+// Bestiary lore (original). Keys match ENEMIES.
+export const BESTIARY = {
+  gloomling: { name: 'Gloomling', lore: 'Oily scraps of the dark given hunger. Alone they are nothing; the Gloam never sends them alone.' },
+  moth: { name: 'Dusk Moth', lore: 'Drawn to any light, the Ember most of all. Fast, frail, and always fluttering just out of reach.' },
+  husk: { name: 'Husk', lore: 'Stone shells around a smouldering cinder heart. Slow to fall and slower to stop.' },
+  wraith: { name: 'Wraith', lore: 'The last breath of those the dark swallowed, drifting back toward warmth.' },
+  splitter: { name: 'Bloater', lore: 'A swollen brood-sac. Burst it and the brood spills out hungry.' },
+  broodling: { name: 'Broodling', lore: 'Newborn and already starving.' },
+  beetle: { name: 'Ram Beetle', lore: 'Lowers its horn, scrapes the ground, then charges in a straight line. Step aside.' },
+  spitter: { name: 'Spitter', lore: 'Keeps its distance and lobs venom. Only bothers when it can see you.' },
+  sentinel: { name: 'Sentinel', lore: 'A spined eye that watches the late hours of the night. Tough enough to outlast lesser builds.' },
+  imp: { name: 'Cinder Imp', lore: 'Ashfields pests that burst into embers when slain. Kill them at range.' },
+  frostwisp: { name: 'Frost Wisp', lore: 'Rimewood spirits whose touch steals the warmth from your legs.' },
+  matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
+  colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
+  tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
+};

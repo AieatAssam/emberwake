@@ -270,3 +270,8 @@ table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 .lineup img.locked { filter: brightness(0) drop-shadow(0 0 6px rgba(255,140,60,.35)); opacity: .7; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @media (max-height: 700px) { .lineup img { width: clamp(36px, 6vw, 60px); } }
+
+/* bestiary */
+.card.mini.beast img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+.card.mini.beast.unseen img { filter: brightness(0) drop-shadow(0 0 4px rgba(255,255,255,.2)); }
+.card.mini.beast.unseen b { color: var(--muted); }

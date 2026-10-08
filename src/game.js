@@ -183,6 +183,7 @@ export class Game {
     this.maxFx = this.baseFx = save.settings.lowfx ? Math.round(MAX_FX / 2) : MAX_FX;
     this.frameAvg = 1 / 60; this.qualT = 0;
     this.bossKills = {};
+    this.seenRun = {};
     this.featsEarned = [];
     this.featT = 0;
     this.prof = { weapons: 0, proj: 0, enemies: 0, fx: 0, pickups: 0, grid: 0 };
@@ -537,6 +538,7 @@ export class Game {
     }
     if (elite) e.p.tint = 0xffe0a0;
     this.enemies.push(e);
+    if (!d.inert) this.seenRun[type] = true;
     if (e.boss) {
       this.boss = e;
       this.ui.toast(`${bossName(type)} AWAKENS`, 'boss');

@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, STAGES, MAX_WEAPON_LEVEL } from './data.js';
+import { CHARACTERS, WEAPONS, PASSIVES, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, initAudio, setMuted, setMusic } from './audio.js';
@@ -210,6 +210,11 @@ export class UI {
         <div class="codex-grid">${fus}</div>
         <h3>Feats — ${Object.keys(save.feats).length}/${Object.keys(FEATS).length}</h3>
         <div class="mini-grid">${Object.entries(FEATS).map(([id, f]) => `<div class="card mini feat ${save.feats[id] ? 'done' : ''}"><div class="feat-ic">${save.feats[id] ? '★' : '☆'}</div><div><b>${f.name}</b><div class="mdesc">${f.desc} · ${f.reward} ✦</div></div></div>`).join('')}</div>
+        <h3>Bestiary — ${Object.keys(BESTIARY).filter((k) => save.seen[k]).length}/${Object.keys(BESTIARY).length} encountered</h3>
+        <div class="mini-grid">${Object.entries(BESTIARY).map(([id, b]) => {
+          const seen = save.seen[id], tex = ENEMIES[id].tex + '0';
+          return `<div class="card mini beast ${seen ? '' : 'unseen'}"><img src="${spriteURL(tex, 1)}" alt=""><div><b>${seen ? b.name : '???'}</b><div class="mdesc">${seen ? b.lore : 'Not yet encountered.'}</div></div></div>`;
+        }).join('')}</div>
         <h3>Weapons</h3><div class="mini-grid">${weps}</div>
         <h3>Relics</h3><div class="mini-grid">${pas}</div>
         <h3>How the Gloam works</h3>
@@ -518,6 +523,7 @@ export class UI {
     const total = g.cinders + bonus;
     save.cinders += total;
     save.totals.runs++; save.totals.kills += g.kills; save.totals.cinders += total;
+    Object.assign(save.seen, g.seenRun);
     if (win) save.totals.wins++;
     let heatUnlocked = 0;
     if (win && g.heat < 5 && (save.heatMax[g.stageId] || 0) <= g.heat) {
