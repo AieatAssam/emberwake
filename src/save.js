@@ -1,0 +1,35 @@
+const KEY = 'emberwake_save_v1';
+
+const DEFAULT = {
+  cinders: 0,
+  meta: {},
+  unlocked: { warden: true },
+  fusions: {},
+  best: { time: 0, kills: 0, level: 0 },
+  totals: { runs: 0, kills: 0, cinders: 0, wins: 0 },
+  settings: { muted: false, music: true, numbers: true, shake: true },
+};
+
+export const save = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      return { ...structuredClone(DEFAULT), ...s, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
+    }
+  } catch { /* storage unavailable */ }
+  return structuredClone(DEFAULT);
+}
+
+export function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* ignore */ }
+}
+
+export function resetSave() {
+  const s = structuredClone(DEFAULT);
+  for (const k of Object.keys(save)) delete save[k];
+  Object.assign(save, s);
+  persist();
+}
