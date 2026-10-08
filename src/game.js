@@ -504,7 +504,7 @@ export class Game {
     let hp = d.hp;
     if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
     // stage difficulty ramps in over the first 3 minutes so every stage has a fair opening
-    const ramp = Math.min(1, this.time / 180);
+    const ramp = Math.min(1, this.time / (180 + 30 * (this.heat || 0)));
     const h = (this.heat || 0) * ramp;
     // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
     const heatHp = 1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60);
@@ -1064,7 +1064,7 @@ export class Game {
     const wave = WAVES[this.waveIdx];
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
-    const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / 180);
+    const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
     rate *= this.stats.curse * heatSpawn; min *= this.stats.curse * heatSpawn;
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
