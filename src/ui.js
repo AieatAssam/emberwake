@@ -121,6 +121,7 @@ export class UI {
           <img src="${spriteURL(c.sprite, 2)}" alt="">
           <div class="cname">${c.name}</div><div class="ctitle">${c.title}</div>
           ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost">${c.cost} ✦</div>`}
+          ${un && (save.records['char:' + id] || {}).wins ? `<button class="dawn-btn ${save.skins[id] === 'dawn' ? 'on' : ''}" data-a="skin" data-id="${id}" title="Dawn variant (earned by breaking the Eclipse)">☀ Dawn</button>` : ''}
         </div>`;
       }).join('');
       const c = CHARACTERS[sel];
@@ -158,6 +159,7 @@ export class UI {
         </div>`);
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
+        skin: (el, ev) => { ev.stopPropagation(); const id = el.dataset.id; save.skins[id] = save.skins[id] === 'dawn' ? '' : 'dawn'; persist(); sel = id; render(); },
         heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
           const id = el.dataset.id, st = STAGES[id];

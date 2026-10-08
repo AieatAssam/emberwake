@@ -1,5 +1,5 @@
 // Emberwake core simulation + rendering.
-import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle } from 'pixi.js';
+import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas } from './atlas.js';
 import {
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
@@ -139,6 +139,12 @@ export class Game {
     this.playerGlow.blendMode = 'add';
     this.world.addChild(this.playerGlow);
     this.playerSprite = new Sprite(T[this.char.sprite]);
+    // Dawn variant: cosmetic golden hue for Bearers who have broken the Eclipse
+    if (save.skins[charId] === 'dawn') {
+      const cm = new ColorMatrixFilter();
+      cm.sepia(false); cm.saturate(0.35, true); cm.brightness(1.22, true);
+      this.playerSprite.filters = [cm];
+    }
     this.playerSprite.anchor.set(0.5, 0.88);
     this.world.addChild(this.playerSprite);
     this.hpBar = new Graphics();

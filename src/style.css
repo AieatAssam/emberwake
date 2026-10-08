@@ -315,3 +315,7 @@ table.records td img.sil { filter: brightness(0); }
 .slider { display: grid; grid-template-columns: 130px 1fr 48px; align-items: center; gap: 10px; padding: 6px 4px; font-size: 15px; }
 .slider input { accent-color: var(--ember); width: 100%; }
 .slider b { text-align: right; color: var(--ember2); font-size: 13px; }
+
+/* Dawn variant toggle */
+.dawn-btn { pointer-events: auto; margin-top: 6px; font: 600 11px var(--ui); letter-spacing: 1px; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 210, 122, 0.4); background: transparent; color: var(--muted); cursor: pointer; }
+.dawn-btn.on { background: linear-gradient(180deg, #ffd27a, #ff9a3a); color: #1a0800; border-color: #fff3c0; box-shadow: 0 0 10px rgba(255, 190, 80, 0.6); }
