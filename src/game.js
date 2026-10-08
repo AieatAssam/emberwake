@@ -154,7 +154,7 @@ export class Game {
 
     this.grid = new Grid(64);
     this.qa = []; this.qb = []; this.qExp = []; this.qNova = [];
-    this.fxPool = []; this.projPool = []; this.numPool = [];
+    this.fxPool = []; this.projPool = []; this.numPool = []; this.enemyPool = [];
 
     // state
     this.time = 0; this.kills = 0; this.level = 1; this.xp = 0; this.xpNext = xpForLevel(1);
@@ -488,13 +488,15 @@ export class Game {
     if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
     else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
-    const e = {
-      type, d, x, y, kx: 0, ky: 0, hp, maxHp: hp, alive: true, uid: uidCounter++,
-      speed: d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08), dmg: d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900),
-      r: d.r * scale, scale, xp: d.xp * (elite ? 10 : 1), elite, boss: !!d.boss, inert: !!d.inert,
-      flash: 0, slowT: 0, freezeT: 0, anim: Math.random() * 10, frame: 0, t: 0, state: 0, stT: d.boss ? 3.5 : rand(1, 3),
-      dirX: 0, dirY: 0, rush: o.rush || null, life: o.life || 0, phase: Math.random() * TAU, _q: 0, glow: null,
-    };
+    // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
+    const e = this.enemyPool.pop() || {};
+    e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
+    e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08);
+    e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900);
+    e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
+    e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
+    e.stT = d.boss ? 3.5 : rand(1, 3); e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
+    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
     e.p.scaleX = e.p.scaleY = scale;
@@ -1092,7 +1094,7 @@ export class Game {
     let contactDmg = 0, contactSrc = '', contactBoss = null;
     for (let i = es.length - 1; i >= 0; i--) {
       const e = es[i];
-      if (!e.alive) { es[i] = es[es.length - 1]; es.pop(); continue; }
+      if (!e.alive) { e.p = null; e.glow = null; this.enemyPool.push(e); es[i] = es[es.length - 1]; es.pop(); continue; }
       const p = e.p;
       if (e.inert) {
         e.anim += dt;
