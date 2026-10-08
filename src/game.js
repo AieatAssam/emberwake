@@ -205,7 +205,8 @@ export class Game {
     s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
     if (this.heat) s.greed *= 1 + 0.3 * this.heat; // heat's enemy buffs ramp in per spawn (see spawnEnemy/director)
     if (s.overcharge) { /* not used */ }
-    const oc = this.overcharge || 0;
+    // Heat dampens Overcharge so higher Heat stays tense after the build snowballs
+    const oc = (this.overcharge || 0) / (1 + 0.15 * (this.heat || 0));
     s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
     s.cooldown = Math.max(s.cooldown, 0.25);
     const prevMax = this.stats ? this.stats.maxHp : s.maxHp;

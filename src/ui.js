@@ -114,7 +114,7 @@ export class UI {
             const st = save.lastStage || 'gloam', mx = save.heatMax[st] || 0, cur = Math.min(save.heatSel[st] || 0, mx);
             if (!mx) return `<div class="heat-row muted">Win on this stage to unlock <b>Heat</b> — harder runs for richer cinders.</div>`;
             return `<div class="heat-row"><span>Heat</span>${Array.from({ length: mx + 1 }, (_, i) => `<button class="heat-btn ${i === cur ? 'on' : ''}" data-a="heat" data-h="${i}">${i}</button>`).join('')}
-              <em>${cur ? `+${cur * 25}% enemy health (growing +${cur * 3}%/min) · +${cur * 10}% spawns · more elites · +${cur * 30}% cinders` : 'Standard difficulty'}</em></div>`;
+              <em>${cur ? `+${cur * 25}% enemy health (growing +${cur * 3}%/min) · +${cur * 10}% spawns · more elites · weaker Overcharge · +${cur * 30}% cinders` : 'Standard difficulty'}</em></div>`;
           })()}
           <div class="row">
             <button class="btn" data-a="back">Back</button>
