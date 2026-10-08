@@ -1384,6 +1384,8 @@ export class Game {
     const ps = this.playerSprite;
     P.bob += rawDt * (P.moving ? 14 : 3);
     ps.x = P.x; ps.y = P.y + (P.moving ? -Math.abs(Math.sin(P.bob)) * 3 : 0);
+    const step = P.moving ? Math.sin(P.bob) : 0;
+    ps.texture = T[this.char.sprite + (step > 0.35 ? '_s1' : step < -0.35 ? '_s2' : '')];
     if (P.fx !== 0) ps.scale.x = P.fx < 0 ? -1 : 1;
     ps.scale.y = 1 + Math.sin(P.bob * 0.5) * (P.moving ? 0 : 0.02);
     ps.tint = P.hurtT > 0 ? 0xff6060 : this.buffs.bloodrage > 0 ? 0xff9090 : 0xffffff;

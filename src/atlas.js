@@ -319,14 +319,25 @@ function drawPickups() {
 }
 
 // ---------- characters ----------
+// STEP (-1, 0, 1) poses the legs for the walk cycle frames
+let STEP = 0;
 function legs(c, cx, by, col) {
   c.fillStyle = col; c.strokeStyle = OUT; c.lineWidth = 2;
-  c.beginPath(); c.roundRect(cx - 9, by - 10, 7, 11, 2); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(cx + 2, by - 10, 7, 11, 2); c.fill(); c.stroke();
+  const l = STEP * 3;
+  c.beginPath(); c.roundRect(cx - 9 + STEP, by - 10 - Math.max(0, l), 7, 11, 2); c.fill(); c.stroke();
+  c.beginPath(); c.roundRect(cx + 2 + STEP, by - 10 - Math.max(0, -l), 7, 11, 2); c.fill(); c.stroke();
+}
+// Each Bearer gets an idle frame plus two stepping frames (_s1, _s2)
+function makeChar(name, draw) {
+  for (const [suffix, st] of [['', 0], ['_s1', 1], ['_s2', -1]]) {
+    STEP = st;
+    make(name + suffix, 64, 64, (c) => { c.translate(0, st ? -1 : 0); draw(c); });
+  }
+  STEP = 0;
 }
 function drawCharacters() {
   // Kael — Ashen Warden: hooded, ash-grey cloak, carries a lantern with the Ember
-  make('warden', 64, 64, (c) => {
+  makeChar('warden', (c) => {
     shadow(c, 32, 58, 18, 5);
     legs(c, 32, 58, '#3a3346');
     poly(c, [[18, 52], [22, 26], [32, 18], [42, 26], [46, 52]], '#6b6478', OUT, 2.5);
@@ -341,10 +352,10 @@ function drawCharacters() {
     circle(c, 50, 45.5, 2.6, '#fff4c0');
   });
   // Ysolde — Rime Oracle: tall crystal headdress, icy robes, frost staff
-  make('oracle', 64, 64, (c) => {
+  makeChar('oracle', (c) => {
     shadow(c, 32, 58, 18, 5);
-    poly(c, [[17, 56], [24, 26], [40, 26], [47, 56]], '#2d5d8c', OUT, 2.5);
-    poly(c, [[24, 56], [28, 30], [36, 30], [40, 56]], '#bfe8ff');
+    poly(c, [[17 + STEP * 3, 56], [24, 26], [40, 26], [47 + STEP * 3, 56]], '#2d5d8c', OUT, 2.5);
+    poly(c, [[24 + STEP * 2, 56], [28, 30], [36, 30], [40 + STEP * 2, 56]], '#bfe8ff');
     circle(c, 32, 21, 8.5, '#e9d7c8', OUT, 2.5);
     poly(c, [[22, 18], [26, 4], [29, 12], [32, 0], [35, 12], [38, 4], [42, 18], [32, 15]], '#9fe6ff', OUT, 2);
     ellipse(c, 29, 22, 1.4, 2, '#1a3d66'); ellipse(c, 35, 22, 1.4, 2, '#1a3d66');
@@ -353,7 +364,7 @@ function drawCharacters() {
     poly(c, [[15, 9], [19, 17], [15, 25], [11, 17]], '#e8fbff', '#2a6a9a', 1.5);
   });
   // Pip — Clockwork Tinker: small, big goggles, brass backpack with antenna
-  make('tinker', 64, 64, (c) => {
+  makeChar('tinker', (c) => {
     shadow(c, 32, 58, 17, 5);
     legs(c, 32, 58, '#4a3524');
     c.fillStyle = '#b8862e'; c.strokeStyle = OUT; c.lineWidth = 2.5;
@@ -369,7 +380,7 @@ function drawCharacters() {
     c.strokeStyle = OUT; c.lineWidth = 1.5; c.beginPath(); c.arc(32, 28, 3, 0.2, Math.PI - 0.2); c.stroke();
   });
   // Grahm — Blood Reaver: crimson armor, horned helm, huge crescent axe
-  make('reaver', 64, 64, (c) => {
+  makeChar('reaver', (c) => {
     shadow(c, 32, 58, 19, 5);
     legs(c, 32, 58, '#3a1616');
     c.strokeStyle = '#4a3020'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(48, 54); c.lineTo(52, 12); c.stroke();
@@ -384,7 +395,7 @@ function drawCharacters() {
     eye(c, 29, 20, 1.4, '#ff3030'); eye(c, 35, 20, 1.4, '#ff3030');
   });
   // Lune — Moon Dancer: lithe, flowing violet scarf, moon circlet
-  make('dancer', 64, 64, (c) => {
+  makeChar('dancer', (c) => {
     shadow(c, 32, 58, 16, 5);
     legs(c, 32, 58, '#2b2244');
     c.fillStyle = '#c070ff'; c.beginPath(); c.moveTo(24, 30); c.quadraticCurveTo(6, 34, 4, 48); c.quadraticCurveTo(14, 38, 26, 36); c.fill();
