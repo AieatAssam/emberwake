@@ -92,7 +92,7 @@ export const WEAPONS = {
   },
   iceLance: {
     name: 'Rime Lance', element: 'frost', behavior: 'lance',
-    desc: 'Fires piercing icicles the way you move. Chills on hit.',
+    desc: 'Fires piercing icicles the way you move, snapping to foes ahead of you. Chills on hit.',
     base: { dmg: 15, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
     levels: L({ amount: 1 }, { dmg: 5 }, { pierce: 2 }, { amount: 1, cdMul: 0.9 }, { dmg: 7 }, { amount: 1 }, { amount: 2, pierce: 3 }),
   },
