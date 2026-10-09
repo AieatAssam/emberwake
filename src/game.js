@@ -39,6 +39,8 @@ const ENEMY_COLORS = {
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
   imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070, scarab: 0x2fd8c8, acolyte: 0xffc060, thief: 0xffd040,
 };
+// Hearth upgrades that are counted in whole items, not scaled stats
+const WHOLE_META = new Set(['amount', 'revival', 'reroll', 'banish', 'spark']);
 const CHEST_COL = { bronze: 0xd89050, silver: 0x8ad0ff, gold: 0xffd040, ascend: 0xe070ff };
 const chestTierOf = (n) => (n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze');
 
@@ -257,7 +259,7 @@ export class Game {
   // ---------- stats ----------
   recalcStats() {
     const s = { ...BASE_STATS };
-    for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, l); }
+    for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, WHOLE_META.has(k) ? l : l * TUNE.metaPower); }
     for (const k in ETERNAL) { const l = save.eternal[k] || 0; if (l) ETERNAL[k].apply(s, l); }
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
