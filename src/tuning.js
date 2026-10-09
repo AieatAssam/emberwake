@@ -15,9 +15,9 @@ export const TUNE = {
   xpCurve: 2.5, // how steeply level cost grows after level 12 (0 = flat)
   chestBig: 0.5, // chance of 3- and 5-item chests
   eliteChest: 0.6, // chance a slain elite drops a chest
-  metaPower: 0.5, // strength of Hearth stat upgrades (whole-number upgrades like Twin Flame are unaffected)
-  hpMid: 7, // extra enemy health from minute 4, growing to (1+hpMid)x by minute 15
-  dmgMid: 0.8, // extra enemy damage on the same ramp
+  metaPower: 0.3, // strength of Hearth stat upgrades (whole-number upgrades like Twin Flame are unaffected)
+  hpMid: 5.5, // extra enemy health from minute 4, growing to (1+hpMid)x by minute 15
+  dmgMid: 0.6, // extra enemy damage on the same ramp
   eliteEvery: 1.4, // multiplier on the gap between periodic elites
 };
 export const TUNE_DEFAULTS = { ...TUNE };
