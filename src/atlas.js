@@ -388,12 +388,6 @@ function drawPickups() {
 // ---------- characters ----------
 // STEP (-1, 0, 1) poses the legs for the walk cycle frames
 let STEP = 0;
-function legs(c, cx, by, col) {
-  c.fillStyle = col; c.strokeStyle = OUT; c.lineWidth = 2;
-  const l = STEP * 3;
-  c.beginPath(); c.roundRect(cx - 9 + STEP, by - 10 - Math.max(0, l), 7, 11, 2); c.fill(); c.stroke();
-  c.beginPath(); c.roundRect(cx + 2 + STEP, by - 10 - Math.max(0, -l), 7, 11, 2); c.fill(); c.stroke();
-}
 // Each Bearer gets an idle frame plus two stepping frames (_s1, _s2)
 function makeChar(name, draw) {
   for (const [suffix, st] of [['', 0], ['_s1', 1], ['_s2', -1]]) {
@@ -402,107 +396,189 @@ function makeChar(name, draw) {
   }
   STEP = 0;
 }
+// Bearers are drawn chibi: oversized heads, big glossy eyes, a strong silhouette and one signature prop each.
+function bigEye(c, x, y, iris, rx = 3.6, ry = 4.6) {
+  ellipse(c, x, y, rx, ry, '#fff', OUT, 1.6);
+  ellipse(c, x + 0.4, y + 0.7, rx * 0.72, ry * 0.78, iris);
+  circle(c, x + 0.4, y + 1, rx * 0.36, '#140a1c');
+  circle(c, x - 0.9, y - 1.5, 1.3, '#fff');
+}
+function smile(c, x, y, w, col = OUT) {
+  c.strokeStyle = col; c.lineWidth = 1.8; c.lineCap = 'round';
+  c.beginPath(); c.arc(x, y, w, 0.25, Math.PI - 0.25); c.stroke();
+}
+function blush(c, x, y) { ellipse(c, x, y, 3.2, 2, 'rgba(255,110,120,0.55)'); }
+// short chibi legs with boots
+function boots(c, cx, col, boot) {
+  const l = STEP * 3;
+  for (const [dx, lift] of [[-6, Math.max(0, l)], [2, Math.max(0, -l)]]) {
+    c.fillStyle = col; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.beginPath(); c.roundRect(cx + dx + STEP, 49 - lift, 6, 8, 2); c.fill(); c.stroke();
+    c.fillStyle = boot; c.beginPath(); c.roundRect(cx + dx - 1 + STEP, 55 - lift, 8, 4, 2); c.fill(); c.stroke();
+  }
+}
 function drawCharacters() {
-  // Kael — Ashen Warden: hooded, ash-grey cloak, carries a lantern with the Ember
+  // Kael — Ashen Warden: grey hood, big amber eyes, trailing ember-orange scarf, lantern holding the last Ember
   makeChar('warden', (c) => {
-    shadow(c, 32, 58, 18, 5);
-    legs(c, 32, 58, '#3a3346');
-    poly(c, [[18, 52], [22, 26], [32, 18], [42, 26], [46, 52]], '#6b6478', OUT, 2.5);
-    poly(c, [[22, 52], [26, 30], [32, 26], [38, 30], [42, 52]], '#8a8296');
-    poly(c, [[20, 28], [32, 8], [44, 28], [38, 32], [26, 32]], '#585068', OUT, 2.5); // hood
-    ellipse(c, 32, 26, 7.5, 6, '#140d1e');
-    eye(c, 29, 26, 1.6, '#ffb040'); eye(c, 35, 26, 1.6, '#ffb040');
-    c.strokeStyle = '#2a2232'; c.lineWidth = 2; c.beginPath(); c.moveTo(47, 32); c.lineTo(50, 40); c.stroke();
-    glowDot(c, 50, 46, 14, 'rgba(255,150,40,0.85)');
+    shadow(c, 32, 59, 17, 5);
+    boots(c, 32, '#3a3346', '#2a2232');
+    // scarf tail streams behind, swaying with the stride
+    c.fillStyle = '#e8662a'; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(24, 36); c.quadraticCurveTo(10, 38 + STEP * 2, 4, 46 - STEP * 2); c.lineTo(9, 50 - STEP * 2); c.quadraticCurveTo(16, 44, 26, 42); c.closePath(); c.fill(); c.stroke();
+    poly(c, [[19, 50], [21, 33], [43, 33], [45, 50]], '#6b6478', OUT, 2.5);
+    poly(c, [[26, 50], [27, 36], [37, 36], [38, 50]], '#8a8296');
+    c.fillStyle = '#ff8a3a'; c.beginPath(); c.roundRect(22, 33, 20, 6, 3); c.fill(); c.stroke(); // scarf wrap
+    // big hood
+    c.beginPath(); c.moveTo(16, 30); c.bezierCurveTo(14, 8, 28, 3, 32, 3); c.bezierCurveTo(36, 3, 50, 8, 48, 30); c.quadraticCurveTo(32, 36, 16, 30);
+    c.fillStyle = lin(c, 0, 3, 0, 32, [[0, '#7a7288'], [1, '#585068']]); c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    ellipse(c, 32, 21, 11.5, 9.5, '#160e22');
+    bigEye(c, 27.5, 21, '#ffb030'); bigEye(c, 36.5, 21, '#ffb030');
+    glowDot(c, 27.5, 21, 7, 'rgba(255,170,40,0.35)'); glowDot(c, 36.5, 21, 7, 'rgba(255,170,40,0.35)');
+    // lantern
+    c.strokeStyle = '#2a2232'; c.lineWidth = 2; c.beginPath(); c.moveTo(46, 38); c.lineTo(51, 42); c.stroke();
+    glowDot(c, 52, 49, 15, 'rgba(255,150,40,0.9)');
     c.fillStyle = '#d0a040'; c.strokeStyle = OUT; c.lineWidth = 2;
-    c.beginPath(); c.roundRect(46, 40, 8, 11, 2); c.fill(); c.stroke();
-    circle(c, 50, 45.5, 2.6, '#fff4c0');
+    c.beginPath(); c.roundRect(47, 43, 10, 12, 3); c.fill(); c.stroke();
+    circle(c, 52, 49, 3.4, '#fff4c0');
+    poly(c, [[52, 36], [55, 42], [49, 42]], '#ffb040');
   });
-  // Ysolde — Rime Oracle: tall crystal headdress, icy robes, frost staff
+  // Ysolde — Rime Oracle: long frost-white hair, crystal tiara, star-bright eyes, floating-orb staff
   makeChar('oracle', (c) => {
-    shadow(c, 32, 58, 18, 5);
-    poly(c, [[17 + STEP * 3, 56], [24, 26], [40, 26], [47 + STEP * 3, 56]], '#2d5d8c', OUT, 2.5);
-    poly(c, [[24 + STEP * 2, 56], [28, 30], [36, 30], [40 + STEP * 2, 56]], '#bfe8ff');
-    circle(c, 32, 21, 8.5, '#e9d7c8', OUT, 2.5);
-    poly(c, [[22, 18], [26, 4], [29, 12], [32, 0], [35, 12], [38, 4], [42, 18], [32, 15]], '#9fe6ff', OUT, 2);
-    ellipse(c, 29, 22, 1.4, 2, '#1a3d66'); ellipse(c, 35, 22, 1.4, 2, '#1a3d66');
-    c.strokeStyle = '#d8e6f0'; c.lineWidth = 3; c.beginPath(); c.moveTo(13, 56); c.lineTo(15, 20); c.stroke();
-    glowDot(c, 15, 17, 12, 'rgba(120,220,255,0.9)');
-    poly(c, [[15, 9], [19, 17], [15, 25], [11, 17]], '#e8fbff', '#2a6a9a', 1.5);
+    shadow(c, 32, 59, 16, 5);
+    // long hair behind
+    c.fillStyle = '#dff4ff'; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(16, 18); c.bezierCurveTo(8, 34, 12, 48, 20 + STEP * 2, 52); c.lineTo(44 + STEP * 2, 52); c.bezierCurveTo(52, 48, 56, 34, 48, 18); c.closePath(); c.fill(); c.stroke();
+    boots(c, 32, '#2d5d8c', '#1a3d66');
+    poly(c, [[18 + STEP * 2, 54], [22, 33], [42, 33], [46 + STEP * 2, 54]], '#3d86c8', OUT, 2.5);
+    poly(c, [[26 + STEP, 54], [28, 36], [36, 36], [38 + STEP, 54]], '#cdeeff');
+    c.fillStyle = '#7fd8ff'; c.beginPath(); c.roundRect(24, 34, 16, 4, 2); c.fill();
+    // head
+    circle(c, 32, 21, 13, '#f6e2d2', OUT, 2.5);
+    c.fillStyle = '#e8f8ff'; c.beginPath(); c.moveTo(19, 22); c.bezierCurveTo(18, 6, 46, 6, 45, 22); c.quadraticCurveTo(40, 12, 32, 13); c.quadraticCurveTo(24, 12, 19, 22);
+    c.fill(); c.stroke();
+    bigEye(c, 27, 23, '#38b8ff', 3.4, 4.4); bigEye(c, 37, 23, '#38b8ff', 3.4, 4.4);
+    blush(c, 22.5, 28); blush(c, 41.5, 28); smile(c, 32, 28.5, 2.2);
+    // tiara
+    poly(c, [[22, 11], [25, 0], [29, 8], [32, -2], [35, 8], [39, 0], [42, 11]], '#9fe6ff', OUT, 2);
+    glowDot(c, 32, 5, 7, 'rgba(160,235,255,0.8)');
+    // staff with floating orb
+    c.strokeStyle = '#dfe9f2'; c.lineWidth = 3; c.beginPath(); c.moveTo(52, 56); c.lineTo(53, 28); c.stroke();
+    glowDot(c, 53, 22 + STEP, 13, 'rgba(120,225,255,0.9)');
+    poly(c, [[53, 14 + STEP], [57, 22 + STEP], [53, 30 + STEP], [49, 22 + STEP]], '#f0fdff', '#2a6a9a', 1.5);
   });
-  // Pip — Clockwork Tinker: small, big goggles, brass backpack with antenna
+  // Pip — Clockwork Tinker: tiny, spiky ginger hair, huge goggles, gap-toothed grin, spinning-gear backpack
   makeChar('tinker', (c) => {
-    shadow(c, 32, 58, 17, 5);
-    legs(c, 32, 58, '#4a3524');
-    c.fillStyle = '#b8862e'; c.strokeStyle = OUT; c.lineWidth = 2.5;
-    c.beginPath(); c.roundRect(37, 28, 14, 18, 3); c.fill(); c.stroke();
-    c.strokeStyle = '#555'; c.lineWidth = 2; c.beginPath(); c.moveTo(46, 28); c.lineTo(48, 14); c.stroke();
-    glowDot(c, 48, 13, 6, 'rgba(120,255,200,0.9)');
-    poly(c, [[20, 52], [21, 32], [43, 32], [44, 52]], '#4f7a5a', OUT, 2.5);
-    c.fillStyle = '#d9b48a'; c.beginPath(); c.roundRect(20, 14, 24, 20, 8); c.fill(); c.strokeStyle = OUT; c.stroke();
-    c.fillStyle = '#7a4a22'; c.beginPath(); c.roundRect(19, 11, 26, 7, 4); c.fill(); c.stroke();
-    circle(c, 27, 22, 5.5, '#2a2a2a', OUT, 2); circle(c, 37, 22, 5.5, '#2a2a2a', OUT, 2);
-    circle(c, 27, 22, 3.6, '#7ef0ff'); circle(c, 37, 22, 3.6, '#7ef0ff');
-    circle(c, 26, 21, 1.2, '#fff'); circle(c, 36, 21, 1.2, '#fff');
-    c.strokeStyle = OUT; c.lineWidth = 1.5; c.beginPath(); c.arc(32, 28, 3, 0.2, Math.PI - 0.2); c.stroke();
+    shadow(c, 32, 59, 16, 5);
+    // brass backpack + gear + antenna
+    c.fillStyle = '#c28a30'; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(38, 32, 15, 18, 4); c.fill(); c.stroke();
+    c.save(); c.translate(45.5, 41); c.rotate(STEP * 0.5);
+    c.fillStyle = '#ffd27a'; c.beginPath(); for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU; c.lineTo(Math.cos(a) * (i % 2 ? 4 : 6), Math.sin(a) * (i % 2 ? 4 : 6)); } c.closePath(); c.fill(); c.lineWidth = 1.2; c.stroke(); c.restore();
+    c.strokeStyle = '#666'; c.lineWidth = 2; c.beginPath(); c.moveTo(48, 32); c.lineTo(50, 18); c.stroke();
+    glowDot(c, 50, 17, 7, 'rgba(120,255,200,0.95)');
+    boots(c, 30, '#4a3524', '#7a4a22');
+    // overalls
+    poly(c, [[19, 51], [20, 34], [42, 34], [43, 51]], '#3f7a8a', OUT, 2.5);
+    c.fillStyle = '#e8d6a8'; c.beginPath(); c.roundRect(24, 34, 14, 9, 3); c.fill(); c.stroke();
+    circle(c, 31, 40, 1.6, '#c28a30');
+    // head
+    circle(c, 30, 22, 13.5, '#f0c9a0', OUT, 2.5);
+    poly(c, [[16, 18], [14, 8], [21, 12], [22, 2], [28, 9], [32, 0], [35, 9], [41, 3], [41, 12], [47, 10], [44, 20], [30, 12]], '#e8702a', OUT, 2);
+    // goggles over eyes
+    c.fillStyle = '#6a4a2a'; c.fillRect(16, 19, 28, 4);
+    circle(c, 24, 23, 7, '#2a2a2a', OUT, 2); circle(c, 37, 23, 7, '#2a2a2a', OUT, 2);
+    circle(c, 24, 23, 5, '#7ef0ff'); circle(c, 37, 23, 5, '#7ef0ff');
+    circle(c, 25, 24, 2.3, '#10202a'); circle(c, 38, 24, 2.3, '#10202a');
+    circle(c, 22.6, 21, 1.6, '#fff'); circle(c, 35.6, 21, 1.6, '#fff');
+    // grin with a gap
+    c.fillStyle = '#4a1a1a'; c.beginPath(); c.arc(30.5, 31, 4.6, 0.1, Math.PI - 0.1); c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.6; c.stroke();
+    c.fillStyle = '#fff'; c.fillRect(28, 28.4, 2.6, 2.6); c.fillRect(32, 28.4, 2.6, 2.6);
+    // wrench
+    c.save(); c.translate(11, 44); c.rotate(-0.5 + STEP * 0.2);
+    c.fillStyle = '#c8ccd8'; c.beginPath(); c.roundRect(-2, -12, 4, 20, 2); c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.6; c.stroke();
+    c.beginPath(); c.arc(0, -13, 5, 0.5, TAU - 0.5); c.stroke(); c.restore();
   });
-  // Grahm — Blood Reaver: crimson armor, horned helm, huge crescent axe
+  // Grahm — Blood Reaver: huge pauldrons, horned helm, toothy war-grin, crescent axe over the shoulder
   makeChar('reaver', (c) => {
-    shadow(c, 32, 58, 19, 5);
-    legs(c, 32, 58, '#3a1616');
-    c.strokeStyle = '#4a3020'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(48, 54); c.lineTo(52, 12); c.stroke();
-    c.beginPath(); c.moveTo(52, 12); c.quadraticCurveTo(64, 20, 56, 34); c.quadraticCurveTo(58, 22, 51, 20); c.closePath();
-    c.fillStyle = '#d8d8e0'; c.fill(); c.lineWidth = 2; c.strokeStyle = OUT; c.stroke();
-    poly(c, [[16, 50], [18, 28], [46, 28], [48, 50]], '#8e1c24', OUT, 2.5);
-    poly(c, [[24, 50], [26, 32], [38, 32], [40, 50]], '#b8323a');
-    circle(c, 18, 30, 6, '#5a5a66', OUT, 2); circle(c, 46, 30, 6, '#5a5a66', OUT, 2);
-    c.fillStyle = '#5a5a66'; c.beginPath(); c.roundRect(22, 10, 20, 20, 7); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
-    poly(c, [[22, 16], [12, 4], [16, 16]], '#e8dcc0', OUT, 2); poly(c, [[42, 16], [52, 4], [48, 16]], '#e8dcc0', OUT, 2);
-    c.fillStyle = '#140808'; c.fillRect(25, 18, 14, 4);
-    eye(c, 29, 20, 1.4, '#ff3030'); eye(c, 35, 20, 1.4, '#ff3030');
+    shadow(c, 32, 59, 19, 5);
+    // axe behind
+    c.strokeStyle = '#4a3020'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(50, 56); c.lineTo(54 + STEP, 8); c.stroke();
+    c.beginPath(); c.moveTo(54 + STEP, 6); c.quadraticCurveTo(68, 16, 58, 32); c.quadraticCurveTo(61, 20, 53 + STEP, 17); c.closePath();
+    c.fillStyle = '#e4e4ee'; c.fill(); c.lineWidth = 2; c.strokeStyle = OUT; c.stroke();
+    boots(c, 32, '#3a1616', '#24100e');
+    poly(c, [[16, 51], [18, 33], [46, 33], [48, 51]], '#8e1c24', OUT, 2.5);
+    poly(c, [[25, 51], [27, 36], [37, 36], [39, 51]], '#c43a44');
+    c.fillStyle = '#3a2a2a'; c.fillRect(17, 45, 30, 4); circle(c, 32, 47, 3, '#d8b040', OUT, 1.5);
+    // pauldrons
+    for (const x of [14, 50]) { circle(c, x, 33, 8, '#6a6a78', OUT, 2.5); circle(c, x - 1.5, 31, 3, '#9a9aaa'); poly(c, [[x - 3, 26], [x, 17], [x + 3, 26]], '#d8d0b8', OUT, 1.5); }
+    // helm
+    c.fillStyle = '#6a6a78'; c.beginPath(); c.roundRect(17, 6, 30, 28, 11); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
+    poly(c, [[19, 14], [6, 0], [10, 17]], '#efe4c8', OUT, 2); poly(c, [[45, 14], [58, 0], [54, 17]], '#efe4c8', OUT, 2);
+    c.fillStyle = '#1a0c0c'; c.beginPath(); c.roundRect(21, 15, 22, 11, 4); c.fill();
+    // angry brows + glowing eyes + teeth
+    c.strokeStyle = '#1a0c0c'; c.lineWidth = 3; c.beginPath(); c.moveTo(22, 13); c.lineTo(30, 17); c.moveTo(42, 13); c.lineTo(34, 17); c.stroke();
+    ellipse(c, 27, 21, 2.8, 2.4, '#ff3a2a'); ellipse(c, 37, 21, 2.8, 2.4, '#ff3a2a');
+    circle(c, 26.4, 20.4, 0.9, '#fff'); circle(c, 36.4, 20.4, 0.9, '#fff');
+    c.fillStyle = '#f4f0e0'; c.beginPath(); c.roundRect(24, 28, 16, 5, 2); c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.5; c.stroke();
+    c.strokeStyle = OUT; c.lineWidth = 1; c.beginPath(); for (let x = 27; x < 40; x += 3.2) { c.moveTo(x, 28); c.lineTo(x, 33); } c.stroke();
   });
-  // Brannoc — The Bellwright: stout bronze-smith with a great bell strapped to his back
+  // Brannoc — The Bellwright: round, jolly, braided copper beard, great bronze bell on his back, big hammer
   makeChar('bellwright', (c) => {
-    shadow(c, 32, 58, 20, 5);
-    // the bell, behind him
-    c.save(); c.translate(43, 26);
-    c.beginPath(); c.moveTo(-9, -12); c.quadraticCurveTo(-11, 6, -15, 12); c.lineTo(15, 12); c.quadraticCurveTo(11, 6, 9, -12); c.quadraticCurveTo(0, -18, -9, -12);
-    c.fillStyle = lin(c, -15, 0, 15, 0, [[0, '#7a4a18'], [0.45, '#e0a040'], [1, '#6a3a10']]); c.fill();
+    shadow(c, 32, 59, 20, 5);
+    // bell behind, swings with the stride
+    c.save(); c.translate(44, 26); c.rotate(STEP * 0.1);
+    c.beginPath(); c.moveTo(-9, -12); c.quadraticCurveTo(-11, 6, -16, 13); c.lineTo(16, 13); c.quadraticCurveTo(11, 6, 9, -12); c.quadraticCurveTo(0, -19, -9, -12);
+    c.fillStyle = lin(c, -16, 0, 16, 0, [[0, '#7a4a18'], [0.45, '#f0b850'], [1, '#6a3a10']]); c.fill();
     c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
-    c.fillStyle = '#ffd27a'; c.fillRect(-14, 8, 28, 3);
-    circle(c, 0, 15, 3, '#4a2a0a', OUT, 1.5);
+    c.fillStyle = '#ffd27a'; c.fillRect(-15, 9, 30, 3);
+    circle(c, 0, 16, 3.2, '#4a2a0a', OUT, 1.5);
     c.restore();
-    legs(c, 30, 58, '#3a2a1e');
-    // stout body with leather apron
-    c.fillStyle = '#5a4a3e'; c.strokeStyle = OUT; c.lineWidth = 2.5;
-    c.beginPath(); c.roundRect(16, 28, 30, 24, 8); c.fill(); c.stroke();
-    poly(c, [[21, 31], [41, 31], [39, 52], [23, 52]], '#7a4a2a');
-    c.fillStyle = '#c08a40'; c.fillRect(21, 38, 20, 3);
-    // strap across chest
-    c.strokeStyle = '#3a2214'; c.lineWidth = 3; c.beginPath(); c.moveTo(18, 30); c.lineTo(42, 46); c.stroke();
-    // head: broad, braided beard
-    c.fillStyle = '#e0b898'; c.beginPath(); c.roundRect(20, 12, 20, 18, 7); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
-    poly(c, [[20, 22], [40, 22], [37, 34], [30, 38], [23, 34]], '#c06a2a', OUT, 2);
-    c.strokeStyle = '#8a4418'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(27, 25); c.lineTo(28, 34); c.moveTo(33, 25); c.lineTo(32, 34); c.stroke();
-    c.fillStyle = '#3a2a22'; c.beginPath(); c.roundRect(19, 9, 22, 7, 3); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
-    eye(c, 26, 19, 1.4, '#ffcf6a'); eye(c, 34, 19, 1.4, '#ffcf6a');
-    // hammer in hand
-    c.strokeStyle = '#4a3020'; c.lineWidth = 3; c.beginPath(); c.moveTo(14, 46); c.lineTo(10, 34); c.stroke();
-    c.fillStyle = '#9aa0b0'; c.beginPath(); c.roundRect(4, 29, 12, 7, 2); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
+    boots(c, 30, '#3a2a1e', '#2a1c12');
+    // barrel body + apron
+    c.fillStyle = '#6a5446'; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(15, 31, 32, 21, 9); c.fill(); c.stroke();
+    poly(c, [[20, 34], [42, 34], [40, 52], [22, 52]], '#8a5a30');
+    c.fillStyle = '#d4a050'; c.fillRect(20, 41, 22, 3);
+    // head: broad, bushy brows, big copper beard
+    circle(c, 31, 20, 14.5, '#eec4a0', OUT, 2.5);
+    c.fillStyle = '#3a2a22'; c.beginPath(); c.roundRect(16, 5, 30, 8, 4); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.moveTo(17, 24); c.quadraticCurveTo(14, 42, 31, 46); c.quadraticCurveTo(48, 42, 45, 24); c.quadraticCurveTo(31, 33, 17, 24);
+    c.fillStyle = '#d0702a'; c.fill(); c.lineWidth = 2.5; c.stroke();
+    c.strokeStyle = '#9a4a16'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(25, 33); c.lineTo(25, 42); c.moveTo(31, 34); c.lineTo(31, 44); c.moveTo(37, 33); c.lineTo(37, 42); c.stroke();
+    c.strokeStyle = '#c0601c'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(22, 15); c.lineTo(29, 17); c.moveTo(40, 15); c.lineTo(33, 17); c.stroke();
+    bigEye(c, 26, 20, '#ffcf6a', 3, 3.8); bigEye(c, 36, 20, '#ffcf6a', 3, 3.8);
+    ellipse(c, 31, 24.5, 3, 2.3, '#e09a78', OUT, 1.4); smile(c, 31, 26.5, 4);
+    // hammer
+    c.strokeStyle = '#4a3020'; c.lineWidth = 3.5; c.beginPath(); c.moveTo(13, 49); c.lineTo(9, 32); c.stroke();
+    c.fillStyle = '#a8aebe'; c.beginPath(); c.roundRect(2, 26, 15, 9, 3); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
   });
-  // Lune — Moon Dancer: lithe, flowing violet scarf, moon circlet
+  // Lune — Moon Dancer: violet ponytail, moon circlet, a cheeky wink, long fluttering scarf, poised stance
   makeChar('dancer', (c) => {
-    shadow(c, 32, 58, 16, 5);
-    legs(c, 32, 58, '#2b2244');
-    c.fillStyle = '#c070ff'; c.beginPath(); c.moveTo(24, 30); c.quadraticCurveTo(6, 34, 4, 48); c.quadraticCurveTo(14, 38, 26, 36); c.fill();
-    poly(c, [[22, 50], [25, 28], [39, 28], [42, 50]], '#3d2f6e', OUT, 2.5);
-    poly(c, [[27, 50], [29, 31], [35, 31], [37, 50]], '#e6e0ff');
-    circle(c, 32, 20, 8.5, '#f0d9c8', OUT, 2.5);
-    c.fillStyle = '#e6e0ff'; c.beginPath(); c.arc(32, 15, 9.5, Math.PI, 0); c.fill(); c.strokeStyle = OUT; c.lineWidth = 2; c.stroke();
-    glowDot(c, 32, 9, 7, 'rgba(220,210,255,0.9)');
-    c.fillStyle = '#fff'; c.beginPath(); c.arc(32, 9, 4, 0, TAU); c.fill();
-    c.fillStyle = '#e6e0ff'; c.beginPath(); c.arc(33.5, 8, 3.4, 0, TAU); c.fill();
-    ellipse(c, 29, 21, 1.3, 1.8, '#4a2a7a'); ellipse(c, 35, 21, 1.3, 1.8, '#4a2a7a');
+    shadow(c, 32, 59, 15, 5);
+    // ponytail + scarf trail behind
+    c.fillStyle = '#7a4ae0'; c.strokeStyle = OUT; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(44, 10); c.bezierCurveTo(60, 8 + STEP * 2, 60, 30, 52, 38 - STEP * 3); c.bezierCurveTo(54, 26, 52, 18, 44, 18); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#d28aff';
+    c.beginPath(); c.moveTo(24, 36); c.quadraticCurveTo(8, 36 - STEP * 2, 2, 50 + STEP * 2); c.lineTo(8, 54 + STEP * 2); c.quadraticCurveTo(14, 44, 26, 42); c.closePath(); c.fill(); c.stroke();
+    boots(c, 32, '#2b2244', '#c9a0ff');
+    poly(c, [[22, 51], [24, 33], [40, 33], [42, 51]], '#4a3a8e', OUT, 2.5);
+    poly(c, [[28, 51], [29, 36], [35, 36], [36, 51]], '#f0eaff');
+    c.fillStyle = '#e8b8ff'; c.beginPath(); c.roundRect(23, 33, 18, 5, 2.5); c.fill(); c.stroke();
+    // head
+    circle(c, 32, 21, 13, '#f6dcc8', OUT, 2.5);
+    c.fillStyle = '#7a4ae0'; c.beginPath(); c.moveTo(18, 22); c.bezierCurveTo(16, 4, 48, 4, 46, 22); c.quadraticCurveTo(42, 12, 36, 14); c.lineTo(32, 9); c.lineTo(28, 15); c.quadraticCurveTo(22, 12, 18, 22);
+    c.fill(); c.lineWidth = 2.5; c.stroke();
+    // winking eye + open eye
+    bigEye(c, 37, 23, '#c070ff', 3.4, 4.4);
+    c.strokeStyle = OUT; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.arc(27, 23, 3.2, 0.15, Math.PI - 0.15, true); c.stroke();
+    blush(c, 22, 28); blush(c, 42, 28);
+    c.fillStyle = '#c04a6a'; c.beginPath(); c.arc(33, 28.4, 3, 0.1, Math.PI - 0.1); c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.4; c.stroke();
+    // moon circlet
+    glowDot(c, 32, 9, 8, 'rgba(225,215,255,0.9)');
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(32, 9, 4.6, 0, TAU); c.fill();
+    c.fillStyle = '#7a4ae0'; c.beginPath(); c.arc(33.8, 8, 3.8, 0, TAU); c.fill();
+    // glaive
+    c.strokeStyle = '#d8d0ff'; c.lineWidth = 2.4; c.beginPath(); c.arc(12, 44, 7, -1.2, 1.6 + STEP * 0.2); c.stroke();
   });
 }
 
