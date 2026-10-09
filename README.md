@@ -25,7 +25,13 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 - **Ember Thieves** flee with a chest — catch them. **Blood Moons** make foes faster and XP double.
 - **Pact of the Wick** — a new Dark Pact: harder-hitting foes in exchange for a revival.
 - Reactive music (menu theme, A-A-B-C song form with echoing counter-melody, boss and Hollow layers, pause muffle) and a much wider sound palette.
-- 6 Bearers, 15 weapons, 8 Ascensions, 15 relics, 10+ enemy types, 3 bosses, 4 stages, endless mode.
+- **Soft obstacles** — pillars, tombs, crystals and trees resist you (you slide along them, or wade through at 35% speed) but never wall you in; mud and dunes drag at your heels; Ashfield vents erupt after a warning. Enemies pass through, as in Vampire Survivors.
+- **Chests you can read** — bronze, silver, gold or violet (Ascension ready) depending on contents, with a light beam and off-screen arrows; opening one builds anticipation with a quickening heartbeat before the reveal.
+- **Perks** — every Bearer has a signature perk beyond stats (longer Kindle, dodge, bell toll, Marked Prey, Hearthheart...), and two new Bearers: Sable the Gloam Hunter and Orin the Hearthkeeper.
+- **New stages** — The Shattered Reliquary and The Glass Dunes, each with its own enemies, scenery and music.
+- **Random events** — healing springs, meteor showers with telegraphed impacts, Blood Moons and Ember Thieves.
+- Recorded CC0 music per stage, menu and boss fights (see `public/music/CREDITS.txt`), with the procedural score as a fallback.
+- 8 Bearers, 15 weapons, 8 Ascensions, 15 relics, 12+ enemy types, 3 bosses, 6 stages, endless mode.
 
 ## Controls
 WASD / arrows · SPACE flare · ESC pause · 1–4 pick upgrade · R reroll · B banish. Gamepad and touch supported.

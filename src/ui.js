@@ -137,6 +137,7 @@ export class UI {
             <div><b>${c.name}, ${c.title}</b></div>
             <div>Starts with <b>${WEAPONS[c.weapon].name}</b> · ${c.bonus}</div>
             <div class="flare-desc">Flare — <b>${c.flareName}</b>: ${c.flareDesc}</div>
+            ${c.perk ? `<div class="perk-desc">Perk — <b>${c.perkName}</b>: ${c.perkDesc}</div>` : ''}
           </div>
           <h3 class="stage-h">Stage</h3>
           <div class="stage-grid">${Object.entries(STAGES).map(([id, st]) => {
@@ -313,6 +314,7 @@ export class UI {
         <label class="slider"><span>Master volume</span><input type="range" min="0" max="100" step="5" data-v="volume" value="${st.volume}"><b>${st.volume}%</b></label>
         <label class="slider"><span>Music volume</span><input type="range" min="0" max="100" step="5" data-v="musicVolume" value="${st.musicVolume}"><b>${st.musicVolume}%</b></label>
         ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}${hapticsSupported ? t('haptics', 'Vibration (haptic feedback)') : ''}
+        <p class="sub credits">Music: public-domain (CC0) tracks by yd, Sorth, cynicmusic, beardalaxy, congusbongus, Spring Spring and Pro Sensory via OpenGameArt.org.</p>
         <div class="row"><button class="btn" data-a="back">Back</button>${document.fullscreenEnabled ? '<button class="btn" data-a="fs">Fullscreen</button>' : ''}${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
       </div>`);
     this.screen.querySelectorAll('input[data-v]').forEach((el) => el.addEventListener('input', () => {
@@ -514,17 +516,37 @@ export class UI {
     const allIcons = [...Object.keys(WEAPONS), ...Object.keys(PASSIVES)];
     const slots = res.items.map((it, i) => `<div class="reel" data-i="${i}"><div class="reel-inner"><img src="${iconURL(allIcons[i % allIcons.length])}"></div><div class="reel-label"></div></div>`).join('');
     const fusion = res.items.some((x) => x.kind === 'fusion');
+    const tier = fusion ? 'ascend' : n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze';
+    const tierIdx = { bronze: 0, silver: 1, gold: 2, ascend: 3 }[tier];
+    const col = { bronze: '#d89050', silver: '#8ad0ff', gold: '#ffd040', ascend: '#e070ff' }[tier];
+    const title = fusion ? 'ASCENSION' : n >= 5 ? 'RADIANT HOARD' : n >= 3 ? 'GILDED CACHE' : 'RELIC CACHE';
     this.open(`
-      <div class="panel chest ${fusion ? 'fusion' : ''} tier${n}">
-        <div class="lu-title">${fusion ? 'ASCENSION' : n >= 5 ? 'RADIANT HOARD' : n >= 3 ? 'GILDED CACHE' : 'RELIC CACHE'}</div>
+      <div class="panel chest ${fusion ? 'fusion' : ''} tier${n} ct-${tier}" style="--tc:${col}">
+        <div class="lu-title chest-title">&nbsp;</div>
         <div class="rays"></div>
-        <div class="reels">${slots}</div>
-        <div class="chest-cinders">+${res.cinders} ✦</div>
-        <button class="btn primary hidden" data-a="take">Claim [Space]</button>
+        <div class="chest-stage"><div class="chest-aura"></div><img class="chest-big" src="${spriteURL(tier === 'bronze' ? 'chest' : 'chest_' + tier, 4)}" alt=""></div>
+        <div class="chest-hint">Something stirs inside…</div>
+        <div class="reels hidden">${slots}</div>
+        <div class="chest-cinders hidden">+${res.cinders} ✦</div>
+        <button class="btn primary hidden" data-a="take">Claim <span class="kbd-only">[Space]</span></button>
+        <div class="chest-flash"></div>
       </div>`, 'dim');
+    const panel = this.screen.querySelector('.panel');
     const reels = [...this.screen.querySelectorAll('.reel')];
-    let done = 0, finished = false;
+    let done = 0, finished = false, revealed = false;
     const timers = [];
+    const buildMs = fusion ? 2700 : n >= 5 ? 2400 : n >= 3 ? 2000 : 1500;
+    // phase 1: the chest strains harder and harder, heartbeat quickening
+    const t0 = performance.now();
+    const pulse = () => {
+      if (revealed) return;
+      const p = Math.min(1, (performance.now() - t0) / buildMs);
+      panel.style.setProperty('--amp', (1 + p * 9).toFixed(2));
+      panel.style.setProperty('--glow', (6 + p * 46).toFixed(0) + 'px');
+      sfx.chestBuild(p);
+      if (p < 1) timers.push(setTimeout(pulse, 420 - 300 * p));
+    };
+    pulse();
     const finish = () => {
       if (finished) return;
       finished = true;
@@ -532,24 +554,38 @@ export class UI {
       sfx.chestOpen();
       this.screen.querySelector('[data-a="take"]').classList.remove('hidden');
     };
-    reels.forEach((r, i) => {
-      const img = r.querySelector('img');
-      let k = 0;
-      const spin = setInterval(() => { img.src = iconURL(allIcons[(Math.random() * allIcons.length) | 0]); sfx.chestDrum(k++); }, 70);
-      timers.push(spin);
-      timers.push(setTimeout(() => {
-        clearInterval(spin);
-        const it = res.items[i];
-        img.src = iconURL(it.icon);
-        r.classList.add('done', it.kind);
-        r.querySelector('.reel-label').innerHTML = `<b>${esc(it.name)}</b>${it.level ? ` <span>${it.kind === 'fusion' ? '' : 'LV ' + it.level}</span>` : ''}`;
-        sfx.pickup();
-        if (++done === n) finish();
-      }, 700 + i * 380 + (it_isFusion(res.items[i]) ? 600 : 0)));
-    });
+    // phase 2: the lid bursts, then the reels spin and reveal one by one
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      timers.forEach((t) => { clearInterval(t); clearTimeout(t); });
+      timers.length = 0;
+      panel.classList.add('opened');
+      panel.querySelector('.chest-title').textContent = title;
+      panel.querySelector('.chest-hint').remove();
+      this.screen.querySelectorAll('.reels, .chest-cinders').forEach((el) => el.classList.remove('hidden'));
+      sfx.chestBurst(tierIdx);
+      reels.forEach((r, i) => {
+        const img = r.querySelector('img');
+        let k = 0;
+        const spin = setInterval(() => { img.src = iconURL(allIcons[(Math.random() * allIcons.length) | 0]); sfx.chestDrum(k++); }, 70);
+        timers.push(spin);
+        timers.push(setTimeout(() => {
+          clearInterval(spin);
+          const it = res.items[i];
+          img.src = iconURL(it.icon);
+          r.classList.add('done', it.kind);
+          r.querySelector('.reel-label').innerHTML = `<b>${esc(it.name)}</b>${it.level ? ` <span>${it.kind === 'fusion' ? '' : 'LV ' + it.level}</span>` : ''}`;
+          sfx.pickup();
+          if (++done === n) finish();
+        }, 700 + i * 380 + (it_isFusion(res.items[i]) ? 600 : 0)));
+      });
+    };
+    timers.push(setTimeout(reveal, buildMs));
     const take = () => {
+      if (!revealed) { reveal(); return; } // first press skips the build-up
       if (!finished) {
-        // skip animation
+        // second press skips the reel animation
         reels.forEach((r, i) => {
           const it = res.items[i];
           r.querySelector('img').src = iconURL(it.icon);
@@ -565,6 +601,8 @@ export class UI {
     this.bind({ take });
     const chestAt = performance.now();
     this.keyHandler = (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && performance.now() - chestAt > 350) { e.preventDefault(); take(); } };
+    // tapping anywhere on the panel before the reveal also skips ahead
+    panel.addEventListener('pointerdown', () => { if (!revealed && performance.now() - chestAt > 350) reveal(); });
   }
 
   // ---------- pause ----------

@@ -1,0 +1,11 @@
+Music in this folder is released under CC0 1.0 (public domain) by the authors below, sourced from OpenGameArt.org.
+Attribution is not required but gratefully given.
+
+gloam.ogg       "EmptyCity: Background Music"           - yd             https://opengameart.org/content/emptycity-background-music
+ashfields.mp3   "Lava Dungeon Battle"                   - Sorth          https://opengameart.org/content/lava-dungeon-battle
+rimewood.mp3    "Icy Realm - (Seven and Eight)"         - cynicmusic     https://opengameart.org/content/icy-realm-seven-and-eight
+marsh.ogg       "Swamp Theme Loop"                      - beardalaxy     https://opengameart.org/content/swamp-theme-loop
+reliquary.ogg   "Cathedral in the forest (ambient loop)" - congusbongus  https://opengameart.org/content/cathedral-in-the-forest-ambient-loop
+glassdunes.ogg  "Desert Chase (Unfinished)"             - Spring Spring  https://opengameart.org/content/desert-chase-unfinished
+menu.mp3        "Main Menu Music (Loop)"                - Pro Sensory    https://opengameart.org/content/main-menu-music-loop
+boss.ogg        "Basilisk Boss Battle Loop"             - beardalaxy     https://opengameart.org/content/basilisk-boss-battle-loop
