@@ -352,6 +352,52 @@ export const META = {
   spark: { name: 'Second Spark', desc: 'Start each run with a random relic (per rank)', max: 2, cost: 700, apply: () => {} },
 };
 
+// Difficulty: harder runs are tougher but pay better; easier runs are gentler and pay less.
+// hp/dmg/speed scale enemies, spawn scales the horde; xp and cinders scale what you earn.
+export const DIFFICULTY = {
+  easy: { name: 'Easy', hp: 0.8, dmg: 0.7, spawn: 0.85, speed: 0.95, xp: 0.8, cinders: 0.6, desc: 'Gentler foes and fewer of them. -20% XP, -40% cinders.' },
+  normal: { name: 'Normal', hp: 1, dmg: 1, spawn: 1, speed: 1, xp: 1, cinders: 1, desc: 'The intended night.' },
+  hard: { name: 'Hard', hp: 1.3, dmg: 1.3, spawn: 1.15, speed: 1.05, xp: 1.1, cinders: 1.5, desc: 'Tougher, denser, faster. +10% XP, +50% cinders.' },
+  brutal: { name: 'Brutal', hp: 1.7, dmg: 1.6, spawn: 1.35, speed: 1.1, xp: 1.2, cinders: 2.2, desc: 'For the unburnable. +20% XP, +120% cinders.' },
+};
+
+// Highest Heat level a stage can reach (one level unlocked per win).
+export const HEAT_MAX = 10;
+
+// Unlocks cost cinders AND an accomplishment, so spending alone never skips the game itself.
+const stageWins = (s) => Object.entries(s.records || {}).filter(([k, v]) => k.startsWith('stage:') && v.wins > 0).length;
+export const UNLOCK_REQS = {
+  chars: {
+    oracle: { text: 'Survive 3:00 in a run', check: (s) => s.best.time >= 180 },
+    tinker: { text: 'Slay 2,000 foes in total', check: (s) => s.totals.kills >= 2000 },
+    reaver: { text: 'Reach level 20 in a run', check: (s) => s.best.level >= 20 },
+    dancer: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
+    bellwright: { text: 'Slay the Brood Matron', check: (s) => !!s.feats.matron },
+    hunter: { text: 'Slay 15,000 foes in total', check: (s) => s.totals.kills >= 15000 },
+    hearthkeeper: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
+  },
+  stages: {
+    rimewood: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
+    marsh: { text: 'Slay the Cinder Colossus', check: (s) => !!s.feats.colossus },
+    reliquary: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
+    glassdunes: { text: 'Win on two different stages', check: (s) => stageWins(s) >= 2 },
+  },
+};
+export const reqOf = (kind, id) => UNLOCK_REQS[kind][id] || null;
+export const reqMet = (kind, id, s) => { const r = reqOf(kind, id); return !r || r.check(s); };
+
+// First time you outlast each mark on a stage you earn a one-off bonus (scaled by the stage's cinder multiplier).
+export const MILESTONES = [{ t: 180, reward: 40 }, { t: 360, reward: 90 }, { t: 600, reward: 180 }, { t: 900, reward: 350 }];
+
+// Eternal Embers: the endless sink. Cheap to start, ever more costly, small capped bonuses.
+export const ETERNAL = {
+  flame: { name: 'Eternal Flame', desc: '+0.8% damage per rank', max: 40, base: 500, grow: 1.15, apply: (s, l) => (s.might += 0.008 * l) },
+  vigor: { name: 'Eternal Vigor', desc: '+1% max health per rank', max: 40, base: 450, grow: 1.15, apply: (s, l) => (s.maxHp *= 1 + 0.01 * l) },
+  hoard: { name: 'Eternal Hoard', desc: '+1% cinders per rank', max: 40, base: 600, grow: 1.16, apply: (s, l) => (s.greed += 0.01 * l) },
+  lore: { name: 'Eternal Lore', desc: '+0.8% experience per rank', max: 40, base: 550, grow: 1.15, apply: (s, l) => (s.growth += 0.008 * l) },
+};
+export const eternalCost = (id, l) => Math.round(ETERNAL[id].base * ETERNAL[id].grow ** l);
+
 export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
   if (level < 20) return Math.floor(4 + level * 4);

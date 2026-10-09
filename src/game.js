@@ -1,7 +1,7 @@
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
-import {
+import { DIFFICULTY, ETERNAL,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
@@ -134,6 +134,7 @@ export class Game {
     this.stage = STAGES[this.stageId];
     // Heat: optional difficulty ladder, unlocked one level per win on this stage
     this.daily = opts.daily || null;
+    this.diff = DIFFICULTY[this.daily ? 'normal' : save.settings.difficulty] || DIFFICULTY.normal;
     this.heat = this.daily ? 0 : Math.max(0, Math.min(save.heatSel[this.stageId] || 0, save.heatMax[this.stageId] || 0));
 
     this.root = new Container();
@@ -256,10 +257,12 @@ export class Game {
   recalcStats() {
     const s = { ...BASE_STATS };
     for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, l); }
+    for (const k in ETERNAL) { const l = save.eternal[k] || 0; if (l) ETERNAL[k].apply(s, l); }
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
     s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
+    s.greed *= this.diff.cinders; s.growth *= this.diff.xp;
     if (this.heat) s.greed *= 1 + 0.3 * this.heat; // heat's enemy buffs ramp in per spawn (see spawnEnemy/director)
     if (s.overcharge) { /* not used */ }
     // Heat dampens Overcharge so higher Heat stays tense after the build snowballs
@@ -564,8 +567,8 @@ export class Game {
     const ramp = Math.min(1, this.time / (180 + 30 * (this.heat || 0)));
     const h = (this.heat || 0) * ramp;
     // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
-    const heatHp = 1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60);
-    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
+    const heatHp = (1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60)) * this.diff.hp;
+    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h) * this.diff.speed;
     if (d.boss) hp *= stHp * (1 + 0.3 * (this.heat || 0));
     else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
@@ -573,7 +576,7 @@ export class Game {
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
-    e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg;
+    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg;
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
@@ -895,6 +898,11 @@ export class Game {
       this.pendingLevels++;
       if (this.perk === 'hearthheart') this.heal(this.stats.maxHp * 0.2, true);
     }
+  }
+  // cinders banked at the end of a run: what you gathered plus a survival bonus
+  runReward(win) {
+    const bonus = Math.round((Math.floor(this.time / 60) * 6 + this.kills / 80) * this.stats.greed) + (win ? 300 : 0);
+    return { gathered: this.cinders, bonus, total: this.cinders + bonus };
   }
   addCinders(v, useKindle) {
     this.cinders += Math.max(1, Math.round(v * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1)));
@@ -1263,7 +1271,7 @@ export class Game {
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
     const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
-    rate *= this.stats.curse * heatSpawn; min *= this.stats.curse * heatSpawn;
+    rate *= this.stats.curse * heatSpawn * this.diff.spawn; min *= this.stats.curse * heatSpawn * this.diff.spawn;
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;
