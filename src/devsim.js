@@ -418,8 +418,9 @@ export function install(startRun, getGame) {
     const dt = opts.dt || 1 / 30;
     const t0 = performance.now();
     // in-memory save tweaks (never persisted by us)
-    const savedMeta = { ...save.meta }, savedDiff = save.settings.difficulty, savedLowfx = save.settings.lowfx;
-    save.settings.lowfx = true; // bots do not render: halve the particle budget to simulate faster
+    const savedMeta = { ...save.meta }, savedDiff = save.settings.difficulty, savedLowfx = save.settings.lowfx, savedNumbers = save.settings.numbers;
+    save.settings.lowfx = true;
+    save.settings.numbers = false; // nobody is watching: no damage numbers
     const savedSel = { ...save.heatSel }, savedMax = { ...save.heatMax };
     const origRandom = Math.random;
     const tuneBefore = { ...TUNE };
@@ -449,7 +450,7 @@ export function install(startRun, getGame) {
       const realUpdate = g.update.bind(g);
       let gate = false;
       g.update = (d) => { if (gate) realUpdate(d); };
-      if (!opts.render) g.render = () => {};
+      if (!opts.render) { g.render = () => {}; g.flash = () => {}; g.maxFx = g.baseFx = 0; } // no particles either: spawnFx bails at once
       ui.showLevelUp = (gg, pre) => draft(gg, pre || gg.buildChoices(), bot);
       ui.showChest = (gg, res) => gg.applyChest(res);
       ui.showResults = () => {}; ui.showVictory = () => {};
@@ -501,7 +502,7 @@ export function install(startRun, getGame) {
       setBotInput(null);
       Math.random = origRandom;
       Object.assign(TUNE, tuneBefore);
-      save.meta = savedMeta; save.settings.difficulty = savedDiff; save.settings.lowfx = savedLowfx; save.heatSel = savedSel; save.heatMax = savedMax;
+      save.meta = savedMeta; save.settings.difficulty = savedDiff; save.settings.lowfx = savedLowfx; save.settings.numbers = savedNumbers; save.heatSel = savedSel; save.heatMax = savedMax;
     }
   };
 }
