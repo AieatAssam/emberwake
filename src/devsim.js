@@ -6,6 +6,7 @@
 // so speed buffs, soft obstacles and slows all apply. "Skill" is a dial of human-like competence
 // (reaction interval, awareness, lookahead, dodging, drafting, flare timing), never of stats.
 import { setBotInput } from './input.js';
+import { TUNE } from './tuning.js';
 import { save } from './save.js';
 import { DIFFICULTY, META, STAGES, fusionPartnersOf } from './data.js';
 
@@ -420,9 +421,11 @@ export function install(startRun, getGame) {
     const savedMeta = { ...save.meta }, savedDiff = save.settings.difficulty;
     const savedSel = { ...save.heatSel }, savedMax = { ...save.heatMax };
     const origRandom = Math.random;
+    const tuneBefore = { ...TUNE };
+    if (opts.tune) Object.assign(TUNE, opts.tune);
     const diff = DIFFICULTY[opts.difficulty] ? opts.difficulty : 'normal';
     const stageId = STAGES[opts.stage] ? opts.stage : 'gloam';
-    const heat = Math.max(0, Math.min(5, opts.heat | 0));
+    const heat = Math.max(0, Math.min(10, opts.heat | 0));
     const metaFrac = Math.max(0, Math.min(1, opts.meta || 0));
     save.settings.difficulty = diff;
     save.heatSel[stageId] = heat; save.heatMax[stageId] = heat;
@@ -434,7 +437,8 @@ export function install(startRun, getGame) {
       name: skillName, sk, flareReady: 0, prev: null, target: null, stuckT: 0, escapeT: 0, escapeA: 0,
       wanderA: Math.random() * 6.2832, wanderDir: 1, wanderT: 6, shrineRoll: Math.random(),
     };
-    let minHp = 1, stuckMs = 0, steps = 0;
+    let minHp = 1, stuckMs = 0, steps = 0, nextMark = 60;
+    const series = [];
     try {
       startRun(charId, stageId);
       const g = getGame();
@@ -477,6 +481,7 @@ export function install(startRun, getGame) {
           if (moved < want * 0.3 && P.iframes <= 0) { bot.stuckT += dt; stuckMs += dt * 1000; } else bot.stuckT = Math.max(0, bot.stuckT - dt);
         }
         minHp = Math.min(minHp, P.hp / g.stats.maxHp);
+        if (g.time >= nextMark) { series.push({ t: nextMark, lvl: g.level, kills: g.kills, hp: Math.round((100 * P.hp) / g.stats.maxHp), alive: g.enemies.length, cin: g.cinders }); nextMark += 60; }
         if (steps % 300 === 0) await new Promise((r) => { setTimeout(r, 0); });
       }
       setBotInput(null);
@@ -488,12 +493,13 @@ export function install(startRun, getGame) {
         cinders: reward.total, gathered: reward.gathered, bestCombo: g.bestCombo, overcharge: g.overcharge || 0,
         killedBy: g.dead ? g.lastHitBy || '?' : null, hpMinPct: Math.max(0, Math.round(minHp * 100)),
         weapons: g.weapons.map((w) => `${w.id}:${w.level}`), fusions: g.weapons.filter((w) => w.fused).map((w) => w.id),
-        passives: { ...g.passives }, pacts: [...g.pacts],
+        passives: { ...g.passives }, pacts: [...g.pacts], series,
         wallMs: Math.round(performance.now() - t0), stuckMs: Math.round(stuckMs),
       };
     } finally {
       setBotInput(null);
       Math.random = origRandom;
+      Object.assign(TUNE, tuneBefore);
       save.meta = savedMeta; save.settings.difficulty = savedDiff; save.heatSel = savedSel; save.heatMax = savedMax;
     }
   };

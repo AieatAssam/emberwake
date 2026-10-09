@@ -30,7 +30,8 @@ const STAGES = list('stages', 'gloam');
 const DIFFS = list('difficulty', 'normal');
 const METAS = list('meta', '0').map(Number);
 const HEATS = list('heat', '0').map(Number);
-const SECS = +arg('secs', 900);
+const SECS = +arg('secs', 1100);
+const TUNE_ARG = Object.fromEntries(String(arg('tune', '')).split(',').filter(Boolean).map((kv) => { const [k, v] = kv.split('='); return [k, +v]; }));
 const WORKERS = Math.max(1, +arg('workers', 4));
 const DT = arg('dt', '') === '' ? undefined : +arg('dt');
 const SEED0 = +arg('seed0', 0);
@@ -57,7 +58,7 @@ const seedSave = JSON.stringify({
   hints: { move: true, gems: true, kindle: true, flare: true, chest: true },
   unlocked: Object.fromEntries(CHAR_IDS.map((c) => [c, true])),
   stages: Object.fromEntries([...STAGES, 'gloam', 'ashfields', 'rimewood'].map((s) => [s, true])),
-  heatMax: Object.fromEntries(STAGES.map((s) => [s, 5])),
+  heatMax: Object.fromEntries(STAGES.map((s) => [s, 10])),
   lastStage: STAGES[0],
 });
 
@@ -85,7 +86,7 @@ const t0 = Date.now();
 
 async function runOne(slot, job) {
   const { cell, seed } = job;
-  const opts = { skill: cell.skill, difficulty: cell.difficulty, stage: cell.stage, heat: cell.heat, meta: cell.meta, seed, dt: DT };
+  const opts = { skill: cell.skill, difficulty: cell.difficulty, stage: cell.stage, heat: cell.heat, meta: cell.meta, seed, dt: DT, tune: TUNE_ARG };
   let timer;
   const guard = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('run timeout')), RUN_TIMEOUT_MS); });
   try {
@@ -140,6 +141,7 @@ function summarize(runs, errors) {
     deadPct: (100 * runs.filter((r) => r.dead).length) / (n || 1),
     timedOutPct: (100 * runs.filter((r) => r.timedOut).length) / (n || 1),
     p25: pct(times, 0.25), median: pct(times, 0.5), p75: pct(times, 0.75),
+    lvl5: mean(runs.map((r) => (r.series.find((x) => x.t === 300) || {}).lvl).filter(Number.isFinite)), lvl10: mean(runs.map((r) => (r.series.find((x) => x.t === 600) || {}).lvl).filter(Number.isFinite)),
     level: mean(runs.map((r) => r.level)), kills: mean(runs.map((r) => r.kills)), cinders: mean(runs.map((r) => r.cinders)),
     wallMs: mean(runs.map((r) => r.wallMs)),
     killers: Object.entries(killers).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}x${v}`).join(' '),
@@ -147,9 +149,9 @@ function summarize(runs, errors) {
 }
 
 function printTable(rows) {
-  const head = ['cell', 'n', 'win%', 'dead%', 'tout%', 'p25', 'med', 'p75', 'lvl', 'kills', 'cinders', 'wall s', 'top killers'];
+  const head = ['cell', 'n', 'win%', 'dead%', 'tout%', 'p25', 'med', 'p75', 'lvl', 'L@5', 'L@10', 'kills', 'cinders', 'wall s', 'top killers'];
   const body = rows.map(([label, s]) => [label, `${s.n}${s.errors ? '+' + s.errors + 'err' : ''}`, f0(s.winPct), f0(s.deadPct), f0(s.timedOutPct),
-    mmss(s.p25), mmss(s.median), mmss(s.p75), f0(s.level), f0(s.kills), f0(s.cinders), f0(s.wallMs / 1000), s.killers]);
+    mmss(s.p25), mmss(s.median), mmss(s.p75), f0(s.level), f0(s.lvl5), f0(s.lvl10), f0(s.kills), f0(s.cinders), f0(s.wallMs / 1000), s.killers]);
   const w = head.map((h, i) => Math.max(h.length, ...body.map((r) => String(r[i]).length)));
   const line = (r) => r.map((c, i) => (i === 0 || i === r.length - 1 ? String(c).padEnd(w[i]) : String(c).padStart(w[i]))).join('  ');
   console.log(line(head));

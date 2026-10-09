@@ -7,6 +7,7 @@ import { DIFFICULTY, ETERNAL,
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { buzz } from './haptics.js';
+import { TUNE } from './tuning.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
 import { save, persist } from './save.js';
 
@@ -267,7 +268,7 @@ export class Game {
     if (s.overcharge) { /* not used */ }
     // Heat dampens Overcharge so higher Heat stays tense after the build snowballs
     const oc = (this.overcharge || 0) / (1 + 0.15 * (this.heat || 0));
-    s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
+    s.might += oc * 0.08 * TUNE.overcharge; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
     s.cooldown = Math.max(s.cooldown, 0.25);
     const prevMax = this.stats ? this.stats.maxHp : s.maxHp;
     this.stats = s;
@@ -281,7 +282,7 @@ export class Game {
     const might = s.might * (B.bloodrage > 0 ? 2 : 1);
     const cdm = s.cooldown * (B.overclock > 0 ? 0.33 : 1);
     const o = part._eff || (part._eff = {});
-    o.dmg = b.dmg * might * (1 + 0.15 * (b.amount == null ? s.amount : 0));
+    o.dmg = b.dmg * might * TUNE.playerDmg * (1 + 0.15 * (b.amount == null ? s.amount : 0));
     o.cd = b.cd * cdm;
     o.amount = b.amount != null ? b.amount + s.amount : 0;
     o.area = (b.area || 1) * s.area * (1 + 0.1 * (b.amount == null ? s.amount : 0));
@@ -562,21 +563,21 @@ export class Game {
     }
     const elite = !!o.elite;
     let hp = d.hp;
-    if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
+    if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * TUNE.enemyHp * TUNE.bossHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
     // stage difficulty ramps in over the first 3 minutes so every stage has a fair opening
     const ramp = Math.min(1, this.time / (180 + 30 * (this.heat || 0)));
     const h = (this.heat || 0) * ramp;
     // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
     const heatHp = (1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60)) * this.diff.hp;
-    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h) * this.diff.speed;
+    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h) * this.diff.speed * TUNE.enemySpeed;
     if (d.boss) hp *= stHp * (1 + 0.3 * (this.heat || 0));
-    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
+    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * TUNE.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
-    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg;
+    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg * TUNE.enemyDmg;
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
@@ -890,7 +891,7 @@ export class Game {
 
   gainXp(v) {
     const mul = this.stats.growth * (1 + (KINDLE_TIERS[this.kindleTier].mul - 1) * 0.5);
-    this.xp += v * mul;
+    this.xp += v * mul * TUNE.xp;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
@@ -901,11 +902,11 @@ export class Game {
   }
   // cinders banked at the end of a run: what you gathered plus a survival bonus
   runReward(win) {
-    const bonus = Math.round((Math.floor(this.time / 60) * 6 + this.kills / 80) * this.stats.greed) + (win ? 300 : 0);
+    const bonus = Math.round(((Math.floor(this.time / 60) * 6 + this.kills / 80) * this.stats.greed + (win ? 300 : 0)) * TUNE.cinders);
     return { gathered: this.cinders, bonus, total: this.cinders + bonus };
   }
   addCinders(v, useKindle) {
-    this.cinders += Math.max(1, Math.round(v * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1)));
+    this.cinders += Math.max(1, Math.round(v * TUNE.cinders * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1)));
   }
   heal(v, show) {
     const P = this.player;
@@ -1271,7 +1272,7 @@ export class Game {
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
     const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
-    rate *= this.stats.curse * heatSpawn * this.diff.spawn; min *= this.stats.curse * heatSpawn * this.diff.spawn;
+    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn; min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn;
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;

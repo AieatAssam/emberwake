@@ -1,4 +1,5 @@
-// All Emberwake game data. Tuning lives here.
+// All Emberwake game data. Tuning lives here (global knobs in tuning.js).
+import { TUNE } from './tuning.js';
 
 export const MAX_WEAPON_LEVEL = 8;
 export const MAX_WEAPONS = 6;
@@ -407,8 +408,8 @@ export function xpForLevel(level) {
 
 export function enemyHpScale(t) {
   const m = t / 60;
-  let s = 1 + 0.2 * m + 0.032 * m * m;
-  if (m > 15) s *= Math.pow(1.17, m - 15);
+  let s = 1 + 0.2 * m + 0.032 * TUNE.hpQuad * m * m;
+  if (m > 15) s *= Math.pow(1 + 0.17 * TUNE.hpLate, m - 15);
   return s;
 }
 
