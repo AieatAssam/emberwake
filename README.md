@@ -138,7 +138,7 @@ Pick a difficulty in **Settings** or from the Bearer-select screen (it applies t
 |---|---|---|---|---|---|
 | Easy | x0.8 | x0.7 | x0.85 | x0.6 | x0.8 |
 | Normal | x1 | x1 | x1 | x1 | x1 |
-| Hard | x1.3 | x1.3 | x1.15 | x1.5 | x1.1 |
+| Hard | x1.4 | x1.4 | x1.2 | x1.6 | x1.1 |
 | Brutal | x1.7 | x1.6 | x1.35 | x2.2 | x1.2 |
 
 ![Settings](docs/img/settings.png)
