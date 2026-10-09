@@ -33,7 +33,8 @@ const HEATS = list('heat', '0').map(Number);
 const SECS = +arg('secs', 1000);
 const TUNE_ARG = Object.fromEntries(String(arg('tune', '')).split(',').filter(Boolean).map((kv) => { const [k, v] = kv.split('='); return [k, +v]; }));
 const WORKERS = Math.max(1, +arg('workers', 4));
-const DT = arg('dt', '') === '' ? undefined : +arg('dt');
+// Fast mode: dt 0.1 matches dt 0.05 outcomes (checked) at 2x the speed; dt 0.2 distorts results, do not use.
+const DT = +arg('dt', 0.1);
 const SEED0 = +arg('seed0', 0);
 const RUN_TIMEOUT_MS = +arg('timeout', 900) * 1000;
 const OUT = arg('out', '');

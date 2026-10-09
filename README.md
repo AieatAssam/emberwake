@@ -177,11 +177,11 @@ In `npm run dev` the console exposes a headless simulator: `await __sim(900, 'wa
 ```bash
 npm run dev &          # the harness talks to the dev server
 npm run balance -- --url http://localhost:5173 --runs 8 --skills novice,average,skilled,expert \
-  --chars warden --stages gloam --difficulty normal --meta 0 --heat 0 --secs 1100 --dt 0.05 --workers 4
+  --chars warden --stages gloam --difficulty normal --meta 0 --heat 0 --secs 1000 --workers 4
 # override balance knobs per run, no code edits needed:
 npm run balance -- --runs 8 --tune xp=0.5,enemyDmg=1.3,spawn=1.1
 ```
-Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). See the script header for all options.
+Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.1 s step (validated against 0.05 s; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
 
 ## Quality gates
 - **CI** (`.github/workflows/ci.yml`) runs on every push and PR: ESLint, Stylelint and html-validate with warnings treated as errors, a production build, and a check that dev-only hooks never ship.
