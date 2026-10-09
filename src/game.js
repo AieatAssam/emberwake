@@ -240,6 +240,8 @@ export class Game {
     this.player.hp = this.stats.maxHp;
     this.rerolls = this.stats.rerolls; this.banishes = this.stats.banishes;
     this.addWeapon(this.char.weapon);
+    // some Bearers start with their signature weapon already trained
+    for (let i = 1; i < (this.char.startLevel || 1); i++) this.levelWeapon(this.char.weapon);
     // Hearth: Second Spark grants random starting relics
     for (let i = 0; i < (save.meta.spark || 0); i++) {
       const pool = Object.keys(PASSIVES).filter((k) => !this.passives[k]);
