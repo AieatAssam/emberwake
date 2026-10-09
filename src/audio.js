@@ -22,6 +22,7 @@ export function initAudio() {
   const dly = ctx.createDelay(1), fb = ctx.createGain(); fb.gain.value = 0.28;
   dly.delayTime.value = 0.35; delayIn.connect(dly); dly.connect(fb).connect(dly); dly.connect(musicBus);
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  queueMicrotask(preloadMusic);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
@@ -160,6 +161,13 @@ export const sfx = {
   pause() { tone(midi(76), 0.08, 'triangle', 0.08); tone(midi(69), 0.12, 'triangle', 0.08, null, 0.06); },
   thief() { [0, 3, 7, 12].forEach((n, i) => tone(midi(88 + n), 0.07, 'square', 0.05, null, i * 0.045)); },
   bloodMoon() { tone(55, 2, 'sawtooth', 0.18, 40); tone(midi(40), 1.6, 'sine', 0.2); noise(1.5, 0.15, 300); },
+  chestDrop() { tone(midi(79), 0.1, 'triangle', 0.1); tone(midi(91), 0.25, 'sine', 0.08, null, 0.08); noise(0.3, 0.05, 7000, 1, 'highpass', 0.05); },
+  // rising heartbeat while a chest strains to open; p runs 0..1
+  chestBuild(p = 0) { tone(60 + p * 40, 0.14, 'sine', 0.22 + p * 0.1, 40); tone(midi(55 + Math.round(p * 14)), 0.12, 'triangle', 0.04 + p * 0.06, null, 0.02); },
+  chestBurst(tier = 0) {
+    noise(0.5, 0.25, 6000, 1, 'highpass'); tone(80, 0.5, 'sine', 0.3, 30);
+    [0, 4, 7, 12, 16, 19, 24].slice(0, 4 + tier).forEach((n, i) => tone(midi(72 + n), 0.5, 'triangle', 0.1, null, 0.04 + i * 0.05));
+  },
   deathStinger() { [69, 65, 62, 57].forEach((n, i) => tone(midi(n), 0.45, 'triangle', 0.1, null, i * 0.22)); },
 };
 
@@ -176,6 +184,10 @@ const THEMES = {
     mel: [12, -99, 10, 7, -99, 3, 5, -99, 7, -99, 10, 12, 15, -99, 12, -99] },
   rimewood: { bpm: 108, roots: [50, 46, 48, 43], arp: [0, 7, 14, 15, 19, 15, 14, 7], bass: 'triangle', lead: 'sine', bell: true, drive: 0.6,
     mel: [7, -99, 14, 12, -99, 7, 9, -99, 5, -99, 7, -99, 2, -99, -99, -99] },
+  reliquary: { bpm: 84, roots: [38, 41, 36, 43], arp: [0, 3, 7, 10, 15, 10, 7, 3], bass: 'triangle', lead: 'sine', bell: true, drive: 0.7,
+    mel: [7, -99, 10, 12, -99, 7, 5, -99, 3, -99, 7, -99, 10, -99, -99, -99] },
+  glassdunes: { bpm: 116, roots: [41, 44, 41, 39], arp: [0, 1, 4, 5, 7, 5, 4, 1], bass: 'sawtooth', lead: 'triangle', bell: false, drive: 1.1,
+    mel: [0, -99, 1, 4, 5, -99, 4, 1, 0, -99, -2, -99, 1, -99, -99, -99] },
   menu: { bpm: 70, roots: [45, 41, 48, 43], arp: [0, 7, 12, 15, 19, 15, 12, 7], bass: 'sine', lead: 'sine', bell: true, drive: 0.4, noKick: true,
     mel: [12, -99, -99, 7, -99, 10, -99, -99, 12, -99, 15, -99, 10, -99, -99, -99] },
 };
@@ -183,7 +195,12 @@ let theme = THEMES.gloam;
 export function setTheme(id) { themeId = THEMES[id] ? id : 'gloam'; theme = THEMES[themeId]; }
 
 export function setIntensity(v) { intensity = Math.max(0, Math.min(1, v)); }
-export function setBoss(on) { bossOn = !!on; }
+export function setBoss(on) {
+  on = !!on;
+  if (on === bossOn) return;
+  bossOn = on;
+  syncTrack();
+}
 export function setHollow(on) { hollowOn = !!on; }
 // muffle the music (pause menus) without stopping it
 export function duck(on) { if (musicLP) musicLP.frequency.setTargetAtTime(on ? 700 : 20000, ctx.currentTime, 0.08); }
@@ -246,26 +263,84 @@ function schedule() {
   }
 }
 
+// ---- Recorded tracks (CC0, see public/music/CREDITS.txt). Streamed one at a time and looped;
+// if a file is missing or the browser cannot decode it, the procedural music above keeps playing.
+const TRACKS = {
+  gloam: 'gloam.ogg', ashfields: 'ashfields.mp3', rimewood: 'rimewood.mp3', marsh: 'marsh.ogg',
+  reliquary: 'reliquary.ogg', glassdunes: 'glassdunes.ogg', menu: 'menu.mp3', boss: 'boss.ogg',
+};
+const trackBuf = {}, trackGainFor = {}, trackLoading = {}, trackFailed = {};
+let cur = null, musicActive = false, fadeToken = 0;
+
+function loadTrack(id) {
+  if (trackBuf[id] || trackFailed[id] || !TRACKS[id] || !ctx) return Promise.resolve();
+  if (trackLoading[id]) return trackLoading[id];
+  trackLoading[id] = fetch(import.meta.env.BASE_URL + 'music/' + TRACKS[id])
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then((ab) => ctx.decodeAudioData(ab))
+    .then((buf) => {
+      // level-match tracks by RMS so a quiet pad and a loud battle theme sit at a similar volume
+      const d = buf.getChannelData(0); let sum = 0, n = 0;
+      for (let i = 0; i < d.length; i += 97) { sum += d[i] * d[i]; n++; }
+      trackGainFor[id] = Math.max(0.5, Math.min(2.5, 0.13 / (Math.sqrt(sum / n) || 0.13)));
+      trackBuf[id] = buf;
+    })
+    .catch(() => { trackFailed[id] = true; });
+  return trackLoading[id];
+}
+function fadeOutCur(sec) {
+  if (!cur) return;
+  const c = cur; cur = null;
+  const t = ctx.currentTime;
+  c.gain.gain.cancelScheduledValues(t); c.gain.gain.setTargetAtTime(0.0001, t, sec / 4);
+  setTimeout(() => { try { c.src.stop(); } catch { /* already stopped */ } c.gain.disconnect(); }, sec * 1000 + 300);
+}
+function startProcedural() { if (!musicTimer) { nextTime = ctx.currentTime + 0.05; step = 0; musicTimer = setInterval(schedule, 40); } }
+function stopProcedural() { clearInterval(musicTimer); musicTimer = null; }
+// pick the right recording for the moment (stage theme, or the boss track while a boss lives)
+function syncTrack() {
+  if (!ctx || !musicActive) return;
+  const want = bossOn && TRACKS.boss && !trackFailed.boss ? 'boss' : themeId;
+  if (cur && cur.id === want) return;
+  if (trackBuf[want]) {
+    fadeOutCur(1.2);
+    const src = ctx.createBufferSource(); src.buffer = trackBuf[want]; src.loop = true;
+    const g = ctx.createGain(); g.gain.value = 0.0001;
+    g.gain.setTargetAtTime(trackGainFor[want], ctx.currentTime, 0.4);
+    src.connect(g).connect(musicBus); src.start();
+    cur = { id: want, src, gain: g };
+    stopProcedural();
+  } else if (!trackFailed[want] && TRACKS[want]) {
+    if (!cur) startProcedural(); // play the generated loop until the download lands
+    loadTrack(want).then(() => { if (!trackFailed[want]) syncTrack(); else if (!cur) startProcedural(); });
+  } else if (!cur) startProcedural();
+}
+// begin loading the menu theme as early as the audio context exists
+export function preloadMusic() { loadTrack('menu'); }
+
 export function startMusic(id) {
   if (!ctx) return;
   if (id) {
-    if (musicTimer && id === themeId) return;
+    if (musicActive && id === themeId) return;
     setTheme(id);
-  } else if (musicTimer) return;
-  clearInterval(musicTimer);
+  } else if (musicActive) return;
+  fadeToken++;
+  musicActive = true; bossOn = false; hollowOn = false;
+  fadeOutCur(0.5);
+  stopProcedural();
   if (musicBus) setGain(musicBus, musicOn ? musicVol : 0);
-  nextTime = ctx.currentTime + 0.05; step = 0; bossOn = false; hollowOn = false;
-  musicTimer = setInterval(schedule, 40);
+  syncTrack();
+  if (themeId !== 'menu') loadTrack('boss'); // have the boss theme ready before it is needed
 }
-export function stopMusic() { clearInterval(musicTimer); musicTimer = null; }
-// ease the music out, then stop the scheduler
+export function stopMusic() { musicActive = false; stopProcedural(); fadeOutCur(0.3); }
+// ease the music out, then stop everything
 export function fadeMusic(sec) {
-  if (!ctx || !musicTimer) return;
+  if (!ctx || !musicActive) return;
   musicBus.gain.cancelScheduledValues(ctx.currentTime);
   musicBus.gain.setTargetAtTime(0.0001, ctx.currentTime, sec / 4);
-  const timer = musicTimer;
-  setTimeout(() => { if (musicTimer === timer) stopMusic(); }, sec * 1000);
+  const tok = ++fadeToken;
+  setTimeout(() => { if (fadeToken === tok) stopMusic(); }, sec * 1000);
 }
 
 // read-only snapshot for dev verification
-export function audioDebug() { return { master: master && +master.gain.value.toFixed(3), music: musicBus && +musicBus.gain.value.toFixed(3) }; }
+export function audioDebug() { return { master: master && +master.gain.value.toFixed(3), music: musicBus && +musicBus.gain.value.toFixed(3), track: cur && cur.id, loaded: Object.keys(trackBuf), failed: Object.keys(trackFailed), proc: !!musicTimer }; }

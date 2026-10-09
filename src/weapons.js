@@ -451,12 +451,25 @@ export const BEHAVIORS = {
     update(g, part, st, dt) {
       const S = part.state, P = g.player;
       S.t = (S.t ?? 0.3) - dt;
-      if (S.t <= 0) { S.t = st.cd; S.queue = st.amount; S.qt = 0; }
+      if (S.t <= 0) {
+        S.t = st.cd; S.queue = st.amount; S.qt = 0;
+        // soft aim-assist: snap to the nearest foe within ~60 degrees of where you are heading
+        const fa = Math.atan2(P.fy, P.fx);
+        let best = fa, bd = Infinity;
+        for (const e of g.enemiesIn(P.x, P.y, 420, g.qa)) {
+          if (e.inert || !e.alive) continue;
+          const aa = Math.atan2(e.y - P.y, e.x - P.x);
+          const diff = Math.abs(((aa - fa + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+          const d2 = (e.x - P.x) ** 2 + (e.y - P.y) ** 2;
+          if (diff < 1.05 && d2 < bd) { bd = d2; best = aa; }
+        }
+        S.aim = best;
+      }
       if (!(S.queue > 0)) return;
       S.qt -= dt;
       if (S.qt > 0) return;
       S.qt = 0.05; S.queue--;
-      const a = Math.atan2(P.fy, P.fx) + rand(-0.12, 0.12);
+      const a = (S.aim ?? Math.atan2(P.fy, P.fx)) + rand(-0.12, 0.12);
       g.addProjectile({
         tex: T.icicle, layer: g.L.proj, x: P.x, y: P.y - 16, vx: Math.cos(a) * st.speed, vy: Math.sin(a) * st.speed,
         life: st.duration, dmg: st.dmg, pierce: st.pierce, r: 9 * st.area, scale: 1.1 * Math.sqrt(st.area), w: part.w,

@@ -62,7 +62,7 @@ const ui = new UI({
 });
 
 if (import.meta.env.DEV) {
-  import('./devsim.js').then((m) => m.install((c) => ui.h.startRun(c), () => game));
+  import('./devsim.js').then((m) => m.install((c, s, o) => ui.h.startRun(c, s, o), () => game));
   window.__atlas = atlasCanvas;
   import('./audio.js').then((a) => { window.__audio = a.audioDebug; });
 }

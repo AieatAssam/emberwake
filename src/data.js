@@ -1,4 +1,5 @@
-// All Emberwake game data. Tuning lives here.
+// All Emberwake game data. Tuning lives here (global knobs in tuning.js).
+import { TUNE } from './tuning.js';
 
 export const MAX_WEAPON_LEVEL = 8;
 export const MAX_WEAPONS = 6;
@@ -86,13 +87,13 @@ export const WEAPONS = {
   sunRing: {
     name: 'Sunring', element: 'fire', behavior: 'aura',
     desc: 'A ring of living flame scorches anything that comes close.',
-    base: { dmg: 5, cd: 0.6, area: 1, knock: 3 },
+    base: { dmg: 6, cd: 0.6, area: 1, knock: 3 },
     levels: L({ area: 0.15 }, { dmg: 3 }, { cdMul: 0.9 }, { area: 0.15 }, { dmg: 4 }, { cdMul: 0.85, area: 0.15 }, { dmg: 4, area: 0.2 }),
   },
   iceLance: {
     name: 'Rime Lance', element: 'frost', behavior: 'lance',
-    desc: 'Fires piercing icicles the way you move. Chills on hit.',
-    base: { dmg: 12, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
+    desc: 'Fires piercing icicles the way you move, snapping to foes ahead of you. Chills on hit.',
+    base: { dmg: 15, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
     levels: L({ amount: 1 }, { dmg: 5 }, { pierce: 2 }, { amount: 1, cdMul: 0.9 }, { dmg: 7 }, { amount: 1 }, { amount: 2, pierce: 3 }),
   },
   gravewell: {
@@ -190,36 +191,56 @@ export const CHARACTERS = {
     bonus: '+10% damage', apply: (s) => { s.might += 0.1; s.maxHp += 10; },
     flare: 'supernova', flareName: 'Supernova', flareDesc: 'Detonate the Ember: a colossal ring of fire.',
     color: '#ff9a3a',
+    perk: 'emberwalk', perkName: 'Slow Burn', perkDesc: 'Kindle lasts 35% longer between kills.',
   },
   oracle: {
-    name: 'Ysolde', title: 'The Rime Oracle', sprite: 'oracle', weapon: 'frostPulse', cost: 250,
-    bonus: '+15% area, +10% duration', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.maxHp -= 10; },
+    name: 'Ysolde', title: 'The Rime Oracle', sprite: 'oracle', weapon: 'frostPulse', startLevel: 3, cost: 250,
+    bonus: '+15% area, +10% duration, +15% damage', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.might += 0.15; s.maxHp -= 5; },
     flare: 'absoluteZero', flareName: 'Absolute Zero', flareDesc: 'Freeze every enemy solid for 5s; frozen foes shatter for double damage.',
     color: '#8ae0ff',
+    perk: 'rimeheart', perkName: 'Rime Heart', perkDesc: 'Foes that die frozen charge your Flare 2.5x faster.',
   },
   tinker: {
     name: 'Pip', title: 'The Clockwork Tinker', sprite: 'tinker', weapon: 'sparkDrones', cost: 500,
     bonus: '-10% cooldowns, +15% projectile speed', apply: (s) => { s.cooldown *= 0.9; s.projSpeed += 0.15; s.maxHp -= 10; },
     flare: 'overclock', flareName: 'Overclock', flareDesc: 'All weapons fire 3x faster for 7s.',
     color: '#7ef0c0',
+    perk: 'salvage', perkName: 'Salvage', perkDesc: 'Every 40s a gadget falls from the clockwork: a magnet, bomb, stillwater or flare orb.',
   },
   reaver: {
-    name: 'Grahm', title: 'The Blood Reaver', sprite: 'reaver', weapon: 'crescentArc', cost: 800,
+    name: 'Grahm', title: 'The Blood Reaver', sprite: 'reaver', weapon: 'crescentArc', cost: 900,
     bonus: '+40 health, +1 armor, +0.5 regen', apply: (s) => { s.maxHp += 40; s.armor += 1; s.regen += 0.5; s.moveSpeed *= 0.95; },
     flare: 'bloodrage', flareName: 'Bloodrage', flareDesc: 'Double damage, +30% speed and lifesteal for 8s.',
     color: '#ff4a5a',
+    perk: 'bloodthirst', perkName: 'Bloodthirst', perkDesc: 'Every kill heals a little. Standing in the thick of it keeps you alive.',
   },
   dancer: {
-    name: 'Lune', title: 'The Moon Dancer', sprite: 'dancer', weapon: 'moonglaive', cost: 1200,
+    name: 'Lune', title: 'The Moon Dancer', sprite: 'dancer', weapon: 'moonglaive', cost: 1500,
     bonus: '+20% move speed, +20% luck', apply: (s) => { s.moveSpeed *= 1.2; s.luck += 0.2; s.maxHp -= 15; },
     flare: 'moonfall', flareName: 'Moonfall', flareDesc: 'Twelve glaives spiral out, then you blink untouchable for 3s.',
     color: '#c9a0ff',
+    perk: 'moonstep', perkName: 'Moonstep', perkDesc: '14% chance to slip any hit, and longer invulnerability after being struck.',
   },
   bellwright: {
-    name: 'Brannoc', title: 'The Bellwright', sprite: 'bellwright', weapon: 'gravewell', cost: 1600,
+    name: 'Brannoc', title: 'The Bellwright', sprite: 'bellwright', weapon: 'gravewell', cost: 2200,
     bonus: '+25% max health, +15% area, -10% move speed', apply: (s) => { s.maxHp *= 1.25; s.area += 0.15; s.moveSpeed *= 0.9; },
     flare: 'toll', flareName: 'Great Toll', flareDesc: 'Ring the bell: every foe on screen is stunned for 2s and struck by three rings of sound.',
     color: '#ffb347',
+    perk: 'tollbearer', perkName: 'Tollbearer', perkDesc: 'Every 15s the bell tolls, hurling nearby foes away and stunning them.',
+  },
+  hunter: {
+    name: 'Sable', title: 'The Gloam Hunter', sprite: 'hunter', weapon: 'iceLance', startLevel: 4, cost: 3000,
+    bonus: '+15% crit chance, +35% crit damage, +20% damage', apply: (s) => { s.crit += 0.15; s.critMul += 0.35; s.might += 0.2; s.maxHp -= 5; },
+    flare: 'deadeye', flareName: 'Deadeye', flareDesc: 'Every strike is a critical hit for 6s and projectiles fly 50% faster.',
+    color: '#6af0a0',
+    perk: 'markedprey', perkName: 'Marked Prey', perkDesc: 'Deal 35% more damage to elites and bosses.',
+  },
+  hearthkeeper: {
+    name: 'Orin', title: 'The Hearthkeeper', sprite: 'hearthkeeper', weapon: 'sunRing', startLevel: 4, cost: 4000,
+    bonus: '+30% health, +1.2 regen, +30% area, +15% damage, -5% move speed', apply: (s) => { s.maxHp *= 1.3; s.regen += 1.2; s.area += 0.3; s.might += 0.15; s.moveSpeed *= 0.95; },
+    flare: 'hearthfire', flareName: 'Hearthfire', flareDesc: 'Plant a roaring hearth for 8s: foes inside burn and you mend.',
+    color: '#ffc060',
+    perk: 'hearthheart', perkName: 'Hearthheart', perkDesc: 'Every level-up restores 20% of your health.',
   },
 };
 
@@ -241,6 +262,8 @@ export const ENEMIES = {
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
   lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
+  scarab: { tex: 'scarab', hp: 18, speed: 98, dmg: 7, xp: 2, r: 12, anim: 10 },
+  acolyte: { tex: 'acolyte', hp: 26, speed: 42, dmg: 7, xp: 3, r: 15, ranged: true, anim: 6 },
   thief: { tex: 'imp', hp: 60, speed: 112, dmg: 0, xp: 8, r: 13, anim: 8, flee: true, loot: true, tint: 0xffd040 },
   hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
@@ -274,26 +297,31 @@ export const EVENTS = [
   { at: 90, type: 'elite', enemy: 'husk' },
   { at: 120, type: 'thief' },
   { at: 140, type: 'stampede', enemy: 'beetle', count: 0, alt: 'gloomling', altCount: 30 },
+  { at: 165, type: 'spring' },
   { at: 180, type: 'elite', enemy: 'wraith' },
   { at: 200, type: 'omen' },
   { at: 240, type: 'ring', enemy: 'wraith', count: 48 },
   { at: 270, type: 'elite', enemy: 'splitter' },
   { at: 300, type: 'boss', enemy: 'matron' },
+  { at: 330, type: 'meteors' },
   { at: 360, type: 'stampede', enemy: 'beetle', count: 26 },
   { at: 390, type: 'elite', enemy: 'beetle' },
   { at: 420, type: 'thief' },
   { at: 450, type: 'ring', enemy: 'husk', count: 40 },
   { at: 480, type: 'omen' },
   { at: 480, type: 'elite', enemy: 'spitter' },
+  { at: 510, type: 'spring' },
   { at: 540, type: 'stampede', enemy: 'moth', count: 60 },
   { at: 570, type: 'elite', enemy: 'sentinel' },
   { at: 600, type: 'boss', enemy: 'colossus' },
+  { at: 645, type: 'meteors' },
   { at: 660, type: 'ring', enemy: 'beetle', count: 56 },
   { at: 690, type: 'elite', enemy: 'husk' },
   { at: 720, type: 'stampede', enemy: 'wraith', count: 70 },
   { at: 735, type: 'elite', enemy: 'sentinel' },
   { at: 750, type: 'boss', enemy: 'herald' },
   { at: 780, type: 'ring', enemy: 'sentinel', count: 30 },
+  { at: 790, type: 'spring' },
   { at: 810, type: 'elite', enemy: 'beetle' },
   { at: 840, type: 'stampede', enemy: 'husk', count: 60 },
   { at: 870, type: 'elite', enemy: 'sentinel' },
@@ -318,24 +346,76 @@ export const META = {
   greed: { name: 'Ember Hoard', desc: '+10% cinders', max: 5, cost: 60, apply: (s, l) => (s.greed += 0.1 * l) },
   luck: { name: 'Fortune', desc: '+5% luck', max: 4, cost: 90, apply: (s, l) => (s.luck += 0.05 * l) },
   flare: { name: 'Flarecraft', desc: '+12% flare charge rate', max: 4, cost: 100, apply: (s, l) => (s.flareGain += 0.12 * l) },
-  amount: { name: 'Twin Flame', desc: '+1 projectile on every weapon', max: 1, cost: 1500, apply: (s, l) => (s.amount += l) },
-  revival: { name: 'Second Wick', desc: 'Revive once at 50% health', max: 2, cost: 600, apply: (s, l) => (s.revivals += l) },
+  amount: { name: 'Twin Flame', desc: '+1 projectile on every weapon', max: 1, cost: 4500, apply: (s, l) => (s.amount += l) },
+  revival: { name: 'Second Wick', desc: 'Revive once at 50% health', max: 1, cost: 2000, apply: (s, l) => (s.revivals += l) },
   reroll: { name: 'Shuffle', desc: '+2 rerolls per run', max: 3, cost: 120, apply: (s, l) => (s.rerolls += 2 * l) },
   banish: { name: 'Exile', desc: '+1 banish per run', max: 3, cost: 150, apply: (s, l) => (s.banishes += l) },
   spark: { name: 'Second Spark', desc: 'Start each run with a random relic (per rank)', max: 2, cost: 700, apply: () => {} },
 };
 
+// Difficulty: harder runs are tougher but pay better; easier runs are gentler and pay less.
+// hp/dmg/speed scale enemies, spawn scales the horde; xp and cinders scale what you earn.
+export const DIFFICULTY = {
+  easy: { name: 'Easy', hp: 0.8, dmg: 0.7, spawn: 0.85, speed: 0.95, xp: 0.8, cinders: 0.6, desc: 'Gentler foes and fewer of them. -20% XP, -40% cinders.' },
+  normal: { name: 'Normal', hp: 1, dmg: 1, spawn: 1, speed: 1, xp: 1, cinders: 1, desc: 'The intended night.' },
+  hard: { name: 'Hard', hp: 1.45, dmg: 1.4, spawn: 1.2, speed: 1.06, xp: 1.1, cinders: 1.6, desc: 'Tougher, denser, faster. +10% XP, +60% cinders.' },
+  brutal: { name: 'Brutal', hp: 1.9, dmg: 1.75, spawn: 1.4, speed: 1.12, xp: 1.2, cinders: 2.4, desc: 'For the unburnable. +20% XP, +140% cinders.' },
+};
+
+// Highest Heat level a stage can reach (one level unlocked per win).
+export const HEAT_MAX = 10;
+
+// Unlocks cost cinders AND an accomplishment, so spending alone never skips the game itself.
+const stageWins = (s) => Object.entries(s.records || {}).filter(([k, v]) => k.startsWith('stage:') && v.wins > 0).length;
+export const UNLOCK_REQS = {
+  chars: {
+    oracle: { text: 'Survive 3:00 in a run', check: (s) => s.best.time >= 180 },
+    tinker: { text: 'Slay 2,000 foes in total', check: (s) => s.totals.kills >= 2000 },
+    reaver: { text: 'Reach level 20 in a run', check: (s) => s.best.level >= 20 },
+    dancer: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
+    bellwright: { text: 'Slay the Brood Matron', check: (s) => !!s.feats.matron },
+    hunter: { text: 'Slay 15,000 foes in total', check: (s) => s.totals.kills >= 15000 },
+    hearthkeeper: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
+  },
+  stages: {
+    rimewood: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
+    marsh: { text: 'Slay the Cinder Colossus', check: (s) => !!s.feats.colossus },
+    reliquary: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
+    glassdunes: { text: 'Win on two different stages', check: (s) => stageWins(s) >= 2 },
+  },
+};
+export const reqOf = (kind, id) => UNLOCK_REQS[kind][id] || null;
+export const reqMet = (kind, id, s) => { const r = reqOf(kind, id); return !r || r.check(s); };
+
+// First time you outlast each mark on a stage you earn a one-off bonus (scaled by the stage's cinder multiplier).
+export const MILESTONES = [{ t: 180, reward: 40 }, { t: 360, reward: 90 }, { t: 600, reward: 180 }, { t: 900, reward: 350 }];
+
+// Eternal Embers: the endless sink. Cheap to start, ever more costly, small capped bonuses.
+export const ETERNAL = {
+  flame: { name: 'Eternal Flame', desc: '+0.8% damage per rank', max: 40, base: 500, grow: 1.15, apply: (s, l) => (s.might += 0.008 * l) },
+  vigor: { name: 'Eternal Vigor', desc: '+1% max health per rank', max: 40, base: 450, grow: 1.15, apply: (s, l) => (s.maxHp *= 1 + 0.01 * l) },
+  hoard: { name: 'Eternal Hoard', desc: '+1% cinders per rank', max: 40, base: 600, grow: 1.16, apply: (s, l) => (s.greed += 0.01 * l) },
+  lore: { name: 'Eternal Lore', desc: '+0.8% experience per rank', max: 40, base: 550, grow: 1.15, apply: (s, l) => (s.growth += 0.008 * l) },
+};
+export const eternalCost = (id, l) => Math.round(ETERNAL[id].base * ETERNAL[id].grow ** l);
+
 export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
-  if (level < 20) return Math.floor(4 + level * 4);
-  if (level < 40) return Math.floor(84 + (level - 20) * 14);
-  return Math.floor(364 + (level - 40) * 42);
+  // quick early levels (first upgrades come fast), then a quadratic climb so builds keep forming choices
+  const base = 4 + level * 4;
+  if (level < 12) return base;
+  const k = level - 12;
+  return Math.floor(base * (1 + 0.012 * k * k * TUNE.xpCurve));
 }
+
+// 0 until minute 4, then eases up to 1 at minute 15: the shape of the mid/late-game squeeze
+export const midRamp = (t) => Math.pow(Math.max(0, Math.min(1.6, (t - 240) / 660)), 1.5);
 
 export function enemyHpScale(t) {
   const m = t / 60;
-  let s = 1 + 0.2 * m + 0.032 * m * m;
-  if (m > 15) s *= Math.pow(1.17, m - 15);
+  let s = 1 + 0.2 * m + 0.032 * TUNE.hpQuad * m * m;
+  if (m > 15) s *= Math.pow(1 + 0.17 * TUNE.hpLate, m - 15);
+  s *= 1 + TUNE.hpMid * midRamp(t);
   return s;
 }
 
@@ -425,28 +505,44 @@ export const STAGES = {
     cost: 0, hpMul: 1, greedMul: 1, speedMul: 1, bias: {},
     ground: { base: '#141a24', blobs: ['rgba(30,44,52,0.5)', 'rgba(26,30,46,0.6)', 'rgba(36,38,40,0.35)', 'rgba(20,40,38,0.45)'], stone: 'rgba(60,62,80,0.35)' },
     tint: 0xb8b8d0, decorTint: 0xffffff, color: '#8ab0ff',
-    decor: { grass: 25, rock1: 17, rock0: 13, flower: 13, shroom: 12, bones: 12, pillar: 8 },
+    decor: { grass: 25, rock1: 17, rock0: 13, flower: 13, shroom: 12, bones: 12, pillar: 8 }, solids: { rock1: 15, pillar: 14 },
   },
   ashfields: {
-    name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. +40% enemy health, +50% cinders.',
-    cost: 600, hpMul: 1.4, greedMul: 1.5, speedMul: 1, lateHp: 0.02, bias: { husk: 1.5, beetle: 1.5, spitter: 0.5, imp: 1.4 },
+    name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. +15% enemy health, +50% cinders.',
+    cost: 600, hpMul: 1.08, greedMul: 1.5, speedMul: 1, lateHp: 0.01, bias: { husk: 1, beetle: 1, spitter: 0.4, imp: 1 },
     ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
     tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
-    decor: { stump: 20, vent: 14, basalt: 22, rock1: 16, bones: 16, pillar: 6 }, own: ['stump', 'vent', 'basalt'],
+    decor: { stump: 20, vent: 14, basalt: 22, rock1: 16, bones: 16, pillar: 6 }, own: ['stump', 'vent', 'basalt'], solids: { basalt: 14, rock1: 15, pillar: 14, stump: 9 }, hazards: { vent: { r: 32, dmg: 9 } },
   },
   rimewood: {
-    name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +80% enemy health, +15% enemy speed, x2 cinders.',
-    cost: 1500, hpMul: 1.8, greedMul: 2, speedMul: 1.15, lateHp: 0.035, bias: { wraith: 1.6, moth: 0.8, sentinel: 0.6, frostwisp: 1.6 },
+    name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +30% enemy health, +6% enemy speed, x2 cinders.',
+    cost: 1500, hpMul: 1.12, greedMul: 2, speedMul: 1.03, lateHp: 0.015, bias: { wraith: 1.2, moth: 0.8, sentinel: 0.5, frostwisp: 1.2 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
-    decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'],
+    decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'], solids: { pine: 9, icecluster: 12, snowrock: 13, rock1: 15, pillar: 14 },
   },
   marsh: {
-    name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. +110% enemy health, +10% speed, x2.5 cinders.',
-    cost: 2500, hpMul: 2.1, greedMul: 2.5, speedMul: 1.1, lateHp: 0.06, bias: { lurker: 1.8, splitter: 1, spitter: 0.6, moth: 0.6 },
+    name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. +45% enemy health, +5% speed, x2.5 cinders.',
+    cost: 3000, hpMul: 1.2, greedMul: 2.5, speedMul: 1.03, lateHp: 0.02, bias: { lurker: 1.3, splitter: 0.8, spitter: 0.5, moth: 0.6 },
     ground: { base: '#0e1612', blobs: ['rgba(30,60,44,0.55)', 'rgba(20,34,30,0.6)', 'rgba(60,90,60,0.22)', 'rgba(10,30,30,0.55)'], stone: 'rgba(60,80,64,0.3)' },
     tint: 0xa8c8b0, decorTint: 0xb0e0c0, color: '#8ad8a0',
-    decor: { reeds: 24, lilypad: 18, sunklantern: 8, rock1: 14, bones: 14, grass: 14, pillar: 4 }, own: ['reeds', 'lilypad', 'sunklantern'],
+    decor: { reeds: 24, lilypad: 18, sunklantern: 8, rock1: 14, bones: 14, grass: 14, pillar: 4 }, own: ['reeds', 'lilypad', 'sunklantern'], solids: { rock1: 15, pillar: 14 }, slows: { lilypad: [32, 0.65], reeds: [22, 0.8] },
+  },
+  reliquary: {
+    name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Acolytes keep their vigil. +60% enemy health, +7% speed, x3 cinders.',
+    cost: 4500, hpMul: 1.05, greedMul: 3, speedMul: 1.02, lateHp: 0.015, bias: { acolyte: 0.8, wraith: 0.8, spitter: 0.4, sentinel: 0.5, moth: 0.5 },
+    ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
+    tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
+    decor: { tomb: 16, candelabra: 10, banner: 8, cobble: 22, pillar: 10, bones: 12, rock0: 6 }, own: ['tomb', 'candelabra', 'banner', 'cobble'],
+    solids: { tomb: 20, candelabra: 7, pillar: 14, banner: 6 },
+  },
+  glassdunes: {
+    name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Drifts drag at your heels. +75% enemy health, +10% speed, x3.5 cinders.',
+    cost: 7000, hpMul: 1.15, greedMul: 3.5, speedMul: 1.03, lateHp: 0.025, bias: { scarab: 1, beetle: 0.8, imp: 0.7, spitter: 0.4, husk: 0.6 },
+    ground: { base: '#241a12', blobs: ['rgba(120,86,50,0.4)', 'rgba(60,40,28,0.55)', 'rgba(170,130,70,0.2)', 'rgba(40,28,22,0.5)'], stone: 'rgba(150,120,80,0.3)' },
+    tint: 0xe0c8a8, decorTint: 0xd8c0a0, color: '#ffd070',
+    decor: { glasscluster: 14, bonespire: 10, drift: 22, rock1: 10, bones: 12, basalt: 4 }, own: ['glasscluster', 'bonespire', 'drift'],
+    solids: { glasscluster: 15, bonespire: 9, rock1: 15, basalt: 14 }, slows: { drift: [36, 0.7] },
   },
 };
 
@@ -467,6 +563,8 @@ export const BESTIARY = {
   matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
   herald: { name: 'The Gloam Herald', lore: 'It does not walk; it arrives. Shrouded, it shrugs off blows; strike in the moments after it erupts.' },
+  scarab: { name: 'Glass Scarab', lore: 'Dune beetles whose shells caught the last sunlight and kept it. Fast, brittle, and everywhere.' },
+  acolyte: { name: 'Candle Acolyte', lore: 'It still keeps vigil in the reliquary. Its candle never burns down; it throws the light at anything warm.' },
   thief: { name: 'Ember Thief', lore: 'A glittering scavenger that steals warmth and runs. Catch it before the dark takes it back: it carries a chest.' },
   hollow: { name: 'The Hollow', lore: 'The Gloam\'s patience, given a shape. It cannot be harmed and it never tires. When it comes, the night is over: run, or be unmade.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },

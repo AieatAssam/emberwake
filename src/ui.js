@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
+import { DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, duck, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
@@ -123,7 +123,7 @@ export class UI {
         return `<div class="card char ${un ? '' : 'locked'} ${id === sel ? 'sel' : ''}" data-a="pick" data-id="${id}" style="--c:${c.color}">
           <img src="${spriteURL(c.sprite, 2)}" alt="">
           <div class="cname">${c.name}</div><div class="ctitle">${c.title}</div>
-          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost">${c.cost} ✦</div>`}
+          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost">${c.cost} ✦</div>${reqOf('chars', id) ? `<div class="req ${reqMet('chars', id, save) ? 'ok' : ''}">${reqMet('chars', id, save) ? '✓' : '🔒'} ${reqOf('chars', id).text}</div>` : ''}`}
           ${un && (save.records['char:' + id] || {}).wins ? `<button class="dawn-btn ${save.skins[id] === 'dawn' ? 'on' : ''}" data-a="skin" data-id="${id}" title="Dawn variant (earned by breaking the Eclipse)">☀ Dawn</button>` : ''}
         </div>`;
       }).join('');
@@ -137,6 +137,7 @@ export class UI {
             <div><b>${c.name}, ${c.title}</b></div>
             <div>Starts with <b>${WEAPONS[c.weapon].name}</b> · ${c.bonus}</div>
             <div class="flare-desc">Flare — <b>${c.flareName}</b>: ${c.flareDesc}</div>
+            ${c.perk ? `<div class="perk-desc">Perk — <b>${c.perkName}</b>: ${c.perkDesc}</div>` : ''}
           </div>
           <h3 class="stage-h">Stage</h3>
           <div class="stage-grid">${Object.entries(STAGES).map(([id, st]) => {
@@ -145,7 +146,7 @@ export class UI {
             return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}">
               <div class="stage-swatch" style="background:${st.ground.base}"><i style="background:${st.ground.blobs[0]}"></i><i style="background:${st.ground.blobs[2]}"></i></div>
               <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
-              ${open ? '' : `<div class="cost">${st.cost} ✦ ${save.cinders >= st.cost ? '· click to unlock' : ''}</div>`}</div></div>`;
+              ${open ? '' : `<div class="cost">${st.cost} ✦ ${save.cinders >= st.cost && reqMet('stages', id, save) ? '· click to unlock' : ''}</div>${reqOf('stages', id) ? `<div class="req ${reqMet('stages', id, save) ? 'ok' : ''}">${reqMet('stages', id, save) ? '✓' : '🔒'} ${reqOf('stages', id).text}</div>` : ''}`}</div></div>`;
           }).join('')}</div>
           ${(() => {
             const st = save.lastStage || 'gloam', mx = save.heatMax[st] || 0, cur = Math.min(save.heatSel[st] || 0, mx);
@@ -156,18 +157,20 @@ export class UI {
           <div class="row">
             <button class="btn" data-a="back">Back</button>
             ${un ? `<button class="btn primary" data-a="go">Begin</button>`
-              : `<button class="btn primary" data-a="buy" ${save.cinders < c.cost ? 'disabled' : ''}>Unlock · ${c.cost} ✦</button>`}
+              : `<button class="btn primary" data-a="buy" ${save.cinders < c.cost || !reqMet('chars', sel, save) ? 'disabled' : ''}>Unlock · ${c.cost} ✦</button>`}
+            <button class="btn ghost" data-a="diff" title="${esc(DIFFICULTY[save.settings.difficulty || 'normal'].desc)}">${DIFFICULTY[save.settings.difficulty || 'normal'].name} ▸</button>
           </div>
           <div class="wallet">${save.cinders} ✦ cinders</div>
         </div>`);
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
         skin: (el, ev) => { ev.stopPropagation(); const id = el.dataset.id; save.skins[id] = save.skins[id] === 'dawn' ? '' : 'dawn'; persist(); sel = id; render(); },
+        diff: () => { const ids = Object.keys(DIFFICULTY); save.settings.difficulty = ids[(ids.indexOf(save.settings.difficulty || 'normal') + 1) % ids.length]; persist(); sfx.select(); render(); },
         heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
           const id = el.dataset.id, st = STAGES[id];
           if (!save.stages[id]) {
-            if (save.cinders < st.cost) { sfx.deny(); return; }
+            if (save.cinders < st.cost || !reqMet('stages', id, save)) { sfx.deny(); return; }
             save.cinders -= st.cost; save.stages[id] = true; sfx.purchase();
           }
           save.lastStage = id; persist(); render();
@@ -175,7 +178,7 @@ export class UI {
         back: () => { sfx.back(); this.showTitle(); },
         go: () => { this.close(); this.h.startRun(sel); },
         buy: () => {
-          if (save.cinders >= c.cost) { save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.purchase(); render(); } else sfx.deny();
+          if (save.cinders >= c.cost && reqMet('chars', sel, save)) { save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.purchase(); render(); } else sfx.deny();
         },
       });
       this.keyHandler = (e) => {
@@ -235,6 +238,10 @@ export class UI {
           <h2>The Hearth</h2>
           <div class="sub">Cinders gathered in the Gloam feed the Hearth. Its warmth follows you into every run.</div>
           <div class="meta-grid">${items}</div>
+          ${save.totals.wins >= 1 ? `<h3 class="stage-h">Eternal Embers <small>— an endless sink for the long game</small></h3><div class="meta-grid">${Object.entries(ETERNAL).map(([id, m]) => {
+            const l = save.eternal[id] || 0, maxed = l >= m.max;
+            return `<div class="card meta eternal ${maxed ? 'maxed' : ''}" data-a="ebuy" data-id="${id}"><div class="mname">${m.name} <span class="lv">${l}/${m.max}</span></div><div class="mdesc">${m.desc}</div><div class="mcost">${maxed ? 'MAX' : eternalCost(id, l) + ' ✦'}</div></div>`;
+          }).join('')}</div>` : `<div class="heat-row muted">Win a run to light the <b>Eternal Embers</b>: an endless sink for spare cinders.</div>`}
           <div class="row"><button class="btn" data-a="back">Back</button><button class="btn ghost" data-a="refund">Refund all</button></div>
           <div class="wallet">${save.cinders} ✦ cinders</div>
         </div>`);
@@ -244,6 +251,10 @@ export class UI {
           const id = el.dataset.id, m = META[id], l = save.meta[id] || 0;
           const cost = Math.round(m.cost * (1 + l * 0.6));
           if (l < m.max && save.cinders >= cost) { save.cinders -= cost; save.meta[id] = l + 1; persist(); sfx.purchase(); render(); } else sfx.deny();
+        },
+        ebuy: (el) => {
+          const id = el.dataset.id, l = save.eternal[id] || 0, cost = l < ETERNAL[id].max ? eternalCost(id, l) : Infinity;
+          if (save.cinders >= cost) { save.cinders -= cost; save.eternal[id] = l + 1; persist(); sfx.purchase(); render(); } else sfx.deny();
         },
         refund: () => {
           let back = 0;
@@ -310,11 +321,17 @@ export class UI {
     this.open(`
       <div class="panel">
         <h2>Settings</h2>
+        <div class="difficulty"><span>Difficulty <small>(applies to your next run)</small></span>
+          <div class="seg">${Object.entries(DIFFICULTY).map(([id, d]) => `<button type="button" class="${(st.difficulty || 'normal') === id ? 'on' : ''}" data-d="${id}">${d.name}</button>`).join('')}</div>
+          <em>${esc(DIFFICULTY[st.difficulty || 'normal'].desc)}</em>
+        </div>
         <label class="slider"><span>Master volume</span><input type="range" min="0" max="100" step="5" data-v="volume" value="${st.volume}"><b>${st.volume}%</b></label>
         <label class="slider"><span>Music volume</span><input type="range" min="0" max="100" step="5" data-v="musicVolume" value="${st.musicVolume}"><b>${st.musicVolume}%</b></label>
         ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}${hapticsSupported ? t('haptics', 'Vibration (haptic feedback)') : ''}
+        <p class="sub credits">Music: public-domain (CC0) tracks by yd, Sorth, cynicmusic, beardalaxy, congusbongus, Spring Spring and Pro Sensory via OpenGameArt.org.</p>
         <div class="row"><button class="btn" data-a="back">Back</button>${document.fullscreenEnabled ? '<button class="btn" data-a="fs">Fullscreen</button>' : ''}${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
       </div>`);
+    this.screen.querySelectorAll('button[data-d]').forEach((el) => el.addEventListener('click', () => { st.difficulty = el.dataset.d; persist(); sfx.select(); this.showSettings(fromPause); }));
     this.screen.querySelectorAll('input[data-v]').forEach((el) => el.addEventListener('input', () => {
       st[el.dataset.v] = +el.value; el.nextElementSibling.textContent = el.value + '%'; persist();
       setVolumes(st.volume / 100, st.musicVolume / 100);
@@ -514,17 +531,37 @@ export class UI {
     const allIcons = [...Object.keys(WEAPONS), ...Object.keys(PASSIVES)];
     const slots = res.items.map((it, i) => `<div class="reel" data-i="${i}"><div class="reel-inner"><img src="${iconURL(allIcons[i % allIcons.length])}"></div><div class="reel-label"></div></div>`).join('');
     const fusion = res.items.some((x) => x.kind === 'fusion');
+    const tier = fusion ? 'ascend' : n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze';
+    const tierIdx = { bronze: 0, silver: 1, gold: 2, ascend: 3 }[tier];
+    const col = { bronze: '#d89050', silver: '#8ad0ff', gold: '#ffd040', ascend: '#e070ff' }[tier];
+    const title = fusion ? 'ASCENSION' : n >= 5 ? 'RADIANT HOARD' : n >= 3 ? 'GILDED CACHE' : 'RELIC CACHE';
     this.open(`
-      <div class="panel chest ${fusion ? 'fusion' : ''} tier${n}">
-        <div class="lu-title">${fusion ? 'ASCENSION' : n >= 5 ? 'RADIANT HOARD' : n >= 3 ? 'GILDED CACHE' : 'RELIC CACHE'}</div>
+      <div class="panel chest ${fusion ? 'fusion' : ''} tier${n} ct-${tier}" style="--tc:${col}">
+        <div class="lu-title chest-title">&nbsp;</div>
         <div class="rays"></div>
-        <div class="reels">${slots}</div>
-        <div class="chest-cinders">+${res.cinders} ✦</div>
-        <button class="btn primary hidden" data-a="take">Claim [Space]</button>
+        <div class="chest-stage"><div class="chest-aura"></div><img class="chest-big" src="${spriteURL(tier === 'bronze' ? 'chest' : 'chest_' + tier, 4)}" alt=""></div>
+        <div class="chest-hint">Something stirs inside…</div>
+        <div class="reels hidden">${slots}</div>
+        <div class="chest-cinders hidden">+${res.cinders} ✦</div>
+        <button class="btn primary hidden" data-a="take">Claim <span class="kbd-only">[Space]</span></button>
+        <div class="chest-flash"></div>
       </div>`, 'dim');
+    const panel = this.screen.querySelector('.panel');
     const reels = [...this.screen.querySelectorAll('.reel')];
-    let done = 0, finished = false;
+    let done = 0, finished = false, revealed = false;
     const timers = [];
+    const buildMs = fusion ? 2700 : n >= 5 ? 2400 : n >= 3 ? 2000 : 1500;
+    // phase 1: the chest strains harder and harder, heartbeat quickening
+    const t0 = performance.now();
+    const pulse = () => {
+      if (revealed) return;
+      const p = Math.min(1, (performance.now() - t0) / buildMs);
+      panel.style.setProperty('--amp', (1 + p * 9).toFixed(2));
+      panel.style.setProperty('--glow', (6 + p * 46).toFixed(0) + 'px');
+      sfx.chestBuild(p);
+      if (p < 1) timers.push(setTimeout(pulse, 420 - 300 * p));
+    };
+    pulse();
     const finish = () => {
       if (finished) return;
       finished = true;
@@ -532,24 +569,38 @@ export class UI {
       sfx.chestOpen();
       this.screen.querySelector('[data-a="take"]').classList.remove('hidden');
     };
-    reels.forEach((r, i) => {
-      const img = r.querySelector('img');
-      let k = 0;
-      const spin = setInterval(() => { img.src = iconURL(allIcons[(Math.random() * allIcons.length) | 0]); sfx.chestDrum(k++); }, 70);
-      timers.push(spin);
-      timers.push(setTimeout(() => {
-        clearInterval(spin);
-        const it = res.items[i];
-        img.src = iconURL(it.icon);
-        r.classList.add('done', it.kind);
-        r.querySelector('.reel-label').innerHTML = `<b>${esc(it.name)}</b>${it.level ? ` <span>${it.kind === 'fusion' ? '' : 'LV ' + it.level}</span>` : ''}`;
-        sfx.pickup();
-        if (++done === n) finish();
-      }, 700 + i * 380 + (it_isFusion(res.items[i]) ? 600 : 0)));
-    });
+    // phase 2: the lid bursts, then the reels spin and reveal one by one
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      timers.forEach((t) => { clearInterval(t); clearTimeout(t); });
+      timers.length = 0;
+      panel.classList.add('opened');
+      panel.querySelector('.chest-title').textContent = title;
+      panel.querySelector('.chest-hint').remove();
+      this.screen.querySelectorAll('.reels, .chest-cinders').forEach((el) => el.classList.remove('hidden'));
+      sfx.chestBurst(tierIdx);
+      reels.forEach((r, i) => {
+        const img = r.querySelector('img');
+        let k = 0;
+        const spin = setInterval(() => { img.src = iconURL(allIcons[(Math.random() * allIcons.length) | 0]); sfx.chestDrum(k++); }, 70);
+        timers.push(spin);
+        timers.push(setTimeout(() => {
+          clearInterval(spin);
+          const it = res.items[i];
+          img.src = iconURL(it.icon);
+          r.classList.add('done', it.kind);
+          r.querySelector('.reel-label').innerHTML = `<b>${esc(it.name)}</b>${it.level ? ` <span>${it.kind === 'fusion' ? '' : 'LV ' + it.level}</span>` : ''}`;
+          sfx.pickup();
+          if (++done === n) finish();
+        }, 700 + i * 380 + (it_isFusion(res.items[i]) ? 600 : 0)));
+      });
+    };
+    timers.push(setTimeout(reveal, buildMs));
     const take = () => {
+      if (!revealed) { reveal(); return; } // first press skips the build-up
       if (!finished) {
-        // skip animation
+        // second press skips the reel animation
         reels.forEach((r, i) => {
           const it = res.items[i];
           r.querySelector('img').src = iconURL(it.icon);
@@ -565,6 +616,8 @@ export class UI {
     this.bind({ take });
     const chestAt = performance.now();
     this.keyHandler = (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && performance.now() - chestAt > 350) { e.preventDefault(); take(); } };
+    // tapping anywhere on the panel before the reveal also skips ahead
+    panel.addEventListener('pointerdown', () => { if (!revealed && performance.now() - chestAt > 350) reveal(); });
   }
 
   // ---------- pause ----------
@@ -620,8 +673,18 @@ export class UI {
   showResults(g, win, abandoned = false) {
     if (g.resultsShown) return;
     g.resultsShown = true;
-    const bonus = Math.round((Math.floor(g.time / 60) * 6 + g.kills / 80) * g.stats.greed) + (win ? 300 : 0);
-    const total = g.cinders + bonus;
+    const { bonus, total: base } = g.runReward(win);
+    // one-off milestone bonuses the first time you outlast each mark on this stage
+    const claimed = save.milestones[g.stageId] || 0;
+    let milestoneGain = 0, milestoneCount = 0;
+    if (!g.daily) {
+      for (let i = claimed; i < MILESTONES.length; i++) {
+        if (g.time < MILESTONES[i].t) break;
+        milestoneGain += Math.round(MILESTONES[i].reward * STAGES[g.stageId].greedMul); milestoneCount++;
+      }
+      if (milestoneCount) save.milestones[g.stageId] = claimed + milestoneCount;
+    }
+    const total = base + milestoneGain;
     save.cinders += total;
     let dailyBonus = 0;
     if (g.daily) {
@@ -641,7 +704,7 @@ export class UI {
     ch.runs++; ch.time = Math.max(ch.time, g.time); if (win) ch.wins++;
     if (win) save.totals.wins++;
     let heatUnlocked = 0;
-    if (win && g.heat < 5 && (save.heatMax[g.stageId] || 0) <= g.heat) {
+    if (win && g.heat < HEAT_MAX && (save.heatMax[g.stageId] || 0) <= g.heat) {
       save.heatMax[g.stageId] = g.heat + 1; save.heatSel[g.stageId] = g.heat + 1; heatUnlocked = g.heat + 1;
     }
     const newBest = g.time > save.best.time;
@@ -672,7 +735,7 @@ export class UI {
         </div>
         <table class="dmg"><tr><th></th><th>Weapon</th><th></th><th>Damage</th><th>Kills</th></tr>${rows}</table>
         ${g.featsEarned.length ? `<div class="run-feats">${g.featsEarned.map((id) => `<span>★ ${FEATS[id].name} +${FEATS[id].reward}</span>`).join('')}</div>` : ''}
-        <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus = <b>${total} ✦</b></div>
+        <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus${milestoneGain ? ` · +${milestoneGain} milestone` : ''} = <b>${total} ✦</b>${g.diff && g.diff.cinders !== 1 ? ` <small>(${g.diff.name}: x${g.diff.cinders} cinders, x${g.diff.xp} XP)</small>` : ''}</div>
         <div class="hook">${affordable ? `${affordable} Hearth upgrade${affordable > 1 ? 's' : ''} affordable!` : nextChar ? `${nextChar[1].cost - save.cinders > 0 ? nextChar[1].cost - save.cinders + ' ✦ until ' + nextChar[1].name + ' unlocks' : nextChar[1].name + ' can be unlocked!'}` : ''}</div>
         <div class="row">
           <button class="btn primary" data-a="again">Again [Enter]</button>
@@ -723,5 +786,5 @@ function srcName(src) {
   const name = (BESTIARY[id] && BESTIARY[id].name) || id;
   if (kind === 'touch') return (elite ? 'an elite ' : '') + name;
   if (kind === 'shot') return id ? `${name}'s orbs` : 'Spitter venom';
-  return { slam: "the Colossus's slam", 'imp-ember': 'Cinder Imp embers', volatile: 'a volatile elite\'s embers' }[kind] || kind;
+  return { settle: 'standing still: the Gloam settled on you', slam: "the Colossus's slam", 'imp-ember': 'Cinder Imp embers', volatile: 'a volatile elite\'s embers' }[kind] || kind;
 }

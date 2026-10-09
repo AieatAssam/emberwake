@@ -1,12 +1,13 @@
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
-import {
+import { DIFFICULTY, ETERNAL,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
-  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
+  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { buzz } from './haptics.js';
+import { TUNE } from './tuning.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
 import { save, persist } from './save.js';
 
@@ -24,6 +25,8 @@ const MOTES = {
   ashfields: { tints: [0xff7a30, 0xffc060], vy: -38, sway: 16, blink: 9, s: [0.3, 0.6] },
   marsh: { tints: [0xc8ff70], vy: -4, sway: 22, blink: 2, s: [0.4, 0.8] },
   rimewood: { tints: [0xe8f4ff], vy: 24, sway: 18, blink: 0, s: [0.3, 0.6] },
+  reliquary: { tints: [0xffd080, 0xc890ff], vy: -14, sway: 10, blink: 5, s: [0.3, 0.6] },
+  glassdunes: { tints: [0xffe0a0, 0x70f0e0], vy: 6, sway: 30, blink: 3, s: [0.3, 0.7] },
 };
 const MAX_ENEMIES = 1100;
 const MAX_FX = 2600;
@@ -34,8 +37,12 @@ const ENEMY_COLORS = {
   herald: 0xb8a8ff,
   gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
   beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
-  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070,
+  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070, scarab: 0x2fd8c8, acolyte: 0xffc060, thief: 0xffd040,
 };
+// Hearth upgrades that are counted in whole items, not scaled stats
+const WHOLE_META = new Set(['amount', 'revival', 'reroll', 'banish', 'spark']);
+const CHEST_COL = { bronze: 0xd89050, silver: 0x8ad0ff, gold: 0xffd040, ascend: 0xe070ff };
+const chestTierOf = (n) => (n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze');
 
 // ---------- particle layer with in-place compaction ----------
 class Layer {
@@ -125,10 +132,12 @@ export class Game {
     this.ui = ui;
     this.charId = charId;
     this.char = CHARACTERS[charId];
+    this.perk = this.char.perk || '';
     this.stageId = STAGES[stageId] ? stageId : 'gloam';
     this.stage = STAGES[this.stageId];
     // Heat: optional difficulty ladder, unlocked one level per win on this stage
     this.daily = opts.daily || null;
+    this.diff = DIFFICULTY[this.daily ? 'normal' : save.settings.difficulty] || DIFFICULTY.normal;
     this.heat = this.daily ? 0 : Math.max(0, Math.min(save.heatSel[this.stageId] || 0, save.heatMax[this.stageId] || 0));
 
     this.root = new Container();
@@ -152,6 +161,10 @@ export class Game {
     this.initMotes();
     this.shrineG = new Graphics();
     this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
+    this.zoneG = new Graphics();
+    this.world.addChildAt(this.zoneG, this.world.getChildIndex(this.L.pickups.pc));
+    this.stillT = 0; this.stillSev = 0; this.posLog = []; this.posLogT = 0; this.settleWarned = false;
+    this.zones = []; this.obstacles = new Map(); this.meteorT = 0; this.perkT = 0;
     this.shrine = null; this.shrineT = 150;
     this.playerGlow = new Sprite(T.softglow);
     this.playerGlow.anchor.set(0.5);
@@ -194,7 +207,7 @@ export class Game {
     this.flashAlpha = 0; this.flashColor = 0xffffff;
 
     this.grid = new Grid(64);
-    this.qa = []; this.qb = []; this.qExp = []; this.qNova = [];
+    this.qa = []; this.qb = []; this.qExp = []; this.qNova = []; this.qZone = [];
     this.fxPool = []; this.projPool = []; this.numPool = []; this.enemyPool = [];
 
     // state
@@ -203,7 +216,7 @@ export class Game {
     this.enemies = []; this.projectiles = []; this.enemyShots = []; this.fx = []; this.pickups = []; this.numbers = [];
     this.weapons = []; this.passives = {}; this.pacts = []; this.banished = new Set();
     this.combo = 0; this.comboT = 0; this.kindleTier = 0; this.bestCombo = 0;
-    this.flare = 0; this.buffs = { overclock: 0, bloodrage: 0, shatter: 0, invuln: 0, bloodMoon: 0 };
+    this.flare = 0; this.buffs = { overclock: 0, bloodrage: 0, shatter: 0, invuln: 0, bloodMoon: 0, deadeye: 0 };
     this.rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.hitStop = 0; this.hitStopCd = 0; this.hitFxBudget = 0; this.kindleRewarded = {}; this.nextStreak = 250;
     this.shake = 0; this.timeScale = 1; this.slowT = 0;
@@ -228,6 +241,8 @@ export class Game {
     this.player.hp = this.stats.maxHp;
     this.rerolls = this.stats.rerolls; this.banishes = this.stats.banishes;
     this.addWeapon(this.char.weapon);
+    // some Bearers start with their signature weapon already trained
+    for (let i = 1; i < (this.char.startLevel || 1); i++) this.levelWeapon(this.char.weapon);
     // Hearth: Second Spark grants random starting relics
     for (let i = 0; i < (save.meta.spark || 0); i++) {
       const pool = Object.keys(PASSIVES).filter((k) => !this.passives[k]);
@@ -247,16 +262,18 @@ export class Game {
   // ---------- stats ----------
   recalcStats() {
     const s = { ...BASE_STATS };
-    for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, l); }
+    for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, WHOLE_META.has(k) ? l : l * TUNE.metaPower); }
+    for (const k in ETERNAL) { const l = save.eternal[k] || 0; if (l) ETERNAL[k].apply(s, l); }
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
     s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
+    s.greed *= this.diff.cinders; s.growth *= this.diff.xp;
     if (this.heat) s.greed *= 1 + 0.3 * this.heat; // heat's enemy buffs ramp in per spawn (see spawnEnemy/director)
     if (s.overcharge) { /* not used */ }
     // Heat dampens Overcharge so higher Heat stays tense after the build snowballs
     const oc = (this.overcharge || 0) / (1 + 0.15 * (this.heat || 0));
-    s.might += oc * 0.08; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
+    s.might += oc * 0.08 * TUNE.overcharge; s.cooldown *= Math.pow(0.97, oc); s.area += oc * 0.03; s.maxHp += oc * 5;
     s.cooldown = Math.max(s.cooldown, 0.25);
     const prevMax = this.stats ? this.stats.maxHp : s.maxHp;
     this.stats = s;
@@ -270,11 +287,11 @@ export class Game {
     const might = s.might * (B.bloodrage > 0 ? 2 : 1);
     const cdm = s.cooldown * (B.overclock > 0 ? 0.33 : 1);
     const o = part._eff || (part._eff = {});
-    o.dmg = b.dmg * might * (1 + 0.15 * (b.amount == null ? s.amount : 0));
+    o.dmg = b.dmg * might * TUNE.playerDmg * (1 + 0.15 * (b.amount == null ? s.amount : 0));
     o.cd = b.cd * cdm;
     o.amount = b.amount != null ? b.amount + s.amount : 0;
     o.area = (b.area || 1) * s.area * (1 + 0.1 * (b.amount == null ? s.amount : 0));
-    o.speed = (b.speed || 1) * s.projSpeed;
+    o.speed = (b.speed || 1) * s.projSpeed * (B.deadeye > 0 ? 1.5 : 1);
     o.duration = (b.duration || 1) * s.duration;
     o.pierce = b.pierce || 1;
     o.chains = b.chains || 0;
@@ -418,12 +435,14 @@ export class Game {
   }
 
   // chest contents: fusions first, then upgrades to owned items
-  rollChest(minItems = 1) {
-    const L = this.stats.luck;
+  chestCount(minItems = 1) {
+    const L = this.stats.luck * TUNE.chestBig, r = Math.random();
     let n = 1;
-    const r = Math.random();
     if (r < 0.05 * L) n = 5; else if (r < 0.22 * L) n = 3;
-    n = Math.max(n, minItems);
+    return Math.max(n, minItems);
+  }
+  rollChest(minItems = 1, fixed = false) {
+    const n = fixed ? minItems : this.chestCount(minItems);
     const items = [];
     for (const fid of this.availableFusions()) { if (items.length >= n) break; items.push({ kind: 'fusion', id: fid }); }
     let guard = 0;
@@ -445,6 +464,7 @@ export class Game {
     return { items: items.map((it) => (it.kind === 'fusion' ? { ...it, name: FUSIONS[it.id].name, desc: FUSIONS[it.id].desc, icon: it.id } : this.describeChoice(it))), cinders };
   }
   applyChest(res) {
+    this.chestsOpened = (this.chestsOpened || 0) + 1; this.chestItems = (this.chestItems || 0) + res.items.length;
     for (const it of res.items) {
       if (it.kind === 'fusion') this.fuse(it.id);
       else this.applyChoice(it);
@@ -549,21 +569,21 @@ export class Game {
     }
     const elite = !!o.elite;
     let hp = d.hp;
-    if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
+    if (d.boss) hp = d.hp * (0.45 + this.level * 0.036) * this.stats.enemyHp * TUNE.enemyHp * TUNE.bossHp * (this.endless ? enemyHpScale(this.time) / 5 : 1);
     // stage difficulty ramps in over the first 3 minutes so every stage has a fair opening
     const ramp = Math.min(1, this.time / (180 + 30 * (this.heat || 0)));
     const h = (this.heat || 0) * ramp;
     // heat keeps biting as the run goes on: +3% enemy HP per heat level per minute on top of the flat bonus
-    const heatHp = 1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60);
-    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h);
+    const heatHp = (1 + 0.25 * h + 0.03 * (this.heat || 0) * (this.time / 60)) * this.diff.hp;
+    const stHp = (1 + (this.stage.hpMul - 1) * ramp) * (1 + (this.stage.lateHp || 0) * (this.time / 60)) * heatHp, stSpd = (1 + (this.stage.speedMul - 1) * ramp) * (1 + 0.04 * h) * this.diff.speed * TUNE.enemySpeed;
     if (d.boss) hp *= stHp * (1 + 0.3 * (this.heat || 0));
-    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * stHp * (elite ? 14 : 1);
+    else if (!d.inert) hp = d.hp * enemyHpScale(this.time) * this.stats.enemyHp * TUNE.enemyHp * stHp * (elite ? 14 : 1);
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
-    e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg;
+    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg * TUNE.enemyDmg * (1 + TUNE.dmgMid * midRamp(this.time));
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
@@ -613,7 +633,8 @@ export class Game {
     if (!e.alive || e.d.hollow) return 0;
     let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1) * (e.d.shroud && this.time - e.lastBlink > 1.5 ? 0.25 : 1);
     let crit = false;
-    if (Math.random() < this.stats.crit + (this.stats.luck - 1) * 0.1) { dmg *= this.stats.critMul; crit = true; }
+    if (this.perk === 'markedprey' && (e.elite || e.boss)) dmg *= 1.25;
+    if (this.buffs.deadeye > 0 || Math.random() < this.stats.crit + (this.stats.luck - 1) * 0.1) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
     e.hp -= dmg;
     e.flash = 0.08;
@@ -655,7 +676,7 @@ export class Game {
     this.kills++;
     if (w) w.kills++;
     // kindle combo
-    this.combo++; this.comboT = 2.8;
+    this.combo++; this.comboT = this.perk === 'emberwalk' ? 3.8 : 2.8;
     if (this.combo > this.bestCombo) this.bestCombo = this.combo;
     const nt = kindleTierOf(this.combo);
     if (nt > this.kindleTier) {
@@ -673,7 +694,8 @@ export class Game {
       this.burst(this.player.x, this.player.y, 24, [0xffa030, 0xffe080], 300, 0.8);
     }
     if (this.combo >= this.nextStreak) { sfx.streak(this.kindleTier); this.nextStreak += 250; }
-    this.flare = Math.min(100, this.flare + (e.boss ? 35 : e.elite ? 8 : 0.32) * this.stats.flareGain);
+    this.flare = Math.min(100, this.flare + (e.boss ? 35 : e.elite ? 8 : 0.32) * this.stats.flareGain * (this.perk === 'rimeheart' && e.freezeT > 0 ? 2.5 : 1));
+    if (this.perk === 'bloodthirst' && !e.boss) this.heal(0.35, false);
     // death fx
     const col = ENEMY_COLORS[e.type] || 0xb080ff;
     const big = e.boss ? 4 : e.elite ? 2 : 1;
@@ -704,7 +726,7 @@ export class Game {
       return;
     }
     if (e.elite) {
-      this.dropPickup('chest', x, y, 1);
+      if (Math.random() < TUNE.eliteChest) this.dropPickup('chest', x, y, 1);
       sfx.eliteKill();
       if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.045);
       this.shockwave(x, y, 0xffd060, 90, 0.3);
@@ -753,7 +775,14 @@ export class Game {
     const pk = { type, x, y, value, alive: true, attract: false, vx: rand(-60, 60), vy: rand(-90, -30), t: 0, pop: 0.25 };
     pk.p = this.L.pickups.add(tex, x, y);
     if (type === 'gem') { this.setGemTex(pk); this.gemCount = (this.gemCount || 0) + 1; if (this.gemCount >= GEM_CAP && (!this.vault || !this.vault.alive)) this.vault = pk; }
-    if (type === 'chest') pk.pop = 0;
+    if (type === 'chest') {
+      pk.pop = 0; pk.n = this.chestCount(value); pk.tier = '';
+      pk.p.scaleX = pk.p.scaleY = 1.35;
+      pk.beam = this.L.glowUnder.add(T.chestbeam || T.softglow, x, y);
+      pk.beam.anchorY = 0.92; pk.beam.scaleX = 1.2; pk.beam.scaleY = 1.5; pk.beam.alpha = 0.5;
+      pk.ring = this.L.glowUnder.add(T.chestring || T.softglow, x, y);
+      sfx.chestDrop();
+    }
     if (type === 'cinder' && value >= 10) pk.p.scaleX = pk.p.scaleY = 1.6;
     this.pickups.push(pk);
     return pk;
@@ -771,7 +800,22 @@ export class Game {
       case 'freeze': p.rotation += dt * 0.8; break;
       case 'flareorb': p.rotation += dt * 3; p.scaleX = p.scaleY = bs * (1 + 0.1 * Math.sin(t * 9)); break;
       case 'cinder': p.alpha = 0.8 + 0.2 * Math.sin(t * 12 + g.x); break;
-      case 'chest': p.rotation = Math.sin(t * 14) * 0.06 * (Math.sin(t * 1.3) > 0.8 ? 1 : 0); break;
+      case 'chest': {
+        const tier = this.fusionReady ? 'ascend' : chestTierOf(g.n);
+        const col = CHEST_COL[tier];
+        if (tier !== g.tier) {
+          g.tier = tier;
+          const tex = T[tier === 'bronze' ? 'chest' : 'chest_' + tier];
+          if (tex) p.texture = tex;
+          g.beam.tint = col; g.ring.tint = col;
+        }
+        p.rotation = Math.sin(t * 14) * 0.06 * (Math.sin(t * 1.3) > 0.8 ? 1 : 0);
+        p.scaleX = p.scaleY = 1.35 * (1 + 0.05 * Math.sin(t * 4));
+        g.beam.x = g.x; g.beam.y = g.y + 12; g.beam.alpha = 0.4 + 0.2 * Math.sin(t * 3);
+        const k = (t * 0.7) % 1;
+        g.ring.x = g.x; g.ring.y = g.y + 6; g.ring.scaleX = g.ring.scaleY = 0.5 + k * 1.6; g.ring.alpha = (1 - k) * 0.8;
+        break;
+      }
     }
   }
   initMotes() {
@@ -844,28 +888,42 @@ export class Game {
       case 'flareorb': this.flare = Math.min(100, this.flare + 50); sfx.pickup(); break;
       case 'chest':
         sfx.pickup();
-        this.chestQueue.push(pk.value);
+        this.chestQueue.push(pk.n || pk.value);
+        this.L.glowUnder.kill(pk.beam); this.L.glowUnder.kill(pk.ring);
+        this.shockwave(pk.x, pk.y, CHEST_COL[pk.tier] || 0xffd040, 160, 0.4);
         break;
     }
   }
 
   gainXp(v) {
     const mul = this.stats.growth * (1 + (KINDLE_TIERS[this.kindleTier].mul - 1) * 0.5);
-    this.xp += v * mul;
+    this.xp += v * mul * TUNE.xp;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
       this.xpNext = xpForLevel(this.level);
       this.pendingLevels++;
+      if (this.perk === 'hearthheart') this.heal(this.stats.maxHp * 0.2, true);
     }
   }
+  // cinders banked at the end of a run: what you gathered plus a survival bonus
+  runReward(win) {
+    // survival pay does not depend on how many cinder pickups you scooped; the win bonus is a flat prize
+    const bonus = Math.round((Math.floor(this.time / 60) * 8 + this.kills / 150) * this.stats.greed + (win ? 800 * this.stats.greed : 0));
+    return { gathered: this.cinders, bonus, total: this.cinders + bonus };
+  }
   addCinders(v, useKindle) {
-    this.cinders += Math.max(1, Math.round(v * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1)));
+    // fractions carry over so small pickups still add up under a low cinder multiplier
+    this.cinderAcc = (this.cinderAcc || 0) + v * TUNE.cinders * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1);
+    const whole = Math.floor(this.cinderAcc);
+    this.cinderAcc -= whole;
+    this.cinders += whole;
   }
   heal(v, show) {
     const P = this.player;
     if (this.stats.noHeal && show) return;
     const before = P.hp;
+    v *= 1 - this.stillSev; // the Gloam smothers healing on anyone standing still
     P.hp = Math.min(this.stats.maxHp, P.hp + v);
     if (show && P.hp > before) {
       sfx.heal();
@@ -876,26 +934,84 @@ export class Game {
   hurtPlayer(amount, src = '?') {
     const P = this.player;
     if (P.iframes > 0 || this.buffs.invuln > 0 || this.dead) return;
+    if (this.perk === 'moonstep' && Math.random() < 0.14) {
+      P.iframes = 0.5;
+      this.burst(P.x, P.y - 10, 12, [0xc9a0ff, 0xffffff], 220, 0.7);
+      this.shockwave(P.x, P.y, 0xc9a0ff, 120, 0.3);
+      sfx.blink();
+      return;
+    }
     (this.dmgLog || (this.dmgLog = {}))[src] = (this.dmgLog[src] || 0) + amount;
     this.lastHitBy = src;
     const s = this.stats;
     const dmg = Math.max(1, amount * 0.25, amount * (1 - Math.min(0.5, s.armor * 0.03)) - s.armor);
     P.hp -= dmg;
-    P.iframes = 0.55; P.hurtT = 0.25;
+    P.iframes = this.perk === 'moonstep' ? 0.95 : 0.55; P.hurtT = 0.25;
     this.shake = Math.max(this.shake, 6);
     this.hurtFlash = 0.5;
     if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.05);
     sfx.hurt(); buzz(30, 120);
-    if (P.hp <= 0) {
-      if (s.revivals > (this.usedRevivals || 0)) {
-        this.usedRevivals = (this.usedRevivals || 0) + 1;
-        P.hp = s.maxHp * 0.5; P.iframes = 3;
-        this.flash(0xffa040, 1);
-        this.ui.toast('SECOND WICK', 'pickup');
-        sfx.revive();
-        this.triggerFlare('supernova', true);
-      } else this.die();
+    if (P.hp <= 0) this.onZeroHp();
+  }
+
+  // out of health: a Second Wick revives you once, otherwise the run ends
+  onZeroHp() {
+    const P = this.player, s = this.stats;
+    if (s.revivals > (this.usedRevivals || 0)) {
+      this.usedRevivals = (this.usedRevivals || 0) + 1;
+      P.hp = s.maxHp * 0.5; P.iframes = 3;
+      this.stillT = 0; this.posLog.length = 0;
+      this.flash(0xffa040, 1);
+      this.ui.toast('SECOND WICK', 'pickup');
+      sfx.revive();
+      this.triggerFlare('supernova', true);
+    } else this.die();
+  }
+
+  // The Gloam settles on anyone who stops running: no build, armor or healing can make idling a strategy.
+  // Near-stillness (little ground covered over the last six seconds, so jittering in place does not help)
+  // builds up; past a short grace period it bites a share of max health that armor cannot stop, chokes
+  // healing, and draws a crowd. Deliberate stand-your-ground moments (shrines, springs, hearths) are exempt.
+  updateSettle(dt) {
+    const P = this.player;
+    if (this.dead) return;
+    const inZone = this.zones.some((z) => (z.type === 'spring' || z.type === 'hearth') && Math.hypot(P.x - z.x, P.y - z.y) < z.r);
+    const inShrine = this.shrine && Math.hypot(P.x - this.shrine.x, P.y - this.shrine.y) < this.shrine.r;
+    this.posLogT -= dt;
+    if (this.posLogT <= 0) {
+      this.posLogT = 0.5;
+      this.posLog.push(P.x, P.y);
+      if (this.posLog.length > 24) this.posLog.splice(0, 2); // 12 samples = 6 seconds
     }
+    let still = false;
+    if (this.posLog.length >= 24) {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let i = 0; i < this.posLog.length; i += 2) {
+        x0 = Math.min(x0, this.posLog[i]); x1 = Math.max(x1, this.posLog[i]);
+        y0 = Math.min(y0, this.posLog[i + 1]); y1 = Math.max(y1, this.posLog[i + 1]);
+      }
+      still = Math.hypot(x1 - x0, y1 - y0) < 220;
+    }
+    if (inZone || inShrine) { this.stillT = 0; this.posLog.length = 0; }
+    else if (still) this.stillT += dt;
+    else this.stillT = Math.max(0, this.stillT - dt * 2);
+    const sev = Math.max(0, Math.min(1, (this.stillT - TUNE.settleAfter) / 6));
+    this.stillSev = sev;
+    if (sev > 0) {
+      if (!this.settleWarned) { this.settleWarned = true; this.ui.toast('THE GLOAM SETTLES: KEEP MOVING', 'boss'); sfx.bossWarn(); }
+      this.smolder(this.stats.maxHp * (TUNE.settleDps + (0.10 - TUNE.settleDps) * sev) * dt);
+      this.settleSfxT = (this.settleSfxT || 0) - dt;
+      if (this.settleSfxT <= 0) { this.settleSfxT = 1; sfx.hurt(); }
+    } else if (this.stillT < 1) this.settleWarned = false;
+  }
+  smolder(amount) {
+    const P = this.player;
+    if (this.dead || P.hp <= 0 || this.buffs.invuln > 0) return;
+    this.lastHitBy = 'settle';
+    (this.dmgLog || (this.dmgLog = {})).settle = ((this.dmgLog || {}).settle || 0) + amount;
+    P.hp -= amount;
+    this.hurtFlash = Math.max(this.hurtFlash || 0, 0.25 + 0.3 * this.stillSev);
+    if (P.hp <= 0) this.onZeroHp();
   }
 
   die() {
@@ -963,6 +1079,18 @@ export class Game {
         this.burst(P.x, P.y - 20, 60, [0xffd27a, 0xffffff], 600, 1);
         break;
       }
+      case 'deadeye':
+        this.flash(0x80ffb0, 0.5);
+        this.buffs.deadeye = 6;
+        this.shockwave(P.x, P.y, 0x6af0a0, 520, 0.6);
+        this.burst(P.x, P.y, 50, [0x6af0a0, 0xffffff], 500, 0.9);
+        break;
+      case 'hearthfire':
+        this.flash(0xffc060, 0.5);
+        this.zones.push({ type: 'hearth', x: P.x, y: P.y, r: 200, t: 8, max: 8, tick: 0, dmg: (14 + this.level * 1.5) * might, color: 0xffb040 });
+        this.shockwave(P.x, P.y, 0xffb040, 420, 0.7);
+        this.burst(P.x, P.y, 70, [0xffb040, 0xffe080, 0xff6020], 420, 1);
+        break;
       case 'moonfall': {
         this.flash(0xd0b0ff, 0.6);
         this.buffs.invuln = 3;
@@ -1099,7 +1227,8 @@ export class Game {
       const mv = moveVector();
       if (P.chillT > 0) P.chillT -= dt;
       const spd = S.moveSpeed * (this.buffs.bloodrage > 0 ? 1.3 : 1) * (P.chillT > 0 ? 0.75 : 1);
-      P.x += mv.x * spd * dt; P.y += mv.y * spd * dt;
+      const mvr = this.resolveObstacles(mv.x * spd, mv.y * spd, dt);
+      P.x += mvr.x * dt; P.y += mvr.y * dt;
       P.moving = mv.x !== 0 || mv.y !== 0;
       if (P.moving) { const l = Math.hypot(mv.x, mv.y); P.fx = mv.x / l; P.fy = mv.y / l; }
       P.iframes -= dt; P.hurtT -= dt;
@@ -1133,6 +1262,8 @@ export class Game {
       this.director(dt);
       for (const w of this.weapons) for (const part of w.parts) BEHAVIORS[part.behavior].update(this, part, this.eff(part), dt);
       this.updateShrine(dt);
+      this.updateSettle(dt);
+      this.updatePerks(dt); this.updateHazards(dt); this.updateZones(dt);
     }
     this.updateNovas(dt);
     t1 = now(); pf.weapons += t1 - t0; t0 = t1;
@@ -1164,7 +1295,7 @@ export class Game {
         this.ui.showLevelUp(this, choices);
       }
     } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
-      this.ui.showChest(this, this.rollChest(this.chestQueue.shift()));
+      this.ui.showChest(this, this.rollChest(this.chestQueue.shift(), true));
     }
     this.checkHints();
     // Ascension readiness: flag partner weapons in the HUD and announce once per fusion
@@ -1173,6 +1304,7 @@ export class Game {
       this.fuseCheckT = 0.5;
       const ready = this.availableFusions();
       this.readyParents = ready.flatMap((fid) => FUSIONS[fid].parents);
+      this.fusionReady = ready.length > 0;
       this.announced = this.announced || {};
       for (const fid of ready) if (!this.announced[fid]) { this.announced[fid] = true; this.ui.toast('ASCENSION READY: open a chest', 'fusion'); sfx.ascendReady(); }
     }
@@ -1204,7 +1336,7 @@ export class Game {
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
     const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
-    rate *= this.stats.curse * heatSpawn; min *= this.stats.curse * heatSpawn;
+    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev); min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev);
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;
@@ -1255,7 +1387,7 @@ export class Game {
     }
     // periodic elites between scripted ones
     this.eliteT += dt;
-    if (t > 120 && this.eliteT > Math.max(18, 60 - t / 30) / (1 + 0.15 * (this.heat || 0))) {
+    if (t > 120 && this.eliteT > (Math.max(18, 60 - t / 30) * TUNE.eliteEvery) / (1 + 0.15 * (this.heat || 0))) {
       this.eliteT = 0;
       const types = Object.keys(wave.pool);
       const sp = this.spawnPointOffscreen(40);
@@ -1278,7 +1410,7 @@ export class Game {
   stagePool(wave) {
     if (wave._pools && wave._pools[this.stageId]) return wave._pools[this.stageId];
     const pool = { ...wave.pool };
-    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530, imp: 90, frostwisp: 90, lurker: 150, splitter: 210 };
+    const unlockedAt = { husk: 105, beetle: 330, spitter: 270, wraith: 150, moth: 30, sentinel: 530, imp: 90, frostwisp: 90, lurker: 150, splitter: 210, scarab: 60, acolyte: 120 };
     for (const k in this.stage.bias) if (wave.at >= (unlockedAt[k] || 0)) pool[k] = (pool[k] || 0) + this.stage.bias[k];
     (wave._pools || (wave._pools = {}))[this.stageId] = pool;
     return pool;
@@ -1307,6 +1439,15 @@ export class Game {
     } else if (ev.type === 'elite') {
       const sp = this.spawnPointOffscreen(40);
       this.spawnEnemy(ev.enemy, sp.x, sp.y, { elite: true, force: true });
+    } else if (ev.type === 'spring') {
+      const a = Math.random() * TAU, d = rand(260, 420);
+      this.zones.push({ type: 'spring', x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: 100, t: 22, max: 22, color: 0x70ffb8 });
+      this.ui.toast('A HEALING SPRING BUBBLES UP', 'pickup');
+      sfx.shrineSpawn();
+    } else if (ev.type === 'meteors') {
+      this.meteorT = 12;
+      this.ui.toast('METEOR SHOWER: watch the red circles', 'boss');
+      sfx.bossWarn();
     } else if (ev.type === 'thief') {
       const sp = this.spawnPointOffscreen(60);
       this.spawnEnemy('thief', sp.x, sp.y, { force: true, life: 18 });
@@ -1676,6 +1817,144 @@ export class Game {
     }
   }
 
+  // Soft obstacles: solid scenery resists but never blocks. The part of your motion pushing
+  // into it is cut to 35% (so you slide along it, or wade through slowly); mud and drifts slow you.
+  resolveObstacles(vx, vy, dt) {
+    const C = 480, P = this.player, out = this._mv || (this._mv = { x: 0, y: 0 });
+    let slow = 1, wading = false;
+    const cx = Math.floor(P.x / C), cy = Math.floor(P.y / C);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const list = this.obstacles.get((cx + a) + ',' + (cy + b));
+      if (!list) continue;
+      for (let i = 0; i < list.length; i++) {
+        const ob = list[i];
+        const dx = P.x - ob.x, dy = P.y - ob.y, R = ob.r + 10;
+        if (dx > R || dx < -R || dy > R || dy < -R) continue;
+        const d = Math.hypot(dx, dy);
+        if (d >= R) continue;
+        if (ob.slow) { slow = Math.min(slow, ob.slow); continue; }
+        if (ob.haz) continue;
+        const nx = dx / (d || 1), ny = dy / (d || 1), vn = vx * nx + vy * ny;
+        if (vn < 0) { vx -= vn * nx * 0.65; vy -= vn * ny * 0.65; wading = true; }
+        slow = Math.min(slow, 0.85);
+      }
+    }
+    if (wading && (vx || vy) && Math.random() < dt * 8 && this.fx.length < this.maxFx * 0.5) {
+      this.spawnFx(T.dot, P.x + rand(-8, 8), P.y + 4, { life: 0.35, s0: 0.9, s1: 0, tint: 0xb8a890, a: 0.6, vy: -20, vx: rand(-20, 20) });
+    }
+    out.x = vx * slow; out.y = vy * slow;
+    return out;
+  }
+
+  // each Bearer's signature perk (passive ones are woven into damage/kill/hurt above)
+  updatePerks(dt) {
+    const P = this.player;
+    this.perkT += dt;
+    if (this.perk === 'salvage' && this.perkT > 40) {
+      this.perkT = 0;
+      const kinds = ['magnet', 'flareorb', 'freeze', 'bomb'];
+      this.dropPickup(kinds[(Math.random() * kinds.length) | 0], P.x + rand(-60, 60), P.y + rand(-60, 60), 1);
+      this.ui.toast('SALVAGE', 'pickup');
+    } else if (this.perk === 'tollbearer' && this.perkT > 15) {
+      this.perkT = 0;
+      this.shockwave(P.x, P.y, 0xffc860, 340, 0.5);
+      sfx.pulse();
+      for (const e of this.enemiesIn(P.x, P.y, 180, this.qZone)) {
+        if (e.inert || e.boss) continue;
+        const dx = e.x - P.x, dy = e.y - P.y, dl = Math.hypot(dx, dy) || 1;
+        e.kx += (dx / dl) * 320 * (1 - (e.d.knockRes || 0)); e.ky += (dy / dl) * 320 * (1 - (e.d.knockRes || 0));
+        e.freezeT = Math.max(e.freezeT, 0.8);
+      }
+    }
+  }
+
+  // vents and other stage hazards: telegraph, then erupt
+  updateHazards(dt) {
+    const C = 480, P = this.player, cx = Math.floor(P.x / C), cy = Math.floor(P.y / C);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const list = this.obstacles.get((cx + a) + ',' + (cy + b));
+      if (!list) continue;
+      for (const ob of list) {
+        if (!ob.haz) continue;
+        ob.t -= dt;
+        if (ob.ph === 0 && ob.t <= 0) {
+          ob.ph = 1; ob.t = 0.9;
+          this.zones.push({ type: 'telegraph', x: ob.x, y: ob.y, r: ob.haz.r + 8, t: 0.9, max: 0.9, color: 0xff5a20, onEnd: () => this.eruptVent(ob) });
+        } else if (ob.ph === 1 && ob.t <= 0) { ob.ph = 0; ob.t = 4 + Math.random() * 5; }
+      }
+    }
+  }
+  eruptVent(ob) {
+    const P = this.player;
+    this.burst(ob.x, ob.y, 30, [0xff7a30, 0xffd060, 0xffffff], 380, 0.9);
+    this.shockwave(ob.x, ob.y, 0xff6a20, ob.haz.r * 2.6, 0.35);
+    sfx.boom();
+    if (Math.hypot(P.x - ob.x, P.y - ob.y) < ob.haz.r + 10) this.hurtPlayer(ob.haz.dmg * (1 + this.time / 1200), 'vent');
+    const list = this.enemiesIn(ob.x, ob.y, ob.haz.r + 10, this.qZone);
+    for (const e of list) if (!e.inert) this.damage(e, 30 + this.time / 10, { knock: 10, fx: ob.x, fy: ob.y });
+  }
+
+  // timed ground zones: telegraphs, healing springs, the Hearthkeeper's hearth
+  updateZones(dt) {
+    const P = this.player, zs = this.zones;
+    for (let i = zs.length - 1; i >= 0; i--) {
+      const z = zs[i];
+      z.t -= dt;
+      const inside = Math.hypot(P.x - z.x, P.y - z.y) < z.r;
+      if (z.type === 'spring') {
+        if (inside && !this.dead) {
+          this.heal(this.stats.maxHp * 0.05 * dt, false);
+          if (Math.random() < dt * 14) this.spawnFx(T.dot, z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.7, { life: 0.8, s0: 1, s1: 0, tint: 0x80ffc0, vy: -50, a: 0.9 });
+        }
+      } else if (z.type === 'hearth') {
+        z.tick -= dt;
+        if (z.tick <= 0) {
+          z.tick = 0.5;
+          for (const e of this.enemiesIn(z.x, z.y, z.r, this.qZone)) if (!e.inert) this.damage(e, e.boss ? z.dmg * 0.5 : z.dmg, { knock: 2, fx: z.x, fy: z.y });
+          if (inside) this.heal(2.5, false);
+          this.burst(z.x + rand(-z.r, z.r) * 0.6, z.y + rand(-z.r, z.r) * 0.6, 3, [0xffb040, 0xffe080], 80, 0.7);
+        }
+      }
+      if (z.t <= 0) { if (z.onEnd) z.onEnd(); zs[i] = zs[zs.length - 1]; zs.pop(); }
+    }
+    if (this.meteorT > 0) {
+      this.meteorT -= dt;
+      this.meteorAcc = (this.meteorAcc || 0) + dt;
+      while (this.meteorAcc > 0.3) {
+        this.meteorAcc -= 0.3;
+        const near = Math.random() < 0.3;
+        const x = near ? P.x + rand(-140, 140) : P.x + rand(-this.halfW, this.halfW) * 0.9;
+        const y = near ? P.y + rand(-140, 140) : P.y + rand(-this.halfH, this.halfH) * 0.9;
+        this.zones.push({ type: 'telegraph', x, y, r: 72, t: 1.15, max: 1.15, color: 0xff6030, onEnd: () => this.meteorImpact(x, y) });
+      }
+    }
+  }
+  meteorImpact(x, y) {
+    this.explodeAt(x, y, 72, 50 + this.level * 3, null, 0xff8030, 14);
+    this.shockwave(x, y, 0xffa040, 190, 0.35);
+    this.shake = Math.max(this.shake, 5);
+    sfx.boom();
+    if (this.dead) return;
+    const P = this.player;
+    if (Math.hypot(P.x - x, P.y - y) < 80) this.hurtPlayer(10 * (1 + this.time / 900), 'meteor');
+  }
+  drawZones() {
+    const g = this.zoneG;
+    g.clear();
+    for (const z of this.zones) {
+      const k = 1 - z.t / (z.max || 1);
+      if (z.type === 'telegraph') {
+        g.circle(z.x, z.y, z.r).fill({ color: z.color, alpha: 0.06 + 0.22 * k });
+        g.circle(z.x, z.y, z.r * (1 - 0.25 * k)).stroke({ color: z.color, width: 3, alpha: 0.4 + 0.5 * k });
+      } else {
+        const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
+        const fade = Math.min(1, z.t / 1.5);
+        g.circle(z.x, z.y, z.r).fill({ color: z.color || 0x70ffb8, alpha: (0.1 + 0.05 * pulse) * fade });
+        g.circle(z.x, z.y, z.r).stroke({ color: z.color || 0x70ffb8, width: 3, alpha: (0.5 + 0.3 * pulse) * fade });
+      }
+    }
+  }
+
   // procedural decor, chunked around the player
   updateDecor() {
     const C = 480, P = this.player;
@@ -1688,26 +1967,31 @@ export class Game {
       if (this.chunks.has(k)) continue;
       let s = (cx * 73856093) ^ (cy * 19349663) ^ 0x5bd1e995;
       const r = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
-      const ps = [];
+      const ps = [], obs = [];
       const n = 5 + ((r() * 7) | 0);
       for (let i = 0; i < n; i++) {
         const dec = this.stage.decor;
         let tot = 0; for (const dk in dec) tot += dec[dk];
         let v = r() * tot, name = 'grass';
         for (const dk in dec) { v -= dec[dk]; if (v <= 0) { name = dk; break; } }
-        const p = this.L.decor.add(T[name], cx * C + r() * C, cy * C + r() * C);
+        const dx = cx * C + r() * C, dy = cy * C + r() * C;
+        const p = this.L.decor.add(T[name], dx, dy);
+        const solid = this.stage.solids && this.stage.solids[name], slow = this.stage.slows && this.stage.slows[name], haz = this.stage.hazards && this.stage.hazards[name];
+        if (solid || slow || haz) obs.push({ x: dx, y: dy - 4, r: solid || (slow ? slow[0] : haz.r), slow: slow ? slow[1] : 0, haz: haz || null, ph: 0, t: 2 + r() * 6 });
         p.anchorY = 0.85;
         if (r() < 0.5) p.scaleX = -1;
-        p.alpha = 0.85;
+        p.alpha = 0.8;
         p.tint = this.stage.own && this.stage.own.includes(name) ? 0xffffff : this.stage.decorTint;
         ps.push(p);
       }
       this.chunks.set(k, ps);
+      this.obstacles.set(k, obs);
     }
     for (const [k, ps] of this.chunks) {
       if (want.has(k)) continue;
       for (const p of ps) this.L.decor.kill(p);
       this.chunks.delete(k);
+      this.obstacles.delete(k);
     }
   }
 
@@ -1770,6 +2054,7 @@ export class Game {
 
     this.drawIndicators(sw, sh);
     this.drawShrine();
+    this.drawZones();
 
     // screen overlays
     this.hurtFlash = Math.max(0, (this.hurtFlash || 0) - rawDt * 2);
@@ -1876,7 +2161,7 @@ export class Game {
       g.poly([ex + c * s * 1.4, ey + si * s * 1.4, ex - c * s * 0.6 - si * s, ey - si * s * 0.6 + c * s,
         ex - c * s * 0.6 + si * s, ey - si * s * 0.6 - c * s]).fill({ color, alpha: 0.9 }).stroke({ color: 0x000000, width: 2, alpha: 0.6 });
     };
-    for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, 0xffcf4a, 10);
+    for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, CHEST_COL[pk.tier] || 0xffcf4a, 10);
     if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, 0xff3a6a, 14);
     if (this.shrine) mark(this.shrine.x, this.shrine.y, 0x7af0ff, 11);
   }
