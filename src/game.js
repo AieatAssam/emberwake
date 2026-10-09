@@ -3,8 +3,7 @@ import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, 
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
 import {
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
-  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf,
-} from './data.js';
+  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity } from './audio.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
@@ -200,6 +199,7 @@ export class Game {
     this.chunks = new Map();
     this.chestQueue = [];
     this.pressure = 1;
+    this.hollowAt = HOLLOW_AT; this.hollowN = 0; this.hollowWarned = false;
     this.maxFx = this.baseFx = save.settings.lowfx ? Math.round(MAX_FX / 2) : MAX_FX;
     this.frameAvg = 1 / 60; this.qualT = 0;
     this.bossKills = {};
@@ -463,7 +463,7 @@ export class Game {
     const es = this.enemies;
     for (let i = 0; i < es.length; i++) {
       const e = es[i];
-      if (!e.alive || e.inert || e === skip) continue;
+      if (!e.alive || e.inert || e.d.hollow || e === skip) continue;
       const dx = e.x - x, dy = e.y - y, d = dx * dx + dy * dy;
       if (d < bd) { bd = d; best = e; }
     }
@@ -474,7 +474,7 @@ export class Game {
     if (!es.length) return null;
     for (let t = 0; t < 14; t++) {
       const e = es[(Math.random() * es.length) | 0];
-      if (e.alive && !e.inert && this.inView(e.x, e.y, -20)) return e;
+      if (e.alive && !e.inert && !e.d.hollow && this.inView(e.x, e.y, -20)) return e;
     }
     return this.nearestEnemy(this.player.x, this.player.y, 900);
   }
@@ -596,7 +596,7 @@ export class Game {
   }
 
   damage(e, amount, o = null) {
-    if (!e.alive) return 0;
+    if (!e.alive || e.d.hollow) return 0;
     let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1) * (e.d.shroud && this.time - e.lastBlink > 1.5 ? 0.25 : 1);
     let crit = false;
     if (Math.random() < this.stats.crit) { dmg *= this.stats.critMul; crit = true; }
@@ -669,7 +669,7 @@ export class Game {
       this.burst(x, y, 120, [0xffd060, 0xff4060, 0xffffff], 700, 1.3);
       this.shockwave(x, y, 0xffffff, 1000, 1);
       sfx.boom();
-      if (e.d.final && !this.victory) { this.victory = true; setTimeout(() => this.ui.showVictory(this), 1800); }
+      if (e.d.final && !this.victory) { this.victory = true; this.hollowAt = Math.min(this.hollowAt, this.time + 120); this.hollowWarned = false; setTimeout(() => this.ui.showVictory(this), 1800); }
       return;
     }
     if (e.elite) {
@@ -818,14 +818,18 @@ export class Game {
         this.flash(0xffa040, 1);
         this.ui.toast('SECOND WICK', 'pickup');
         this.triggerFlare('supernova', true);
-      } else {
-        this.dead = true;
-        sfx.death();
-        this.burst(P.x, P.y, 80, [0xff8030, 0xffd080, 0xffffff], 400, 1);
-        this.playerSprite.visible = false;
-        setTimeout(() => this.ui.showResults(this, false), 1400);
-      }
+      } else this.die();
     }
+  }
+
+  die() {
+    if (this.dead) return;
+    const P = this.player;
+    this.dead = true;
+    sfx.death();
+    this.burst(P.x, P.y, 80, [0xff8030, 0xffd080, 0xffffff], 400, 1);
+    this.playerSprite.visible = false;
+    setTimeout(() => this.ui.showResults(this, false), 1400);
   }
 
   // ---------- flare (character ultimate) ----------
@@ -1043,7 +1047,7 @@ export class Game {
     let t0 = now();
     this.grid.clear();
     const es = this.enemies;
-    for (let i = 0; i < es.length; i++) if (es[i].alive) this.grid.insert(es[i]);
+    for (let i = 0; i < es.length; i++) if (es[i].alive && !es[i].d.hollow) this.grid.insert(es[i]);
 
     let t1 = now(); pf.grid += t1 - t0; t0 = t1;
     if (!this.dead) {
@@ -1123,7 +1127,7 @@ export class Game {
     rate *= this.stats.curse * heatSpawn; min *= this.stats.curse * heatSpawn;
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
-    for (const e of this.enemies) if (!e.inert && e.alive) alive++;
+    for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;
     this.spawnAcc += rate * dt;
     // floor top-up is bounded by the wave's own rate so fast killers can't farm infinite spawns
     // Gloam Pressure: if the horde is being erased faster than it arrives, the dark pushes harder
@@ -1158,6 +1162,16 @@ export class Game {
           this.runEvent({ type: 'boss', enemy: bossPool[(Math.random() * bossPool.length) | 0] });
         }
       }
+    }
+    // The Hollow: the run's hard limit. Unkillable, relentless, speeds up; more follow.
+    if (!this.hollowWarned && t > this.hollowAt - 30) { this.hollowWarned = true; this.ui.toast('THE HOLLOW STIRS: 0:30', 'boss'); sfx.bossWarn(); }
+    if (t >= this.hollowAt && this.hollowN < 8) {
+      this.hollowN++;
+      this.hollowAt = t + 60;
+      const sp = this.spawnPointOffscreen(160);
+      this.spawnEnemy('hollow', sp.x, sp.y, { force: true });
+      this.ui.toast(this.hollowN === 1 ? 'THE HOLLOW HUNTS YOU. RUN.' : 'ANOTHER HOLLOW RISES', 'boss');
+      sfx.bossWarn(); this.shake = Math.max(this.shake, 14);
     }
     // periodic elites between scripted ones
     this.eliteT += dt;
@@ -1238,6 +1252,7 @@ export class Game {
       let dx = P.x - e.x, dy = P.y - e.y;
       const dist = Math.hypot(dx, dy) || 1;
       dx /= dist; dy /= dist;
+      if (e.d.hollow) { this.updateHollow(e, dt, dx, dy, dist); continue; }
       // relocate stragglers ahead of the player
       if (!e.boss && !e.rush && (Math.abs(P.x - e.x) > farX || Math.abs(P.y - e.y) > farY)) {
         const sp = this.spawnPointOffscreen();
@@ -1365,6 +1380,31 @@ export class Game {
         P.iframes = Math.max(P.iframes, big ? 1.1 : 0.8);
         this.shockwave(P.x, P.y, 0xff3a6a, 120, 0.3);
       }
+    }
+  }
+
+  // The Hollow never stops, cannot be hurt, and ends the run on touch (only a Moonfall blink saves you)
+  updateHollow(e, dt, dx, dy, dist) {
+    const P = this.player;
+    e.t += dt;
+    const sp = Math.min(200, e.speed + e.t * 0.5);
+    e.x += dx * sp * dt; e.y += dy * sp * dt;
+    e.anim += dt * 3;
+    const p = e.p;
+    p.texture = e.d._t[(e.anim | 0) & 1];
+    p.x = e.x; p.y = e.y + Math.sin(e.t * 3) * 4;
+    p.scaleX = e.scale * (dx < 0 ? -1 : 1); p.scaleY = e.scale;
+    p.alpha = 0.9;
+    if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.tint = 0x6a40c0; e.glow.alpha = 0.5 + Math.sin(e.t * 4) * 0.15; }
+    if (this.fx.length < this.maxFx * 0.5 && Math.random() < dt * 24) {
+      this.spawnFx(T.smoke, e.x + rand(-20, 20), e.y + rand(-10, 20), { life: 0.9, s0: 0.6, s1: 1.4, tint: 0x20103a, a: 0.5, add: false });
+    }
+    if (this.buffs.invuln > 0 || this.dead) return;
+    if (dist < e.r + P.r) {
+      (this.dmgLog || (this.dmgLog = {})).hollow = 9999;
+      this.lastHitBy = 'touch:hollow';
+      this.shockwave(P.x, P.y, 0x8040ff, 200, 0.5);
+      this.die();
     }
   }
 

@@ -240,6 +240,7 @@ export const ENEMIES = {
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
   lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
+  hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
 };
 
@@ -289,6 +290,10 @@ export const EVENTS = [
   { at: 870, type: 'elite', enemy: 'sentinel' },
   { at: 900, type: 'boss', enemy: 'tyrant' },
 ];
+
+// The Gloam grows tired of waiting: the Hollow arrives at this time if the run is still going.
+export const HOLLOW_AT = 1080;
+export const WIN_AT = 900;
 
 // Hearth: permanent upgrades bought with cinders
 export const META = {
@@ -453,6 +458,7 @@ export const BESTIARY = {
   matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
   herald: { name: 'The Gloam Herald', lore: 'It does not walk; it arrives. Shrouded, it shrugs off blows; strike in the moments after it erupts.' },
+  hollow: { name: 'The Hollow', lore: 'The Gloam\'s patience, given a shape. It cannot be harmed and it never tires. When it comes, the night is over: run, or be unmade.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
 };
 

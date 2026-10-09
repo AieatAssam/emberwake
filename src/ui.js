@@ -356,6 +356,8 @@ export class UI {
     this.set('#lvl', 'text', 'LV ' + g.level);
     this.set('#timer', 'text', fmtTime(g.time));
     this.set('#timer', '.endless', g.time > 900);
+    this.set('#goal', 'text', goalText(g));
+    this.set('#goal', '.alarm', g.hollowN > 0 || (!!g.hollowAt && g.hollowAt - g.time < 30 && g.time > 900));
     this.set('#kills', 'text', fmtNum(g.kills));
     this.set('#cinders', 'text', fmtNum(g.cinders));
     // kindle
@@ -451,7 +453,7 @@ export class UI {
           <div class="row small">
             <button class="btn ghost" data-a="reroll" ${g.rerolls > 0 ? '' : 'disabled'}>Reroll (${g.rerolls}) [R]</button>
             <button class="btn ghost" data-a="banish" ${g.banishes > 0 ? '' : 'disabled'}>${banishMode ? 'Cancel' : 'Banish'} (${g.banishes}) [B]</button>
-            <button class="btn ghost" data-a="skip">Skip (+XP) [S]</button>
+            <button class="btn ghost" data-a="skip">Skip (+XP) [X]</button>
           </div>
           ${this.buildSummary(g)}
         </div>`, 'dim');
@@ -477,12 +479,15 @@ export class UI {
         banish: () => { if (g.banishes > 0 || banishMode) { banishMode = !banishMode; render(); } },
         skip: () => { g.gainXp(g.xpNext * 0.25); this.close(); },
       });
+      // Movement keys (WASD) must never act here, and a short grace stops held keys from auto-picking
+      const openedAt = performance.now();
       this.keyHandler = (e) => {
+        if (e.repeat || performance.now() - openedAt < 350) return;
         const n = parseInt(e.key, 10);
         if (n >= 1 && n <= choices.length) choose(n - 1);
         if (e.code === 'KeyR' && g.rerolls > 0) { g.rerolls--; choices = g.buildChoices(); render(); }
         if (e.code === 'KeyB' && (g.banishes > 0 || banishMode)) { banishMode = !banishMode; render(); }
-        if (e.code === 'KeyS') { g.gainXp(g.xpNext * 0.25); this.close(); }
+        if (e.code === 'KeyX') { g.gainXp(g.xpNext * 0.25); this.close(); }
       };
     };
     render();
@@ -554,7 +559,8 @@ export class UI {
       g.applyChest(res);
     };
     this.bind({ take });
-    this.keyHandler = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); take(); } };
+    const chestAt = performance.now();
+    this.keyHandler = (e) => { if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && performance.now() - chestAt > 350) { e.preventDefault(); take(); } };
   }
 
   // ---------- pause ----------
@@ -594,7 +600,7 @@ export class UI {
     this.open(`
       <div class="panel results win">
         <div class="lu-title">THE ECLIPSE BREAKS</div>
-        <div class="sub">The Tyrant falls and a sliver of dawn bleeds through the Gloam.<br>But the dark is endless — and so is your flame.</div>
+        <div class="sub">The Tyrant falls and a sliver of dawn bleeds through the Gloam.<br>But the Hollow has noticed you. In two minutes it will come, and nothing you own can harm it.<br>Bank your victory, or see how long you can run.</div>
         <div class="row">
           <button class="btn primary" data-a="endless">Keep Burning (Endless)</button>
           <button class="btn" data-a="end">Rest at the Hearth</button>
@@ -693,6 +699,16 @@ export class UI {
   }
 }
 
+// The current objective, shown under the timer so a run always has a clear next goal
+function goalText(g) {
+  const t = g.time;
+  if (g.hollowN > 0) return `SURVIVE THE HOLLOW · ${g.hollowN} hunting`;
+  const hl = Math.max(0, g.hollowAt - t);
+  if (g.victory) return `The Hollow comes in ${fmtTime(hl)}: flee or keep burning`;
+  if (g.boss && g.boss.type === 'tyrant') return 'GOAL · Break the Eclipse Tyrant';
+  if (t >= 900) return `GOAL · Slay the Tyrant before the Hollow (${fmtTime(hl)})`;
+  return `GOAL · Reach the Eclipse ${fmtTime(900 - t)}`;
+}
 function it_isFusion(it) { return it && it.kind === 'fusion'; }
 
 // readable names for damage sources recorded by Game.hurtPlayer

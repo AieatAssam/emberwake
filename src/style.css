@@ -342,3 +342,8 @@ table.records td img.sil { filter: brightness(0); }
 
 @keyframes fuse-ready { from { box-shadow: 0 0 4px rgb(255 207 74 / 60%); } to { box-shadow: 0 0 14px #ffcf4a, 0 0 22px rgb(255 140 40 / 70%); } }
 .fuse-badge { position: absolute; left: -4px; top: -6px; font-style: normal; font-size: 13px; line-height: 1; filter: drop-shadow(0 0 3px #ffcf4a); }
+
+#goal { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); font-family: var(--display); font-size: 13px; letter-spacing: 2px; color: #ffd9a0; text-shadow: 0 1px 4px #000; white-space: nowrap; opacity: 0.9; }
+#goal.alarm { color: #c8a8ff; text-shadow: 0 0 12px #8040ff; animation: goal-pulse 1s ease-in-out infinite; }
+
+@keyframes goal-pulse { 50% { opacity: 0.45; } }

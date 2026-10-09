@@ -773,6 +773,24 @@ function drawEnemies() {
     poly(c, [[20, 8], [27, 21], [20, 44], [13, 21]], '#ffcf6a');
     poly(c, [[20, 8], [27, 21], [20, 26]], '#fff2c4');
   });
+  // The Hollow — a drifting shroud around a pale, weeping mask; nothing behind the eyes
+  for (const f of [0, 1]) make('hollow' + f, 110, 120, (c) => {
+    shadow(c, 55, 112, 30, 6);
+    glowDot(c, 55, 56, 52, 'rgba(110,60,200,0.35)');
+    c.beginPath(); c.moveTo(55, 10);
+    c.bezierCurveTo(88, 14, 96, 60, 90, 98);
+    for (let i = 0; i < 6; i++) { const x = 90 - i * 14.5; c.lineTo(x - 7, 100 + ((i + f) % 2) * 12); c.lineTo(x - 14.5, 96 + ((i + f) % 2) * -4); }
+    c.bezierCurveTo(14, 60, 22, 14, 55, 10);
+    c.fillStyle = lin(c, 0, 10, 0, 110, [[0, '#2a1a4a'], [1, '#05030a']]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = '#8a6ae0'; c.stroke();
+    // bone-white mask
+    c.beginPath(); c.moveTo(55, 18); c.bezierCurveTo(78, 20, 80, 44, 72, 64); c.quadraticCurveTo(55, 80, 38, 64); c.bezierCurveTo(30, 44, 32, 20, 55, 18);
+    c.fillStyle = '#e8e4f4'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    ellipse(c, 45, 42, 5, 9, '#05030a'); ellipse(c, 65, 42, 5, 9, '#05030a');
+    c.strokeStyle = '#6a4ac0'; c.lineWidth = 2; c.beginPath(); c.moveTo(45, 50); c.lineTo(44, 66 + f * 3); c.moveTo(65, 50); c.lineTo(66, 66 + f * 3); c.stroke();
+    ellipse(c, 55, 66, 4, 6 + f, '#05030a');
+    eye(c, 45, 42, 2, '#c8a8ff'); eye(c, 65, 42, 2, '#c8a8ff');
+  });
   // White flash variants
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
