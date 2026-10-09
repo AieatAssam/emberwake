@@ -6,7 +6,7 @@
 //     --chars warden --stages gloam --difficulty normal --meta 0 --heat 0 --secs 900 --workers 4 --out res.json
 //
 // Every list option takes comma-separated values; the harness runs the full cross product.
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, appendFileSync } from 'node:fs';
 
 const argv = process.argv.slice(2);
 const arg = (name, def) => {
@@ -30,7 +30,7 @@ const STAGES = list('stages', 'gloam');
 const DIFFS = list('difficulty', 'normal');
 const METAS = list('meta', '0').map(Number);
 const HEATS = list('heat', '0').map(Number);
-const SECS = +arg('secs', 1100);
+const SECS = +arg('secs', 1000);
 const TUNE_ARG = Object.fromEntries(String(arg('tune', '')).split(',').filter(Boolean).map((kv) => { const [k, v] = kv.split('='); return [k, +v]; }));
 const WORKERS = Math.max(1, +arg('workers', 4));
 const DT = arg('dt', '') === '' ? undefined : +arg('dt');
@@ -109,7 +109,7 @@ async function worker(id) {
       }
     }
     const entry = results.get(cellKey(job.cell));
-    if (res) entry.runs.push(res);
+    if (res) { entry.runs.push(res); if (OUT) appendFileSync(OUT + 'l', JSON.stringify({ cell: job.cell, seed: job.seed, tune: TUNE_ARG, ...res, series: undefined, lvl5: (res.series.find((x) => x.t === 300) || {}).lvl, lvl10: (res.series.find((x) => x.t === 600) || {}).lvl }) + '\n'); }
     else { entry.errors++; console.error(`[w${id}] ${cellKey(job.cell)} seed ${job.seed} failed: ${String(err).slice(0, 200)}`); }
     done++;
     if (!QUIET && res) {
