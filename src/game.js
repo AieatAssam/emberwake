@@ -3,7 +3,7 @@ import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, 
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
 import { DIFFICULTY, ETERNAL,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
-  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
+  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { buzz } from './haptics.js';
@@ -578,7 +578,7 @@ export class Game {
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
-    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg * TUNE.enemyDmg;
+    e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg * TUNE.enemyDmg * (1 + TUNE.dmgMid * midRamp(this.time));
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;

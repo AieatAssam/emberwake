@@ -408,10 +408,14 @@ export function xpForLevel(level) {
   return Math.floor(base * (1 + 0.012 * k * k * TUNE.xpCurve));
 }
 
+// 0 until minute 4, then eases up to 1 at minute 15: the shape of the mid/late-game squeeze
+export const midRamp = (t) => Math.pow(Math.max(0, Math.min(1.6, (t - 240) / 660)), 1.5);
+
 export function enemyHpScale(t) {
   const m = t / 60;
   let s = 1 + 0.2 * m + 0.032 * TUNE.hpQuad * m * m;
   if (m > 15) s *= Math.pow(1 + 0.17 * TUNE.hpLate, m - 15);
+  s *= 1 + TUNE.hpMid * midRamp(t);
   return s;
 }
 

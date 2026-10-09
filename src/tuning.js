@@ -15,6 +15,8 @@ export const TUNE = {
   xpCurve: 1, // how steeply level cost grows after level 12 (0 = flat)
   chestBig: 1, // chance of 3- and 5-item chests
   eliteChest: 1, // chance a slain elite drops a chest
+  hpMid: 0, // extra enemy health from minute 4, growing to (1+hpMid)x by minute 15
+  dmgMid: 0, // extra enemy damage on the same ramp
   eliteEvery: 1, // multiplier on the gap between periodic elites
 };
 export const TUNE_DEFAULTS = { ...TUNE };
