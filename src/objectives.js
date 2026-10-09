@@ -384,7 +384,7 @@ function escort(g, cfg) {
     return { title: o.title, count: `${o.count}/${o.n}`, prog: pil.hp / pil.max, sub: near ? 'Guard the Acolyte as it walks to the far chapel' : 'Stay within reach: it only walks with you', state: near ? '' : 'warn' };
   };
   o.targets = () => (pil ? [pil] : []);
-  o.botTargets = () => (pil && downT <= 0 ? [{ x: pil.x, y: pil.y, r: 170, v: 5, camp: true, k: pil }] : []);
+  o.botTargets = () => (pil && downT <= 0 && legStarted ? [{ x: pil.x, y: pil.y, r: 230, v: 5, camp: true, k: pil }] : []);
   o.draw = (gfx) => {
     if (!pil) return;
     if (legStarted) ring(gfx, pil.x, pil.y, 260, 0xffd080, 0.04, 0.8);

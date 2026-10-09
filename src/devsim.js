@@ -461,7 +461,8 @@ export function install(startRun, getGame) {
       name: skillName, sk, flareReady: 0, prev: null, target: null, stuckT: 0, escapeT: 0, escapeA: 0,
       wanderA: Math.random() * 6.2832, wanderDir: 1, wanderT: 6, shrineRoll: Math.random(),
     };
-    let minHp = 1, stuckMs = 0, steps = 0, nextMark = 60;
+    let minHp = 1, stuckMs = 0, steps = 0, nextMark = 60, lastSettleLog = -9;
+    const settleLog = [];
     const series = [];
     try {
       startRun(charId, stageId);
@@ -505,6 +506,7 @@ export function install(startRun, getGame) {
           if (moved < want * 0.3 && P.iframes <= 0) { bot.stuckT += dt; stuckMs += dt * 1000; } else bot.stuckT = Math.max(0, bot.stuckT - dt);
         }
         minHp = Math.min(minHp, P.hp / g.stats.maxHp);
+        if (g.stillSev > 0 && g.time - lastSettleLog > 4 && settleLog.length < 4) { lastSettleLog = g.time; settleLog.push({ t: Math.round(g.time), sev: +g.stillSev.toFixed(2), hasObj: g.obj.botTargets().length, boss: !!g.boss, exempt: g.obj.exempt, tgt: bot.target ? (bot.target.type || 'obj') : null }); }
         if (g.time >= nextMark) { series.push({ t: nextMark, lvl: g.level, kills: g.kills, hp: Math.round((100 * P.hp) / g.stats.maxHp), alive: g.enemies.length, cin: g.cinders }); nextMark += 60; }
         if (steps % 300 === 0) await new Promise((r) => { setTimeout(r, 0); });
       }
@@ -518,7 +520,7 @@ export function install(startRun, getGame) {
         objDone: g.obj.done, objAt: g.obj.doneAt, objCount: g.obj.count, objN: g.obj.n, warded: !!(g.boss && g.boss.alive && g.boss.d.final && !g.obj.done),
         killedBy: g.dead ? g.lastHitBy || '?' : null, hpMinPct: Math.max(0, Math.round(minHp * 100)),
         weapons: g.weapons.map((w) => `${w.id}:${w.level}`), fusions: g.weapons.filter((w) => w.fused).map((w) => w.id),
-        passives: { ...g.passives }, pacts: [...g.pacts], series, chests: g.chestsOpened || 0, chestItems: g.chestItems || 0,
+        passives: { ...g.passives }, pacts: [...g.pacts], series, settleLog, chests: g.chestsOpened || 0, chestItems: g.chestItems || 0,
         wallMs: Math.round(performance.now() - t0), stuckMs: Math.round(stuckMs),
       };
     } finally {
