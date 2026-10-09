@@ -12,5 +12,9 @@ export const TUNE = {
   hpQuad: 1, // weight of the quadratic term in the enemy health curve
   hpLate: 1, // strength of the exponential tail after 15 minutes
   overcharge: 1, // power per Overcharge stack
+  xpCurve: 1, // how steeply level cost grows after level 12 (0 = flat)
+  chestBig: 1, // chance of 3- and 5-item chests
+  eliteChest: 1, // chance a slain elite drops a chest
+  eliteEvery: 1, // multiplier on the gap between periodic elites
 };
 export const TUNE_DEFAULTS = { ...TUNE };

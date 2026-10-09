@@ -431,7 +431,7 @@ export class Game {
 
   // chest contents: fusions first, then upgrades to owned items
   chestCount(minItems = 1) {
-    const L = this.stats.luck, r = Math.random();
+    const L = this.stats.luck * TUNE.chestBig, r = Math.random();
     let n = 1;
     if (r < 0.05 * L) n = 5; else if (r < 0.22 * L) n = 3;
     return Math.max(n, minItems);
@@ -459,6 +459,7 @@ export class Game {
     return { items: items.map((it) => (it.kind === 'fusion' ? { ...it, name: FUSIONS[it.id].name, desc: FUSIONS[it.id].desc, icon: it.id } : this.describeChoice(it))), cinders };
   }
   applyChest(res) {
+    this.chestsOpened = (this.chestsOpened || 0) + 1; this.chestItems = (this.chestItems || 0) + res.items.length;
     for (const it of res.items) {
       if (it.kind === 'fusion') this.fuse(it.id);
       else this.applyChoice(it);
@@ -720,7 +721,7 @@ export class Game {
       return;
     }
     if (e.elite) {
-      this.dropPickup('chest', x, y, 1);
+      if (Math.random() < TUNE.eliteChest) this.dropPickup('chest', x, y, 1);
       sfx.eliteKill();
       if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.045);
       this.shockwave(x, y, 0xffd060, 90, 0.3);
@@ -1323,7 +1324,7 @@ export class Game {
     }
     // periodic elites between scripted ones
     this.eliteT += dt;
-    if (t > 120 && this.eliteT > Math.max(18, 60 - t / 30) / (1 + 0.15 * (this.heat || 0))) {
+    if (t > 120 && this.eliteT > (Math.max(18, 60 - t / 30) * TUNE.eliteEvery) / (1 + 0.15 * (this.heat || 0))) {
       this.eliteT = 0;
       const types = Object.keys(wave.pool);
       const sp = this.spawnPointOffscreen(40);

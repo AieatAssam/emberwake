@@ -401,11 +401,11 @@ export const eternalCost = (id, l) => Math.round(ETERNAL[id].base * ETERNAL[id].
 
 export function xpForLevel(level) {
   // XP to go from `level` to `level+1`
-  // steepens past level 40 so builds keep forming choices instead of snowballing to maxed-out
-  if (level < 20) return Math.floor(4 + level * 4);
-  if (level < 40) return Math.floor(84 + (level - 20) * 18);
-  const k = level - 40;
-  return Math.floor(440 + k * 70 + k * k * 2.5);
+  // quick early levels (first upgrades come fast), then a quadratic climb so builds keep forming choices
+  const base = 4 + level * 4;
+  if (level < 12) return base;
+  const k = level - 12;
+  return Math.floor(base * (1 + 0.012 * k * k * TUNE.xpCurve));
 }
 
 export function enemyHpScale(t) {

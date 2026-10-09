@@ -494,7 +494,7 @@ export function install(startRun, getGame) {
         cinders: reward.total, gathered: reward.gathered, bestCombo: g.bestCombo, overcharge: g.overcharge || 0,
         killedBy: g.dead ? g.lastHitBy || '?' : null, hpMinPct: Math.max(0, Math.round(minHp * 100)),
         weapons: g.weapons.map((w) => `${w.id}:${w.level}`), fusions: g.weapons.filter((w) => w.fused).map((w) => w.id),
-        passives: { ...g.passives }, pacts: [...g.pacts], series,
+        passives: { ...g.passives }, pacts: [...g.pacts], series, chests: g.chestsOpened || 0, chestItems: g.chestItems || 0,
         wallMs: Math.round(performance.now() - t0), stuckMs: Math.round(stuckMs),
       };
     } finally {
