@@ -87,13 +87,13 @@ export const WEAPONS = {
   sunRing: {
     name: 'Sunring', element: 'fire', behavior: 'aura',
     desc: 'A ring of living flame scorches anything that comes close.',
-    base: { dmg: 5, cd: 0.6, area: 1, knock: 3 },
+    base: { dmg: 6, cd: 0.6, area: 1, knock: 3 },
     levels: L({ area: 0.15 }, { dmg: 3 }, { cdMul: 0.9 }, { area: 0.15 }, { dmg: 4 }, { cdMul: 0.85, area: 0.15 }, { dmg: 4, area: 0.2 }),
   },
   iceLance: {
     name: 'Rime Lance', element: 'frost', behavior: 'lance',
     desc: 'Fires piercing icicles the way you move. Chills on hit.',
-    base: { dmg: 12, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
+    base: { dmg: 15, cd: 0.8, amount: 1, speed: 620, pierce: 3, area: 1, duration: 1.2, knock: 4 },
     levels: L({ amount: 1 }, { dmg: 5 }, { pierce: 2 }, { amount: 1, cdMul: 0.9 }, { dmg: 7 }, { amount: 1 }, { amount: 2, pierce: 3 }),
   },
   gravewell: {
@@ -233,7 +233,7 @@ export const CHARACTERS = {
     bonus: '+15% crit chance, +35% crit damage, +10% damage', apply: (s) => { s.crit += 0.15; s.critMul += 0.35; s.might += 0.1; s.maxHp -= 5; },
     flare: 'deadeye', flareName: 'Deadeye', flareDesc: 'Every strike is a critical hit for 6s and projectiles fly 50% faster.',
     color: '#6af0a0',
-    perk: 'markedprey', perkName: 'Marked Prey', perkDesc: 'Deal 25% more damage to elites and bosses.',
+    perk: 'markedprey', perkName: 'Marked Prey', perkDesc: 'Deal 35% more damage to elites and bosses.',
   },
   hearthkeeper: {
     name: 'Orin', title: 'The Hearthkeeper', sprite: 'hearthkeeper', weapon: 'sunRing', cost: 4000,
@@ -358,8 +358,8 @@ export const META = {
 export const DIFFICULTY = {
   easy: { name: 'Easy', hp: 0.8, dmg: 0.7, spawn: 0.85, speed: 0.95, xp: 0.8, cinders: 0.6, desc: 'Gentler foes and fewer of them. -20% XP, -40% cinders.' },
   normal: { name: 'Normal', hp: 1, dmg: 1, spawn: 1, speed: 1, xp: 1, cinders: 1, desc: 'The intended night.' },
-  hard: { name: 'Hard', hp: 1.4, dmg: 1.4, spawn: 1.2, speed: 1.06, xp: 1.1, cinders: 1.6, desc: 'Tougher, denser, faster. +10% XP, +60% cinders.' },
-  brutal: { name: 'Brutal', hp: 1.7, dmg: 1.6, spawn: 1.35, speed: 1.1, xp: 1.2, cinders: 2.2, desc: 'For the unburnable. +20% XP, +120% cinders.' },
+  hard: { name: 'Hard', hp: 1.45, dmg: 1.4, spawn: 1.2, speed: 1.06, xp: 1.1, cinders: 1.6, desc: 'Tougher, denser, faster. +10% XP, +60% cinders.' },
+  brutal: { name: 'Brutal', hp: 1.9, dmg: 1.75, spawn: 1.4, speed: 1.12, xp: 1.2, cinders: 2.4, desc: 'For the unburnable. +20% XP, +140% cinders.' },
 };
 
 // Highest Heat level a stage can reach (one level unlocked per win).
@@ -516,7 +516,7 @@ export const STAGES = {
   },
   rimewood: {
     name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +30% enemy health, +6% enemy speed, x2 cinders.',
-    cost: 1500, hpMul: 1.3, greedMul: 2, speedMul: 1.06, lateHp: 0.018, bias: { wraith: 1.6, moth: 0.8, sentinel: 0.6, frostwisp: 1.6 },
+    cost: 1500, hpMul: 1.2, greedMul: 2, speedMul: 1.05, lateHp: 0.018, bias: { wraith: 1.6, moth: 0.8, sentinel: 0.6, frostwisp: 1.6 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
     decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'], solids: { pine: 9, icecluster: 12, snowrock: 13, rock1: 15, pillar: 14 },
@@ -530,7 +530,7 @@ export const STAGES = {
   },
   reliquary: {
     name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Acolytes keep their vigil. +60% enemy health, +7% speed, x3 cinders.',
-    cost: 4500, hpMul: 1.6, greedMul: 3, speedMul: 1.07, lateHp: 0.035, bias: { acolyte: 2.2, wraith: 1.4, spitter: 0.8, sentinel: 0.9, moth: 0.5 },
+    cost: 4500, hpMul: 1.4, greedMul: 3, speedMul: 1.05, lateHp: 0.035, bias: { acolyte: 2.2, wraith: 1.4, spitter: 0.8, sentinel: 0.9, moth: 0.5 },
     ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
     tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
     decor: { tomb: 16, candelabra: 10, banner: 8, cobble: 22, pillar: 10, bones: 12, rock0: 6 }, own: ['tomb', 'candelabra', 'banner', 'cobble'],
@@ -538,7 +538,7 @@ export const STAGES = {
   },
   glassdunes: {
     name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Drifts drag at your heels. +75% enemy health, +10% speed, x3.5 cinders.',
-    cost: 7000, hpMul: 1.75, greedMul: 3.5, speedMul: 1.1, lateHp: 0.04, bias: { scarab: 2.4, beetle: 1.3, imp: 1, spitter: 0.6, husk: 0.8 },
+    cost: 7000, hpMul: 1.5, greedMul: 3.5, speedMul: 1.06, lateHp: 0.04, bias: { scarab: 1.8, beetle: 1.3, imp: 1, spitter: 0.6, husk: 0.8 },
     ground: { base: '#241a12', blobs: ['rgba(120,86,50,0.4)', 'rgba(60,40,28,0.55)', 'rgba(170,130,70,0.2)', 'rgba(40,28,22,0.5)'], stone: 'rgba(150,120,80,0.3)' },
     tint: 0xe0c8a8, decorTint: 0xd8c0a0, color: '#ffd070',
     decor: { glasscluster: 14, bonespire: 10, drift: 22, rock1: 10, bones: 12, basalt: 4 }, own: ['glasscluster', 'bonespire', 'drift'],

@@ -61,7 +61,7 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 | **Grahm**, the Blood Reaver | Crescent Arc | +40 health, +1 armor, +0.5 regen | **Bloodrage** — double damage, +30% speed, lifesteal | **Bloodthirst** — every kill heals a little |
 | **Lune**, the Moon Dancer | Moonglaive | +20% move speed, +20% luck | **Moonfall** — twelve glaives spiral out, then you blink untouchable | **Moonstep** — 14% chance to slip any hit; longer invulnerability after being struck |
 | **Brannoc**, the Bellwright | Gravewell | +25% max health, +15% area, -10% move speed | **Great Toll** — every foe on screen stunned and struck by three rings of sound | **Tollbearer** — every 15s the bell tolls, hurling nearby foes away |
-| **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +10% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +25% damage to elites and bosses |
+| **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +10% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +35% damage to elites and bosses |
 | **Orin**, the Hearthkeeper | Sunring | +30% health, +1.2 regen, +20% area, -5% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
 
 ![Character select](docs/img/select.png)
@@ -138,8 +138,8 @@ Pick a difficulty in **Settings** or from the Bearer-select screen (it applies t
 |---|---|---|---|---|---|
 | Easy | x0.8 | x0.7 | x0.85 | x0.6 | x0.8 |
 | Normal | x1 | x1 | x1 | x1 | x1 |
-| Hard | x1.4 | x1.4 | x1.2 | x1.6 | x1.1 |
-| Brutal | x1.7 | x1.6 | x1.35 | x2.2 | x1.2 |
+| Hard | x1.45 | x1.4 | x1.2 | x1.6 | x1.1 |
+| Brutal | x1.9 | x1.75 | x1.4 | x2.4 | x1.2 |
 
 ![Settings](docs/img/settings.png)
 
