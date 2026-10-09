@@ -418,7 +418,8 @@ export function install(startRun, getGame) {
     const dt = opts.dt || 1 / 30;
     const t0 = performance.now();
     // in-memory save tweaks (never persisted by us)
-    const savedMeta = { ...save.meta }, savedDiff = save.settings.difficulty;
+    const savedMeta = { ...save.meta }, savedDiff = save.settings.difficulty, savedLowfx = save.settings.lowfx;
+    save.settings.lowfx = true; // bots do not render: halve the particle budget to simulate faster
     const savedSel = { ...save.heatSel }, savedMax = { ...save.heatMax };
     const origRandom = Math.random;
     const tuneBefore = { ...TUNE };
@@ -500,7 +501,7 @@ export function install(startRun, getGame) {
       setBotInput(null);
       Math.random = origRandom;
       Object.assign(TUNE, tuneBefore);
-      save.meta = savedMeta; save.settings.difficulty = savedDiff; save.heatSel = savedSel; save.heatMax = savedMax;
+      save.meta = savedMeta; save.settings.difficulty = savedDiff; save.settings.lowfx = savedLowfx; save.heatSel = savedSel; save.heatMax = savedMax;
     }
   };
 }
