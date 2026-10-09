@@ -3,7 +3,7 @@ import { buildAtlas, atlasCanvas } from './atlas.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
 import { initInput, consumePressed, padButtons } from './input.js';
-import { initAudio, startMusic, setMuted, setMusic, setTheme, setVolumes } from './audio.js';
+import { initAudio, startMusic, setMuted, setMusic, setVolumes } from './audio.js';
 import { save } from './save.js';
 import './style.css';
 
@@ -25,13 +25,14 @@ setMuted(save.settings.muted);
 setMusic(save.settings.music);
 
 let game = null;
+// browsers block audio until a gesture: the first click starts the menu music
+addEventListener('pointerdown', () => { initAudio(); if (!game) startMusic('menu'); }, { once: true });
 
 const ui = new UI({
   startRun(charId, stageId = save.lastStage || 'gloam', opts = {}) {
     if (game) { game.destroy(); game = null; }
     initAudio();
-    setTheme(stageId);
-    startMusic();
+    startMusic(stageId);
     game = new Game(app, ui, charId, stageId, opts);
     ui.beginRun(game);
     if (import.meta.env.DEV) window.__game = game;
@@ -39,6 +40,7 @@ const ui = new UI({
   quitToTitle() {
     if (game) { game.destroy(); game = null; }
     ui.game = null;
+    startMusic('menu');
   },
 });
 
