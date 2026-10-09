@@ -378,6 +378,16 @@ export class UI {
     this.set('#timer', 'text', fmtTime(g.time));
     this.set('#timer', '.endless', g.time > 900);
     this.set('#goal', 'text', goalText(g));
+    const ob = g.obj.hud();
+    this.set('#objective', '.on', !!ob);
+    if (ob) {
+      this.set('#objective .ob-title', 'text', ob.title);
+      this.set('#objective .ob-count', 'text', ob.count);
+      this.set('#objective .ob-bar > div', 'w', Math.round(Math.max(0, Math.min(1, ob.prog)) * 100) + '%');
+      this.set('#objective .ob-sub', 'text', ob.sub);
+      this.set('#objective', '.done', ob.state === 'done');
+      this.set('#objective', '.warn', ob.state === 'warn');
+    }
     this.set('#goal', '.alarm', g.hollowN > 0 || (!!g.hollowAt && g.hollowAt - g.time < 30 && g.time > 900));
     this.set('#kills', 'text', fmtNum(g.kills));
     this.set('#cinders', 'text', fmtNum(g.cinders));
@@ -773,9 +783,9 @@ function goalText(g) {
   if (g.hollowN > 0) return `SURVIVE THE HOLLOW · ${g.hollowN} hunting`;
   const hl = Math.max(0, g.hollowAt - t);
   if (g.victory) return `The Hollow comes in ${fmtTime(hl)}: flee or keep burning`;
-  if (g.boss && g.boss.type === 'tyrant') return 'GOAL · Break the Eclipse Tyrant';
-  if (t >= 900) return `GOAL · Slay the Tyrant before the Hollow (${fmtTime(hl)})`;
-  return `GOAL · Reach the Eclipse ${fmtTime(900 - t)}`;
+  if (g.boss && g.boss.type === 'tyrant') return g.obj.done ? 'GOAL · Break the Eclipse Tyrant' : 'THE TYRANT IS WARDED · finish the objective first';
+  if (t >= 900) return g.obj.done ? `GOAL · Slay the Tyrant before the Hollow (${fmtTime(hl)})` : `OBJECTIVE FIRST: the Tyrant is warded (${fmtTime(hl)} to the Hollow)`;
+  return g.obj.done ? `THEN · Break the Eclipse ${fmtTime(900 - t)}` : `GOAL · Complete the objective, then break the Eclipse ${fmtTime(900 - t)}`;
 }
 function it_isFusion(it) { return it && it.kind === 'fusion'; }
 

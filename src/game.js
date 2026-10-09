@@ -8,6 +8,7 @@ import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { buzz } from './haptics.js';
 import { TUNE } from './tuning.js';
+import { makeObjective } from './objectives.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
 import { save, persist } from './save.js';
 
@@ -161,6 +162,9 @@ export class Game {
     this.initMotes();
     this.shrineG = new Graphics();
     this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
+    this.objG = new Graphics();
+    this.world.addChildAt(this.objG, this.world.getChildIndex(this.L.pickups.pc));
+    this.obj = makeObjective(this);
     this.zoneG = new Graphics();
     this.world.addChildAt(this.zoneG, this.world.getChildIndex(this.L.pickups.pc));
     this.stillT = 0; this.stillSev = 0; this.posLog = []; this.posLogT = 0; this.settleWarned = false;
@@ -633,10 +637,13 @@ export class Game {
     if (!e.alive || e.d.hollow) return 0;
     let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1) * (e.d.shroud && this.time - e.lastBlink > 1.5 ? 0.25 : 1);
     let crit = false;
-    if (this.perk === 'markedprey' && (e.elite || e.boss)) dmg *= 1.25;
+    if (this.perk === 'markedprey' && (e.elite || e.boss)) dmg *= 1.35;
+    // the Eclipse Tyrant is warded until the stage objective is done
+    if (e.d.final && !this.obj.done) dmg *= 0.1;
     if (this.buffs.deadeye > 0 || Math.random() < this.stats.crit + (this.stats.luck - 1) * 0.1) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
     e.hp -= dmg;
+    if (e.d.final && !this.obj.done && e.hp < 1) e.hp = 1;
     e.flash = 0.08;
     if (o) {
       if (o.w) o.w.dmgDone += dmg;
@@ -665,6 +672,7 @@ export class Game {
   killEnemy(e, w) {
     this.removeEnemy(e);
     const x = e.x, y = e.y;
+    this.obj.onKill(e);
     if (e.inert) {
       this.burst(x, y, 24, [0xffd060, 0xfff0c0, 0x8060ff], 260, 0.8);
       this.spawnFx(T.glow, x, y, { life: 0.35, s0: 1.5, s1: 3, tint: 0xffc060 });
@@ -886,6 +894,7 @@ export class Game {
         this.ui.toast('STILLWATER', 'pickup');
         break;
       case 'flareorb': this.flare = Math.min(100, this.flare + 50); sfx.pickup(); break;
+      case 'sunshard': this.obj.onShard(pk); sfx.pickup(); break;
       case 'chest':
         sfx.pickup();
         this.chestQueue.push(pk.n || pk.value);
@@ -906,6 +915,18 @@ export class Game {
       if (this.perk === 'hearthheart') this.heal(this.stats.maxHp * 0.2, true);
     }
   }
+  // the stage objective is complete: lift the Tyrant's ward if it is already up
+  onObjectiveDone() {
+    this.ui.toast('OBJECTIVE COMPLETE', 'fusion');
+    sfx.ascendReady(); sfx.levelup();
+    this.flash(0xffe0a0, 0.6);
+    const P = this.player;
+    this.shockwave(P.x, P.y, 0xffd060, 600, 0.7);
+    this.burst(P.x, P.y, 50, [0xffd060, 0xffffff], 520, 1);
+    const b = this.boss;
+    if (b && b.alive && b.d.final) { b.freezeT = Math.max(b.freezeT, 2); this.ui.toast('THE WARD SHATTERS', 'boss'); }
+  }
+
   // cinders banked at the end of a run: what you gathered plus a survival bonus
   runReward(win) {
     // survival pay does not depend on how many cinder pickups you scooped; the win bonus is a flat prize
@@ -975,7 +996,7 @@ export class Game {
   updateSettle(dt) {
     const P = this.player;
     if (this.dead) return;
-    const inZone = this.zones.some((z) => (z.type === 'spring' || z.type === 'hearth') && Math.hypot(P.x - z.x, P.y - z.y) < z.r);
+    const inZone = this.obj.exempt || this.zones.some((z) => (z.type === 'spring' || z.type === 'hearth') && Math.hypot(P.x - z.x, P.y - z.y) < z.r);
     const inShrine = this.shrine && Math.hypot(P.x - this.shrine.x, P.y - this.shrine.y) < this.shrine.r;
     this.posLogT -= dt;
     if (this.posLogT <= 0) {
@@ -1263,6 +1284,7 @@ export class Game {
       for (const w of this.weapons) for (const part of w.parts) BEHAVIORS[part.behavior].update(this, part, this.eff(part), dt);
       this.updateShrine(dt);
       this.updateSettle(dt);
+      this.obj.update(dt);
       this.updatePerks(dt); this.updateHazards(dt); this.updateZones(dt);
     }
     this.updateNovas(dt);
@@ -1336,7 +1358,8 @@ export class Game {
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
     const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
-    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev); min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev);
+    const objMul = this.obj.spawnMul();
+    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev) * objMul; min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev) * objMul;
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;
@@ -1758,6 +1781,7 @@ export class Game {
       const g = pk[i];
       if (!g.alive) { pk[i] = pk[pk.length - 1]; pk.pop(); continue; }
       g.t += dt;
+      if (g.exp && this.time > g.exp) { g.alive = false; this.L.pickups.kill(g.p); continue; }
       if (g.pop > 0) {
         g.pop -= dt; g.x += g.vx * dt; g.y += g.vy * dt; g.vy += 400 * dt;
       }
@@ -1821,7 +1845,7 @@ export class Game {
   // into it is cut to 35% (so you slide along it, or wade through slowly); mud and drifts slow you.
   resolveObstacles(vx, vy, dt) {
     const C = 480, P = this.player, out = this._mv || (this._mv = { x: 0, y: 0 });
-    let slow = 1, wading = false;
+    let slow = this.obj.slowAt(P), wading = false;
     const cx = Math.floor(P.x / C), cy = Math.floor(P.y / C);
     for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
       const list = this.obstacles.get((cx + a) + ',' + (cy + b));
@@ -2055,6 +2079,7 @@ export class Game {
     this.drawIndicators(sw, sh);
     this.drawShrine();
     this.drawZones();
+    this.objG.clear(); this.obj.draw(this.objG);
 
     // screen overlays
     this.hurtFlash = Math.max(0, (this.hurtFlash || 0) - rawDt * 2);
@@ -2164,6 +2189,7 @@ export class Game {
     for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, CHEST_COL[pk.tier] || 0xffcf4a, 10);
     if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, 0xff3a6a, 14);
     if (this.shrine) mark(this.shrine.x, this.shrine.y, 0x7af0ff, 11);
+    for (const t of this.obj.targets()) mark(t.x, t.y, 0x40e8d8, 13);
   }
 
   destroy() {

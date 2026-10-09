@@ -21,25 +21,25 @@ const SKILLS = {
     decide: 0.45, dirsMin: 4, dirsMax: 6, look: 0.2, samples: 2, aware: 110, bossAware: 260,
     shotW: 0, shotR: 0, telW: 0, margin: 6, kite: null, pickW: 1.5, pickRange: 380, crowdAvoid: 0,
     bad: 0.08, noise: 0.45, obsW: 0.25, slowW: 0, hold: 0.1, stuckT: 1.2, knowsFreeze: false,
-    chestW: 1.5, shrine: 0, flare: 'novice', draft: 'novice', dashAware: false,
+    chestW: 1.5, shrine: 0, flare: 'novice', draft: 'novice', dashAware: false, objW: 1.6, objForget: 0.4, objBoss: false,
   },
   average: {
     decide: 0.2, dirsMin: 8, dirsMax: 8, look: 0.35, samples: 3, aware: 170, bossAware: 420,
     shotW: 0.35, shotR: 160, telW: 0.3, margin: 20, kite: null, pickW: 1.0, pickRange: 520, crowdAvoid: 0.25,
     bad: 0.03, noise: 0.2, obsW: 0.6, slowW: 0.1, hold: 0.25, stuckT: 0.8, knowsFreeze: true,
-    chestW: 3.5, shrine: 0.3, flare: 'average', draft: 'average', dashAware: false,
+    chestW: 3.5, shrine: 0.3, flare: 'average', draft: 'average', dashAware: false, objW: 3, objForget: 0.1, objBoss: false,
   },
   skilled: {
     decide: 0.12, dirsMin: 16, dirsMax: 16, look: 0.45, samples: 4, aware: 215, bossAware: 560,
     shotW: 0.9, shotR: 280, telW: 1.0, margin: 30, kite: [250, 380], pickW: 0.8, pickRange: 700, crowdAvoid: 0.7,
     bad: 0.004, noise: 0.07, obsW: 1.2, slowW: 0.5, hold: 0.35, stuckT: 0.4, knowsFreeze: true,
-    chestW: 6, shrine: 0.8, flare: 'skilled', draft: 'skilled', dashAware: true,
+    chestW: 6, shrine: 0.8, flare: 'skilled', draft: 'skilled', dashAware: true, objW: 5, objForget: 0, objBoss: true,
   },
   expert: {
     decide: 0, dirsMin: 24, dirsMax: 24, look: 0.7, samples: 5, aware: 300, bossAware: 700,
     shotW: 1.4, shotR: 380, telW: 1.5, margin: 44, kite: [210, 340], pickW: 0.8, pickRange: 900, crowdAvoid: 1.0,
     bad: 0, noise: 0.02, obsW: 1.8, slowW: 1.2, hold: 0.4, stuckT: 0.25, knowsFreeze: true,
-    chestW: 8, shrine: 1, flare: 'expert', draft: 'expert', dashAware: true,
+    chestW: 8, shrine: 1, flare: 'expert', draft: 'expert', dashAware: true, objW: 7, objForget: 0, objBoss: true,
   },
 };
 
@@ -260,7 +260,17 @@ function chooseTarget(g, bot, ob) {
   const sh = g.shrine;
   if (sh && bot.shrineRoll < sk.shrine && !g.boss) {
     const d = Math.hypot(sh.x - P.x, sh.y - P.y);
-    if (d < 1000) cand.push({ k: sh, shrine: true, v: 5, d, s: 5 / (d + 80), x: sh.x, y: sh.y });
+    if (d < 1000) cand.push({ k: sh, shrine: true, v: 5, d, s: 5 / (d + 80), x: sh.x, y: sh.y, r: sh.r });
+  }
+  // the stage objective: pursued with skill-graded attention (novices drift off it, experts plan for it)
+  bot.objAttnT = (bot.objAttnT || 0) - Math.max(sk.decide, 1 / 30);
+  if (bot.objAttnT <= 0) { bot.objAttn = Math.random() < sk.objForget ? 0.15 : 1; bot.objAttnT = 25 + Math.random() * 40; }
+  if (!(g.boss && g.boss.alive && !sk.objBoss)) {
+    for (const t of g.obj.botTargets()) {
+      const d = Math.hypot(t.x - P.x, t.y - P.y);
+      const w = ((sk.objW * t.v) / 5) * (bot.objAttn ?? 1) * (hpF < 0.3 ? 0.4 : 1);
+      cand.push({ k: t.k, obj: true, camp: t.camp, r: t.r, v: w * 5, d, s: (w * 15) / (d * 0.3 + 80), x: t.x, y: t.y });
+    }
   }
   if (hpF < 0.65 && sk.pickW > 0.5 && !g.stats.noHeal) {
     for (const z of ob.springs) {
@@ -311,9 +321,9 @@ function decide(g, bot, ctxIn) {
   let tx, ty, tv, camp = null;
   if (tgt) {
     tx = tgt.x; ty = tgt.y; tv = Math.min(2.5, tgt.v);
-    if (tgt.shrine) {
+    if (tgt.shrine || (tgt.obj && tgt.camp)) {
       const d = Math.hypot(tx - P.x, ty - P.y);
-      if (d < g.shrine.r * 0.7) camp = tgt; // inside: orbit in place until it kindles
+      if (d < tgt.r * 0.7) camp = tgt; // inside: orbit in place until it is done
     }
   } else {
     // wander on a slow figure-eight so we keep moving through open ground
@@ -392,7 +402,7 @@ function decide(g, bot, ctxIn) {
     }
     if (camp) {
       const dc = Math.hypot(camp.x - ex, camp.y - ey);
-      if (dc > g.shrine.r * 0.8) cost += 0.8;
+      if (dc > camp.r * 0.8) cost += 0.8;
     } else {
       // pull toward the target (progress over the horizon)
       const d0 = tl, d1 = Math.hypot(tx - ex, ty - ey);
@@ -505,6 +515,7 @@ export function install(startRun, getGame) {
         skill: skillName, char: charId, stage: stageId, difficulty: diff, heat, metaFrac, seed: opts.seed ?? null,
         win, dead: !!g.dead, timedOut: !win && !g.dead, time: Math.round(g.time * 10) / 10, level: g.level, kills: g.kills,
         cinders: reward.total, gathered: reward.gathered, bestCombo: g.bestCombo, overcharge: g.overcharge || 0,
+        objDone: g.obj.done, objAt: g.obj.doneAt, objCount: g.obj.count, objN: g.obj.n, warded: !!(g.boss && g.boss.alive && g.boss.d.final && !g.obj.done),
         killedBy: g.dead ? g.lastHitBy || '?' : null, hpMinPct: Math.max(0, Math.round(minHp * 100)),
         weapons: g.weapons.map((w) => `${w.id}:${w.level}`), fusions: g.weapons.filter((w) => w.fused).map((w) => w.id),
         passives: { ...g.passives }, pacts: [...g.pacts], series, chests: g.chestsOpened || 0, chestItems: g.chestItems || 0,
