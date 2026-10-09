@@ -432,7 +432,19 @@ export function install(startRun, getGame) {
     save.settings.difficulty = diff;
     save.heatSel[stageId] = heat; save.heatMax[stageId] = heat;
     save.meta = {};
-    for (const id in META) { const l = Math.round(metaFrac * META[id].max); if (l) save.meta[id] = l; }
+    // progression model: a player spends a share of the whole Hearth's price, cheapest next level first
+    {
+      const price = (id, l) => Math.round(META[id].cost * (1 + l * 0.6));
+      let total = 0;
+      for (const id in META) for (let l = 0; l < META[id].max; l++) total += price(id, l);
+      let budget = metaFrac * total;
+      for (;;) {
+        let best = null, bp = Infinity;
+        for (const id in META) { const l = save.meta[id] || 0; if (l < META[id].max && price(id, l) < bp) { bp = price(id, l); best = id; } }
+        if (!best || bp > budget) break;
+        budget -= bp; save.meta[best] = (save.meta[best] || 0) + 1;
+      }
+    }
     if (typeof opts.seed === 'number') Math.random = mulberry32(opts.seed >>> 0);
 
     const bot = {
