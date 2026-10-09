@@ -7,12 +7,16 @@ import { initAudio, startMusic, setMuted, setMusic, setVolumes } from './audio.j
 import { save } from './save.js';
 import './style.css';
 
+const coarse = matchMedia('(pointer: coarse)').matches;
+document.body.classList.toggle('touch', coarse);
+
 const app = new Application();
 await app.init({
   resizeTo: window,
   background: '#0a0812',
   antialias: false,
-  resolution: Math.min(window.devicePixelRatio || 1, 2),
+  // phones: cap the render scale lower, a 3x screen is far more pixels than the swarm needs
+  resolution: Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2),
   autoDensity: true,
   powerPreference: 'high-performance',
 });
@@ -25,6 +29,17 @@ setMuted(save.settings.muted);
 setMusic(save.settings.music);
 
 let game = null;
+// keep the screen awake during a run, and drop the long-press menu
+let wakeLock = null;
+async function holdAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { /* denied or unsupported */ }
+}
+addEventListener('contextmenu', (e) => e.preventDefault());
 // browsers block audio until a gesture: the first click starts the menu music
 addEventListener('pointerdown', () => { initAudio(); if (!game) startMusic('menu'); }, { once: true });
 
@@ -34,12 +49,14 @@ const ui = new UI({
     initAudio();
     startMusic(stageId);
     game = new Game(app, ui, charId, stageId, opts);
+    holdAwake(true);
     ui.beginRun(game);
     if (import.meta.env.DEV) window.__game = game;
   },
   quitToTitle() {
     if (game) { game.destroy(); game = null; }
     ui.game = null;
+    holdAwake(false);
     startMusic('menu');
   },
 });
@@ -56,6 +73,7 @@ addEventListener('keydown', (e) => {
   if ((e.code === 'Escape' || e.code === 'KeyP') && !ui.modalOpen) { e.preventDefault(); ui.showPause(game); }
 });
 document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && game) holdAwake(true);
   if (document.hidden && game && !ui.modalOpen && !game.dead) ui.showPause(game);
 });
 

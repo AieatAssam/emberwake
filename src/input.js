@@ -2,6 +2,7 @@
 const keys = new Set();
 const pressed = new Set();
 const touch = { active: false, id: -1, ox: 0, oy: 0, x: 0, y: 0 };
+const JOY_R = 56, JOY_DEAD = 8;
 let joyEl = null, knobEl = null;
 
 export function initInput() {
@@ -17,7 +18,7 @@ export function initInput() {
   knobEl = document.getElementById('joy-knob');
   const canvasHost = document.getElementById('game');
   canvasHost.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'mouse') return;
+    if (e.pointerType === 'mouse' || touch.active) return;
     touch.active = true; touch.id = e.pointerId;
     touch.ox = touch.x = e.clientX; touch.oy = touch.y = e.clientY;
     if (joyEl) { joyEl.style.display = 'block'; joyEl.style.left = e.clientX + 'px'; joyEl.style.top = e.clientY + 'px'; }
@@ -25,12 +26,15 @@ export function initInput() {
   addEventListener('pointermove', (e) => {
     if (!touch.active || e.pointerId !== touch.id) return;
     touch.x = e.clientX; touch.y = e.clientY;
-    if (knobEl) {
-      let dx = touch.x - touch.ox, dy = touch.y - touch.oy;
-      const d = Math.hypot(dx, dy), m = 44;
-      if (d > m) { dx = (dx / d) * m; dy = (dy / d) * m; }
-      knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+    let dx = touch.x - touch.ox, dy = touch.y - touch.oy;
+    const d = Math.hypot(dx, dy);
+    if (d > JOY_R) {
+      // dynamic stick: the base trails the thumb so you never run out of travel
+      touch.ox += (dx / d) * (d - JOY_R); touch.oy += (dy / d) * (d - JOY_R);
+      dx = touch.x - touch.ox; dy = touch.y - touch.oy;
+      if (joyEl) { joyEl.style.left = touch.ox + 'px'; joyEl.style.top = touch.oy + 'px'; }
     }
+    if (knobEl) knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
   });
   const end = (e) => {
     if (e.pointerId !== touch.id) return;
@@ -60,7 +64,7 @@ export function moveVector() {
   }
   if (touch.active) {
     const dx = touch.x - touch.ox, dy = touch.y - touch.oy, d = Math.hypot(dx, dy);
-    if (d > 6) { const m = Math.min(1, d / 44); x += (dx / d) * m; y += (dy / d) * m; }
+    if (d > JOY_DEAD) { const m = Math.min(1, ((d - JOY_DEAD) / (JOY_R - JOY_DEAD)) * 1.15); x += (dx / d) * m; y += (dy / d) * m; }
   }
   const len = Math.hypot(x, y);
   if (len > 1) { x /= len; y /= len; }

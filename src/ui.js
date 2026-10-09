@@ -5,6 +5,7 @@ import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, duck, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
 import { clearPressed, padMenu } from './input.js';
+import { hapticsSupported } from './haptics.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -20,7 +21,7 @@ export class UI {
     this.lastInv = '';
     this.keyHandler = null;
     addEventListener('keydown', (e) => this.keyHandler && this.keyHandler(e));
-    $('#pausebtn').addEventListener('click', () => this.game && !this.modalOpen && this.showPause(this.game));
+    $('#pausebtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); if (this.game && !this.modalOpen) this.showPause(this.game); });
     $('#flarebtn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.game && this.game.triggerFlare(); });
     this.padIdx = 0;
     const padLoop = () => { this.padNav(); requestAnimationFrame(padLoop); };
@@ -89,7 +90,8 @@ export class UI {
           <button class="btn" data-a="settings">Settings</button>
         </div>
         <div class="stats-line">Best ${fmtTime(s.best.time)} · ${s.totals.runs} runs · ${fmtNum(s.totals.kills)} slain · ${s.totals.wins} victories</div>
-        <div class="howto">WASD / Arrows to move · weapons fire on their own · <b>SPACE</b> to unleash your Flare · ESC pause</div>
+        <div class="howto kbd-only">WASD / Arrows to move · weapons fire on their own · <b>SPACE</b> to unleash your Flare · ESC pause</div>
+        <div class="howto touch-only">Drag anywhere to move · weapons fire on their own · tap <b>✹</b> to unleash your Flare</div>
       </div>`, 'title');
     this.bind({
       play: () => this.showCharSelect(),
@@ -310,8 +312,8 @@ export class UI {
         <h2>Settings</h2>
         <label class="slider"><span>Master volume</span><input type="range" min="0" max="100" step="5" data-v="volume" value="${st.volume}"><b>${st.volume}%</b></label>
         <label class="slider"><span>Music volume</span><input type="range" min="0" max="100" step="5" data-v="musicVolume" value="${st.musicVolume}"><b>${st.musicVolume}%</b></label>
-        ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}
-        <div class="row"><button class="btn" data-a="back">Back</button>${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
+        ${t('muted', 'Mute all audio')}${t('music', 'Music')}${t('numbers', 'Damage numbers')}${t('shake', 'Screen shake')}${t('lowfx', 'Reduced effects (fewer particles, no screen flashes)')}${hapticsSupported ? t('haptics', 'Vibration (haptic feedback)') : ''}
+        <div class="row"><button class="btn" data-a="back">Back</button>${document.fullscreenEnabled ? '<button class="btn" data-a="fs">Fullscreen</button>' : ''}${fromPause ? '' : '<button class="btn ghost danger" data-a="wipe">Erase save</button>'}</div>
       </div>`);
     this.screen.querySelectorAll('input[data-v]').forEach((el) => el.addEventListener('input', () => {
       st[el.dataset.v] = +el.value; el.nextElementSibling.textContent = el.value + '%'; persist();
@@ -323,6 +325,7 @@ export class UI {
     }));
     this.bind({
       back: () => (fromPause ? this.showPause(this.game) : this.showTitle()),
+      fs: () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); },
       // eslint-disable-next-line no-alert -- deliberate native confirmation for an irreversible wipe
       wipe: () => { if (confirm('Erase all progress?')) { resetSave(); this.showTitle(); } },
     });
@@ -438,7 +441,7 @@ export class UI {
     const render = () => {
       const cards = choices.map((c, i) => `
         <div class="card pick ${c.kind} ${c.isNew ? 'new' : ''}" data-a="choose" data-i="${i}" style="animation-delay:${i * 60}ms">
-          <div class="pk-key">${i + 1}</div>
+          <div class="pk-key kbd-only">${i + 1}</div>
           <img src="${iconURL(c.icon)}">
           <div class="pk-body">
             <div class="pk-name">${esc(c.name)} ${c.level ? `<span class="lv">${c.isNew ? 'NEW' : 'LV ' + c.level}${c.max ? ' · MAX' : ''}</span>` : ''}</div>
@@ -452,9 +455,9 @@ export class UI {
           <div class="lu-sub">${banishMode ? 'Choose a card to banish for the rest of the run' : 'The Ember answers. Choose a gift.'}</div>
           <div class="picks">${cards}</div>
           <div class="row small">
-            <button class="btn ghost" data-a="reroll" ${g.rerolls > 0 ? '' : 'disabled'}>Reroll (${g.rerolls}) [R]</button>
-            <button class="btn ghost" data-a="banish" ${g.banishes > 0 ? '' : 'disabled'}>${banishMode ? 'Cancel' : 'Banish'} (${g.banishes}) [B]</button>
-            <button class="btn ghost" data-a="skip">Skip (+XP) [X]</button>
+            <button class="btn ghost" data-a="reroll" ${g.rerolls > 0 ? '' : 'disabled'}>Reroll (${g.rerolls}) <span class="kbd-only">[R]</span></button>
+            <button class="btn ghost" data-a="banish" ${g.banishes > 0 ? '' : 'disabled'}>${banishMode ? 'Cancel' : 'Banish'} (${g.banishes}) <span class="kbd-only">[B]</span></button>
+            <button class="btn ghost" data-a="skip">Skip (+XP) <span class="kbd-only">[X]</span></button>
           </div>
           ${this.buildSummary(g)}
         </div>`, 'dim');
