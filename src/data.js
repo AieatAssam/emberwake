@@ -263,7 +263,7 @@ export const ENEMIES = {
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
   lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
   scarab: { tex: 'scarab', hp: 18, speed: 98, dmg: 7, xp: 2, r: 12, anim: 10 },
-  acolyte: { tex: 'acolyte', hp: 32, speed: 42, dmg: 8, xp: 3, r: 15, ranged: true, anim: 6 },
+  acolyte: { tex: 'acolyte', hp: 26, speed: 42, dmg: 7, xp: 3, r: 15, ranged: true, anim: 6 },
   thief: { tex: 'imp', hp: 60, speed: 112, dmg: 0, xp: 8, r: 13, anim: 8, flee: true, loot: true, tint: 0xffd040 },
   hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
@@ -530,7 +530,7 @@ export const STAGES = {
   },
   reliquary: {
     name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Acolytes keep their vigil. +60% enemy health, +7% speed, x3 cinders.',
-    cost: 4500, hpMul: 1.12, greedMul: 3, speedMul: 1.03, lateHp: 0.02, bias: { acolyte: 1.1, wraith: 0.9, spitter: 0.5, sentinel: 0.6, moth: 0.5 },
+    cost: 4500, hpMul: 1.05, greedMul: 3, speedMul: 1.02, lateHp: 0.015, bias: { acolyte: 0.8, wraith: 0.8, spitter: 0.4, sentinel: 0.5, moth: 0.5 },
     ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
     tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
     decor: { tomb: 16, candelabra: 10, banner: 8, cobble: 22, pillar: 10, bones: 12, rock0: 6 }, own: ['tomb', 'candelabra', 'banner', 'cobble'],
