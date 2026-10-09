@@ -194,8 +194,8 @@ export const CHARACTERS = {
     perk: 'emberwalk', perkName: 'Slow Burn', perkDesc: 'Kindle lasts 35% longer between kills.',
   },
   oracle: {
-    name: 'Ysolde', title: 'The Rime Oracle', sprite: 'oracle', weapon: 'frostPulse', startLevel: 2, cost: 250,
-    bonus: '+15% area, +10% duration, +10% damage', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.might += 0.1; s.maxHp -= 5; },
+    name: 'Ysolde', title: 'The Rime Oracle', sprite: 'oracle', weapon: 'frostPulse', startLevel: 3, cost: 250,
+    bonus: '+15% area, +10% duration, +15% damage', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.might += 0.15; s.maxHp -= 5; },
     flare: 'absoluteZero', flareName: 'Absolute Zero', flareDesc: 'Freeze every enemy solid for 5s; frozen foes shatter for double damage.',
     color: '#8ae0ff',
     perk: 'rimeheart', perkName: 'Rime Heart', perkDesc: 'Foes that die frozen charge your Flare 2.5x faster.',
@@ -229,15 +229,15 @@ export const CHARACTERS = {
     perk: 'tollbearer', perkName: 'Tollbearer', perkDesc: 'Every 15s the bell tolls, hurling nearby foes away and stunning them.',
   },
   hunter: {
-    name: 'Sable', title: 'The Gloam Hunter', sprite: 'hunter', weapon: 'iceLance', startLevel: 3, cost: 3000,
-    bonus: '+15% crit chance, +35% crit damage, +10% damage', apply: (s) => { s.crit += 0.15; s.critMul += 0.35; s.might += 0.1; s.maxHp -= 5; },
+    name: 'Sable', title: 'The Gloam Hunter', sprite: 'hunter', weapon: 'iceLance', startLevel: 4, cost: 3000,
+    bonus: '+15% crit chance, +35% crit damage, +20% damage', apply: (s) => { s.crit += 0.15; s.critMul += 0.35; s.might += 0.2; s.maxHp -= 5; },
     flare: 'deadeye', flareName: 'Deadeye', flareDesc: 'Every strike is a critical hit for 6s and projectiles fly 50% faster.',
     color: '#6af0a0',
     perk: 'markedprey', perkName: 'Marked Prey', perkDesc: 'Deal 35% more damage to elites and bosses.',
   },
   hearthkeeper: {
-    name: 'Orin', title: 'The Hearthkeeper', sprite: 'hearthkeeper', weapon: 'sunRing', startLevel: 3, cost: 4000,
-    bonus: '+30% health, +1.2 regen, +20% area, -5% move speed', apply: (s) => { s.maxHp *= 1.3; s.regen += 1.2; s.area += 0.2; s.moveSpeed *= 0.95; },
+    name: 'Orin', title: 'The Hearthkeeper', sprite: 'hearthkeeper', weapon: 'sunRing', startLevel: 4, cost: 4000,
+    bonus: '+30% health, +1.2 regen, +30% area, +15% damage, -5% move speed', apply: (s) => { s.maxHp *= 1.3; s.regen += 1.2; s.area += 0.3; s.might += 0.15; s.moveSpeed *= 0.95; },
     flare: 'hearthfire', flareName: 'Hearthfire', flareDesc: 'Plant a roaring hearth for 8s: foes inside burn and you mend.',
     color: '#ffc060',
     perk: 'hearthheart', perkName: 'Hearthheart', perkDesc: 'Every level-up restores 20% of your health.',
@@ -530,7 +530,7 @@ export const STAGES = {
   },
   reliquary: {
     name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Acolytes keep their vigil. +60% enemy health, +7% speed, x3 cinders.',
-    cost: 4500, hpMul: 1.25, greedMul: 3, speedMul: 1.04, lateHp: 0.025, bias: { acolyte: 1.5, wraith: 1.1, spitter: 0.6, sentinel: 0.7, moth: 0.5 },
+    cost: 4500, hpMul: 1.12, greedMul: 3, speedMul: 1.03, lateHp: 0.02, bias: { acolyte: 1.1, wraith: 0.9, spitter: 0.5, sentinel: 0.6, moth: 0.5 },
     ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
     tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
     decor: { tomb: 16, candelabra: 10, banner: 8, cobble: 22, pillar: 10, bones: 12, rock0: 6 }, own: ['tomb', 'candelabra', 'banner', 'cobble'],
@@ -538,7 +538,7 @@ export const STAGES = {
   },
   glassdunes: {
     name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Drifts drag at your heels. +75% enemy health, +10% speed, x3.5 cinders.',
-    cost: 7000, hpMul: 1.3, greedMul: 3.5, speedMul: 1.05, lateHp: 0.03, bias: { scarab: 1.3, beetle: 1, imp: 0.8, spitter: 0.5, husk: 0.7 },
+    cost: 7000, hpMul: 1.15, greedMul: 3.5, speedMul: 1.03, lateHp: 0.025, bias: { scarab: 1, beetle: 0.8, imp: 0.7, spitter: 0.4, husk: 0.6 },
     ground: { base: '#241a12', blobs: ['rgba(120,86,50,0.4)', 'rgba(60,40,28,0.55)', 'rgba(170,130,70,0.2)', 'rgba(40,28,22,0.5)'], stone: 'rgba(150,120,80,0.3)' },
     tint: 0xe0c8a8, decorTint: 0xd8c0a0, color: '#ffd070',
     decor: { glasscluster: 14, bonespire: 10, drift: 22, rock1: 10, bones: 12, basalt: 4 }, own: ['glasscluster', 'bonespire', 'drift'],
