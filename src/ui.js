@@ -3,7 +3,7 @@ import { iconURL, spriteURL } from './atlas.js';
 import { CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
-import { sfx, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
+import { sfx, duck, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
 import { clearPressed, padMenu } from './input.js';
 
 const $ = (s) => document.querySelector(s);
@@ -62,6 +62,7 @@ export class UI {
     this.screen.querySelectorAll('button, .card').forEach((b) => b.addEventListener('pointerenter', () => sfx.hover()));
   }
   close() {
+    duck(false);
     this.screen.className = '';
     this.screen.innerHTML = '';
     this.modalOpen = false;
@@ -164,15 +165,15 @@ export class UI {
         stage: (el) => {
           const id = el.dataset.id, st = STAGES[id];
           if (!save.stages[id]) {
-            if (save.cinders < st.cost) return;
-            save.cinders -= st.cost; save.stages[id] = true; sfx.chestOpen();
+            if (save.cinders < st.cost) { sfx.deny(); return; }
+            save.cinders -= st.cost; save.stages[id] = true; sfx.purchase();
           }
           save.lastStage = id; persist(); render();
         },
-        back: () => this.showTitle(),
+        back: () => { sfx.back(); this.showTitle(); },
         go: () => { this.close(); this.h.startRun(sel); },
         buy: () => {
-          if (save.cinders >= c.cost) { save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.chestOpen(); render(); }
+          if (save.cinders >= c.cost) { save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.purchase(); render(); } else sfx.deny();
         },
       });
       this.keyHandler = (e) => {
@@ -240,7 +241,7 @@ export class UI {
         buy: (el) => {
           const id = el.dataset.id, m = META[id], l = save.meta[id] || 0;
           const cost = Math.round(m.cost * (1 + l * 0.6));
-          if (l < m.max && save.cinders >= cost) { save.cinders -= cost; save.meta[id] = l + 1; persist(); sfx.levelup(); render(); }
+          if (l < m.max && save.cinders >= cost) { save.cinders -= cost; save.meta[id] = l + 1; persist(); sfx.purchase(); render(); } else sfx.deny();
         },
         refund: () => {
           let back = 0;
@@ -565,6 +566,7 @@ export class UI {
 
   // ---------- pause ----------
   showPause(g) {
+    sfx.pause(); duck(true);
     const rows = g.weapons.map((w) => {
       const name = w.fused ? FUSIONS[w.id].name : WEAPONS[w.id].name;
       return `<tr><td><img src="${iconURL(w.id)}"></td><td>${name}</td><td>${w.fused ? '★' : 'LV ' + w.level}</td><td>${fmtNum(w.dmgDone)}</td><td>${fmtNum(w.dmgDone / Math.max(1, g.time))}/s</td></tr>`;

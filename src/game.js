@@ -5,7 +5,7 @@ import {
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
-import { sfx, setIntensity } from './audio.js';
+import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
 import { save, persist } from './save.js';
 
@@ -15,6 +15,15 @@ export const KINDLE_TIERS = [
   { at: 0, mul: 1 }, { at: 25, mul: 1.15 }, { at: 70, mul: 1.3 }, { at: 150, mul: 1.5 },
   { at: 300, mul: 1.75 }, { at: 600, mul: 2 }, { at: 1200, mul: 2.5 },
 ];
+// one-time gifts for first reaching a Kindle tier in a run
+const KINDLE_REWARDS = { 3: 'flare', 4: 'magnet', 6: 'chest' };
+// drifting ambient motes per stage: tint(s), vertical drift, sway, blink, scale
+const MOTES = {
+  gloam: { tints: [0xb080ff, 0x80a0ff], vy: -8, sway: 12, blink: 0, s: [0.4, 0.8] },
+  ashfields: { tints: [0xff7a30, 0xffc060], vy: -38, sway: 16, blink: 9, s: [0.3, 0.6] },
+  marsh: { tints: [0xc8ff70], vy: -4, sway: 22, blink: 2, s: [0.4, 0.8] },
+  rimewood: { tints: [0xe8f4ff], vy: 24, sway: 18, blink: 0, s: [0.3, 0.6] },
+};
 const MAX_ENEMIES = 1100;
 const MAX_FX = 2600;
 const GEM_CAP = 650;
@@ -137,7 +146,9 @@ export class Game {
       glowUnder: new Layer(this.world, 'add'),
       pickups: new Layer(this.world),
       enemies: new Layer(this.world),
+      motes: new Layer(this.world, 'add'),
     };
+    this.initMotes();
     this.shrineG = new Graphics();
     this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
     this.shrine = null; this.shrineT = 150;
@@ -191,7 +202,9 @@ export class Game {
     this.enemies = []; this.projectiles = []; this.enemyShots = []; this.fx = []; this.pickups = []; this.numbers = [];
     this.weapons = []; this.passives = {}; this.pacts = []; this.banished = new Set();
     this.combo = 0; this.comboT = 0; this.kindleTier = 0; this.bestCombo = 0;
-    this.flare = 0; this.buffs = { overclock: 0, bloodrage: 0, shatter: 0, invuln: 0 };
+    this.flare = 0; this.buffs = { overclock: 0, bloodrage: 0, shatter: 0, invuln: 0, bloodMoon: 0 };
+    this.rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.hitStop = 0; this.hitStopCd = 0; this.hitFxBudget = 0; this.kindleRewarded = {}; this.nextStreak = 250;
     this.shake = 0; this.timeScale = 1; this.slowT = 0;
     this.waveIdx = 0; this.eventIdx = 0; this.spawnAcc = 0; this.totemT = 0; this.eliteT = 0;
     this.boss = null; this.victory = false; this.endless = false; this.dead = false;
@@ -256,10 +269,10 @@ export class Game {
     const might = s.might * (B.bloodrage > 0 ? 2 : 1);
     const cdm = s.cooldown * (B.overclock > 0 ? 0.33 : 1);
     const o = part._eff || (part._eff = {});
-    o.dmg = b.dmg * might;
+    o.dmg = b.dmg * might * (1 + 0.15 * (b.amount == null ? s.amount : 0));
     o.cd = b.cd * cdm;
     o.amount = b.amount != null ? b.amount + s.amount : 0;
-    o.area = (b.area || 1) * s.area;
+    o.area = (b.area || 1) * s.area * (1 + 0.1 * (b.amount == null ? s.amount : 0));
     o.speed = (b.speed || 1) * s.projSpeed;
     o.duration = (b.duration || 1) * s.duration;
     o.pierce = b.pierce || 1;
@@ -549,7 +562,7 @@ export class Game {
     const e = this.enemyPool.pop() || {};
     e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
-    e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900);
+    e.dmg = d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg;
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
@@ -569,7 +582,7 @@ export class Game {
       e.glow.scaleX = e.glow.scaleY = (e.r * 3.2) / 64;
       e.glow.alpha = 0.6;
     }
-    if (elite) e.p.tint = 0xffe0a0;
+    e.p.tint = elite ? 0xffe0a0 : d.tint || 0xffffff;
     this.enemies.push(e);
     if (!d.inert) this.seenRun[type] = true;
     if (e.boss) {
@@ -599,7 +612,7 @@ export class Game {
     if (!e.alive || e.d.hollow) return 0;
     let dmg = amount * rand(0.92, 1.08) * (e.affix === 'warded' ? 0.6 : 1) * (e.sunk ? 0.5 : 1) * (e.d.shroud && this.time - e.lastBlink > 1.5 ? 0.25 : 1);
     let crit = false;
-    if (Math.random() < this.stats.crit) { dmg *= this.stats.critMul; crit = true; }
+    if (Math.random() < this.stats.crit + (this.stats.luck - 1) * 0.1) { dmg *= this.stats.critMul; crit = true; }
     if (this.buffs.shatter > 0 && e.freezeT > 0) dmg *= 2;
     e.hp -= dmg;
     e.flash = 0.08;
@@ -616,7 +629,13 @@ export class Game {
     }
     if (this.buffs.bloodrage > 0) this.heal(dmg * 0.004, false);
     if (!e.inert) this.dmgNumber(e.x + rand(-6, 6), e.y - e.r - 6, dmg, crit, o && o.w ? elementTint(o.w.id) : 0xffffff);
-    sfx.hit();
+    if (crit) sfx.crit(); else sfx.hit();
+    // impact sparks (budgeted per frame) and a flick of hit-stop on crits against bosses
+    if ((crit || this.hitFxBudget > 0) && !e.inert && this.fx.length < this.maxFx * 0.6) {
+      this.hitFxBudget--;
+      this.spawnFx(T.spark, e.x + rand(-4, 4), e.y - e.r * 0.6, { life: 0.14, s0: crit ? 1.1 : 0.6, s1: 0.1, rot: Math.random() * TAU, tint: o && o.w ? elementTint(o.w.id) : 0xffe0a0, drag: 0 });
+    }
+    if (crit && e.boss && this.hitStopCd <= 0 && !this.rm) { this.hitStop = Math.max(this.hitStop, 0.025); this.hitStopCd = 0.3; }
     if (e.hp <= 0) this.killEnemy(e, o && o.w);
     return dmg;
   }
@@ -642,8 +661,17 @@ export class Game {
       this.kindleTier = nt;
       sfx.kindleUp(nt);
       this.ui.kindlePop(KINDLE_TIERS[nt].mul);
+      const rw = KINDLE_REWARDS[nt];
+      if (rw && !this.kindleRewarded[nt]) {
+        this.kindleRewarded[nt] = true;
+        const P = this.player;
+        if (rw === 'flare') { this.flare = Math.min(100, this.flare + 25); this.ui.toast('KINDLED: +25% FLARE', 'kindle'); }
+        else if (rw === 'magnet') { this.dropPickup('magnet', P.x + 40, P.y, 1); this.ui.toast('KINDLED: A MAGNET FALLS', 'kindle'); }
+        else { this.dropPickup('chest', P.x + 40, P.y, 1); this.ui.toast('KINDLED: A CHEST IS SENT', 'kindle'); }
+      }
       this.burst(this.player.x, this.player.y, 24, [0xffa030, 0xffe080], 300, 0.8);
     }
+    if (this.combo >= this.nextStreak) { sfx.streak(this.kindleTier); this.nextStreak += 250; }
     this.flare = Math.min(100, this.flare + (e.boss ? 35 : e.elite ? 8 : 0.32) * this.stats.flareGain);
     // death fx
     const col = ENEMY_COLORS[e.type] || 0xb080ff;
@@ -656,7 +684,8 @@ export class Game {
       this.spawnFx(T.glow, x, y, { life: 0.22, s0: 0.5 * big * e.scale, s1: 1.4 * big * e.scale, tint: col, a: 0.8 });
       this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: 0x302040, a: 0.5, add: false, vy: -20 });
     }
-    sfx.kill();
+    sfx.kill(e.r);
+    if (e.d.loot) this.dropPickup('chest', x, y, 1);
     // drops
     if (e.boss) {
       this.bossKills[e.type] = true;
@@ -669,16 +698,20 @@ export class Game {
       this.burst(x, y, 120, [0xffd060, 0xff4060, 0xffffff], 700, 1.3);
       this.shockwave(x, y, 0xffffff, 1000, 1);
       sfx.boom();
+      if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.08);
       if (e.d.final && !this.victory) { this.victory = true; this.hollowAt = Math.min(this.hollowAt, this.time + 120); this.hollowWarned = false; setTimeout(() => this.ui.showVictory(this), 1800); }
       return;
     }
     if (e.elite) {
       this.dropPickup('chest', x, y, 1);
+      sfx.eliteKill();
+      if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.045);
+      this.shockwave(x, y, 0xffd060, 90, 0.3);
       this.slowT = 0.35;
       this.shake = Math.max(this.shake, 10);
       this.burst(x, y, 40, [0xffd060, 0xffffff], 400, 1);
     }
-    this.dropPickup('gem', x, y, e.xp / this.pressure);
+    this.dropPickup('gem', x, y, (e.xp * (this.buffs.bloodMoon > 0 ? 2 : 1)) / this.pressure);
     if (Math.random() < 0.012 * this.stats.luck) {
       const roll = weighted([['cinder', 62], ['heart', this.stats.noHeal ? 0 : 16], ['magnet', 5], ['bomb', 4], ['freeze', 4], ['flareorb', 7]]);
       this.dropPickup(roll, x + rand(-8, 8), y + rand(-8, 8), roll === 'cinder' ? 1 + ((Math.random() * 3) | 0) : 1);
@@ -724,10 +757,50 @@ export class Game {
     this.pickups.push(pk);
     return pk;
   }
+  // cheap per-pickup life: coin-flip gems, beating hearts, spinning orbs, rattling chests
+  animPickup(g, p, dt) {
+    if (g.pop > 0) return;
+    if (g.bs === undefined) g.bs = p.scaleX;
+    const bs = g.bs, t = g.t;
+    switch (g.type) {
+      case 'gem': p.scaleX = bs * (0.4 + 0.6 * Math.abs(Math.cos(t * 2.2 + g.x))); break;
+      case 'heart': p.scaleX = p.scaleY = bs * (1 + 0.14 * Math.pow(Math.max(0, Math.sin(t * 7)), 6)); break;
+      case 'magnet': p.rotation = Math.sin(t * 5) * 0.3; break;
+      case 'bomb': p.rotation += dt * 1.5; break;
+      case 'freeze': p.rotation += dt * 0.8; break;
+      case 'flareorb': p.rotation += dt * 3; p.scaleX = p.scaleY = bs * (1 + 0.1 * Math.sin(t * 9)); break;
+      case 'cinder': p.alpha = 0.8 + 0.2 * Math.sin(t * 12 + g.x); break;
+      case 'chest': p.rotation = Math.sin(t * 14) * 0.06 * (Math.sin(t * 1.3) > 0.8 ? 1 : 0); break;
+    }
+  }
+  initMotes() {
+    this.motes = [];
+    const cfg = MOTES[this.stageId] || MOTES.gloam;
+    if (save.settings.lowfx || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (let i = 0; i < 44; i++) {
+      const p = this.L.motes.add(T.dot, 0, 0);
+      p.tint = cfg.tints[i % cfg.tints.length];
+      this.motes.push({ p, u: Math.random(), v: Math.random(), ph: Math.random() * TAU, sc: rand(cfg.s[0], cfg.s[1]), cfg });
+    }
+  }
+  updateMotes(dt, sw, sh, z) {
+    const P = this.player, w = sw / z + 80, h = sh / z + 80;
+    for (const m of this.motes) {
+      const c = m.cfg;
+      m.v += (c.vy / h) * dt; m.u += Math.sin(this.time * 0.6 + m.ph) * (c.sway / w) * dt;
+      m.u -= Math.floor(m.u); m.v -= Math.floor(m.v);
+      const p = m.p;
+      p.x = P.x + (m.u - 0.5) * w; p.y = P.y + (m.v - 0.5) * h;
+      p.scaleX = p.scaleY = m.sc;
+      const b = c.blink === 0 ? 1 : c.blink > 5 ? 0.5 + 0.5 * Math.sin(this.time * c.blink + m.ph) : Math.pow(Math.max(0, Math.sin(this.time * c.blink + m.ph)), 3);
+      p.alpha = 0.45 * b;
+    }
+  }
   setGemTex(pk) {
     const v = pk.value;
     pk.p.texture = v >= 200 ? T.gem4 : v >= 40 ? T.gem3 : v >= 10 ? T.gem2 : v >= 3 ? T.gem1 : T.gem0;
     pk.p.scaleX = pk.p.scaleY = v >= 200 ? 1.2 : v >= 40 ? 1.1 : 0.9;
+    pk.bs = pk.p.scaleX;
   }
 
   collect(pk) {
@@ -805,11 +878,12 @@ export class Game {
     (this.dmgLog || (this.dmgLog = {}))[src] = (this.dmgLog[src] || 0) + amount;
     this.lastHitBy = src;
     const s = this.stats;
-    const dmg = Math.max(1, amount * (1 - Math.min(0.5, s.armor * 0.03)) - s.armor);
+    const dmg = Math.max(1, amount * 0.25, amount * (1 - Math.min(0.5, s.armor * 0.03)) - s.armor);
     P.hp -= dmg;
     P.iframes = 0.55; P.hurtT = 0.25;
     this.shake = Math.max(this.shake, 6);
     this.hurtFlash = 0.5;
+    if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.05);
     sfx.hurt();
     if (P.hp <= 0) {
       if (s.revivals > (this.usedRevivals || 0)) {
@@ -817,6 +891,7 @@ export class Game {
         P.hp = s.maxHp * 0.5; P.iframes = 3;
         this.flash(0xffa040, 1);
         this.ui.toast('SECOND WICK', 'pickup');
+        sfx.revive();
         this.triggerFlare('supernova', true);
       } else this.die();
     }
@@ -826,7 +901,7 @@ export class Game {
     if (this.dead) return;
     const P = this.player;
     this.dead = true;
-    sfx.death();
+    sfx.death(); sfx.deathStinger(); fadeMusic(1.2);
     this.burst(P.x, P.y, 80, [0xff8030, 0xffd080, 0xffffff], 400, 1);
     this.playerSprite.visible = false;
     setTimeout(() => this.ui.showResults(this, false), 1400);
@@ -836,7 +911,7 @@ export class Game {
   triggerFlare(kind = this.char.flare, free = false) {
     if (!free) { if (this.flare < 100) return; this.flare = 0; }
     const P = this.player;
-    sfx.flare();
+    sfx.flare(kind);
     this.shake = Math.max(this.shake, 20);
     const might = this.stats.might;
     switch (kind) {
@@ -1008,6 +1083,8 @@ export class Game {
   // ---------- main update ----------
   update(rawDt) {
     if (this.paused || this.dead && this.deadT > 3) return;
+    this.hitStopCd -= rawDt;
+    if (this.hitStop > 0) { this.hitStop -= rawDt; return; } // brief impact freeze; render still runs
     if (this.slowT > 0) { this.slowT -= rawDt; this.timeScale = 0.3; } else this.timeScale = 1;
     const dt = rawDt * this.timeScale;
     if (!this.dead) this.time += dt;
@@ -1042,6 +1119,7 @@ export class Game {
     this.deathFxBudget = Math.round(18 / this.pressure);
     this.explGlowBudget = 3;
     this.glintBudget = this.fx.length < this.maxFx * 0.5 ? 3 : 0;
+    this.hitFxBudget = save.settings.lowfx ? 4 : Math.round(14 / this.pressure);
     // grid
     const pf = this.prof, now = performance.now.bind(performance);
     let t0 = now();
@@ -1075,7 +1153,7 @@ export class Game {
       if (choices.every((c) => c.kind === 'overcharge' || c.kind === 'heal' || c.kind === 'cinderBag')) {
         // fully maxed build: power keeps climbing without interrupting the carnage
         this.applyChoice(choices.find((c) => c.kind === 'overcharge'));
-        sfx.kindleUp(Math.min(6, (this.overcharge || 0) % 7));
+        sfx.overcharge(this.overcharge || 0);
         this.shockwave(P.x, P.y, 0xffd060, 260, 0.35);
         this.ui.toast('OVERCHARGE', 'kindle');
       } else {
@@ -1095,11 +1173,12 @@ export class Game {
       const ready = this.availableFusions();
       this.readyParents = ready.flatMap((fid) => FUSIONS[fid].parents);
       this.announced = this.announced || {};
-      for (const fid of ready) if (!this.announced[fid]) { this.announced[fid] = true; this.ui.toast('ASCENSION READY: open a chest', 'fusion'); sfx.kindleUp(5); }
+      for (const fid of ready) if (!this.announced[fid]) { this.announced[fid] = true; this.ui.toast('ASCENSION READY: open a chest', 'fusion'); sfx.ascendReady(); }
     }
     this.featT -= rawDt;
     if (this.featT <= 0) { this.featT = 0.5; this.checkFeats(); }
     setIntensity(Math.min(1, this.time / 600 + this.kindleTier * 0.08 + (this.boss ? 0.3 : 0)));
+    setBoss(!!this.boss); setHollow(this.hollowN > 0);
   }
 
   updateNovas(dt) {
@@ -1171,7 +1250,7 @@ export class Game {
       const sp = this.spawnPointOffscreen(160);
       this.spawnEnemy('hollow', sp.x, sp.y, { force: true });
       this.ui.toast(this.hollowN === 1 ? 'THE HOLLOW HUNTS YOU. RUN.' : 'ANOTHER HOLLOW RISES', 'boss');
-      sfx.bossWarn(); this.shake = Math.max(this.shake, 14);
+      sfx.hollowSpawn(); this.shake = Math.max(this.shake, 14);
     }
     // periodic elites between scripted ones
     this.eliteT += dt;
@@ -1227,6 +1306,16 @@ export class Game {
     } else if (ev.type === 'elite') {
       const sp = this.spawnPointOffscreen(40);
       this.spawnEnemy(ev.enemy, sp.x, sp.y, { elite: true, force: true });
+    } else if (ev.type === 'thief') {
+      const sp = this.spawnPointOffscreen(60);
+      this.spawnEnemy('thief', sp.x, sp.y, { force: true, life: 18 });
+      this.ui.toast('AN EMBER THIEF! Catch it for a chest', 'pickup');
+      sfx.thief();
+    } else if (ev.type === 'omen') {
+      this.buffs.bloodMoon = 20;
+      this.ui.toast('BLOOD MOON: double experience, faster foes', 'boss');
+      sfx.bloodMoon();
+      this.flash(0xff2030, 0.35);
     } else if (ev.type === 'boss') {
       const sp = this.spawnPointOffscreen(120);
       this.spawnEnemy(ev.enemy, sp.x, sp.y, { force: true });
@@ -1234,7 +1323,7 @@ export class Game {
   }
 
   updateEnemies(dt) {
-    const P = this.player, es = this.enemies, ES = this.stats.enemySpeed;
+    const P = this.player, es = this.enemies, ES = Math.min(1.5, this.stats.enemySpeed * (this.buffs.bloodMoon > 0 ? 1.3 : 1));
     const farX = this.halfW * 2 + 200, farY = this.halfH * 2 + 200;
     const kd = Math.exp(-9 * dt);
     let contactDmg = 0, contactSrc = '', contactBoss = null;
@@ -1254,22 +1343,23 @@ export class Game {
       dx /= dist; dy /= dist;
       if (e.d.hollow) { this.updateHollow(e, dt, dx, dy, dist); continue; }
       // relocate stragglers ahead of the player
-      if (!e.boss && !e.rush && (Math.abs(P.x - e.x) > farX || Math.abs(P.y - e.y) > farY)) {
+      if (!e.boss && !e.rush && !e.d.flee && (Math.abs(P.x - e.x) > farX || Math.abs(P.y - e.y) > farY)) {
         const sp = this.spawnPointOffscreen();
         e.x = sp.x; e.y = sp.y;
         continue;
       }
-      if (e.rush) { e.life -= dt; if (e.life <= 0) { this.removeEnemy(e); continue; } }
+      if (e.rush || e.d.flee) { e.life -= dt; if (e.life <= 0) { this.removeEnemy(e); continue; } }
 
       let mvx = 0, mvy = 0;
       if (e.freezeT > 0) {
         e.freezeT -= dt;
         p.tint = 0x90e0ff;
       } else {
-        if (!e.elite) p.tint = 0xffffff; else p.tint = 0xffe0a0;
+        if (!e.elite) p.tint = e.d.tint || 0xffffff; else p.tint = 0xffe0a0;
         const sp = e.speed * ES * (e.slowT > 0 ? 0.5 : 1);
         if (e.slowT > 0) { e.slowT -= dt; p.tint = 0xb0d8ff; }
         if (e.rush) { mvx = e.rush.x * sp * 2.4; mvy = e.rush.y * sp * 2.4; }
+        else if (e.d.flee) { mvx = -dx * sp; mvy = -dy * sp; }
         else if (e.d.charge) {
           // ram beetle: approach, wind up, dash
           if (e.state === 0) {
@@ -1366,7 +1456,7 @@ export class Game {
       this.hurtPlayer(contactDmg, 'touch:' + contactSrc);
       // Thorn Mail: reflect a share of the blow back at the attacker
       if (this.stats.thorns > 0 && P.hp < hpBefore) {
-        const refl = (hpBefore - P.hp) * this.stats.thorns;
+        const refl = contactDmg * this.stats.thorns;
         const near = this.enemiesIn(P.x, P.y - 10, 70, this.qExp);
         for (const t of near) if (!t.inert) this.damage(t, t.boss ? refl * 0.5 : refl);
         this.burst(P.x, P.y - 10, 14, [0xd8e8c0, 0x9ab07a], 260, 0.7, 'shard');
@@ -1542,6 +1632,7 @@ export class Game {
       const p = g.p;
       p.x = g.x;
       p.y = g.y + (g.type === 'gem' ? Math.sin(g.t * 4 + g.x) * 2 : Math.sin(g.t * 3) * 3);
+      this.animPickup(g, p, dt);
       if (g.type === 'chest' && Math.random() < dt * 6) this.spawnFx(T.spark, g.x + rand(-18, 18), g.y + rand(-20, 6), { life: 0.6, s0: 0.5, s1: 0, tint: 0xffd060, vy: -40 });
       // occasional tier-coloured glints on visible gems (budgeted per frame)
       else if (g.type === 'gem' && this.glintBudget > 0 && Math.random() < dt * 0.6 && this.inView(g.x, g.y, -20)) {
@@ -1644,6 +1735,7 @@ export class Game {
     this.ground.tileScale.set(z);
     this.ground.tilePosition.set(this.world.position.x, this.world.position.y);
 
+    if (this.motes.length) this.updateMotes(rawDt, sw, sh, z);
     // player
     const ps = this.playerSprite;
     P.bob += rawDt * (P.moving ? 14 : 3);
@@ -1667,8 +1759,12 @@ export class Game {
     hb.clear();
     if (!this.dead) {
       const r = Math.max(0, P.hp / this.stats.maxHp);
+      // a pale ghost bar trails behind damage, then catches up
+      if (P.hpGhost === undefined || r >= P.hpGhost) { P.hpGhost = r; P.ghostHold = 0.35; }
+      else if ((P.ghostHold -= rawDt) <= 0) P.hpGhost = Math.max(r, P.hpGhost - rawDt * 0.6);
       hb.rect(P.x - 18, P.y + 8, 36, 5).fill({ color: 0x120814, alpha: 0.85 });
-      hb.rect(P.x - 17, P.y + 9, 34 * r, 3).fill(r > 0.5 ? 0x5aff8a : r > 0.25 ? 0xffd040 : 0xff4050);
+      if (P.hpGhost > r) hb.rect(P.x - 17, P.y + 9, 34 * P.hpGhost, 3).fill({ color: 0xffffff, alpha: 0.6 });
+      hb.rect(P.x - 17, P.y + 9, 34 * r, 3).fill(P.hurtT > 0.18 ? 0xffffff : r > 0.5 ? 0x5aff8a : r > 0.25 ? 0xffd040 : 0xff4050);
     }
 
     this.drawIndicators(sw, sh);
@@ -1722,6 +1818,7 @@ export class Game {
         const a = Math.random() * TAU, d = rand(520, 820);
         this.shrine = { x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: 95, prog: 0, life: 45, t: 0 };
         this.ui.toast('AN EMBER SHRINE STIRS', 'pickup');
+        sfx.shrineSpawn();
       }
       return;
     }

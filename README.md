@@ -21,7 +21,11 @@ A browser bullet-heaven survival roguelite built with **PixiJS v8** (WebGL, batc
 - **Stages** — The Gloam, The Ashfields, The Rimewood and The Drowned Marsh: distinct ground, enemy mixes and risk/reward multipliers, unlocked with cinders.
 - **Heat** — win a stage to unlock the next of 5 Heat levels: tougher, faster, denser runs for up to +150% cinders.
 - **Feats** — 15 achievements that pay cinders, with live unlock banners.
-- 6 Bearers, 15 weapons, 8 Ascensions, 15 relics, 9 enemy types, 3 bosses, 4 stages, endless mode.
+- **Kindle gifts** — first reaching Kindle tiers 3, 4 and 6 in a run drops a Flare charge, a Magnet and a Chest.
+- **Ember Thieves** flee with a chest — catch them. **Blood Moons** make foes faster and XP double.
+- **Pact of the Wick** — a new Dark Pact: harder-hitting foes in exchange for a revival.
+- Reactive music (menu theme, A-A-B-C song form with echoing counter-melody, boss and Hollow layers, pause muffle) and a much wider sound palette.
+- 6 Bearers, 15 weapons, 8 Ascensions, 15 relics, 10+ enemy types, 3 bosses, 4 stages, endless mode.
 
 ## Controls
 WASD / arrows · SPACE flare · ESC pause · 1–4 pick upgrade · R reroll · B banish. Gamepad and touch supported.

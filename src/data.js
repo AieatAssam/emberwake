@@ -9,7 +9,7 @@ export const BASE_STATS = {
   might: 1, area: 1, projSpeed: 1, duration: 1, amount: 0, cooldown: 1,
   magnet: 95, luck: 1, growth: 1, greed: 1, crit: 0.05, critMul: 2,
   flareGain: 1, thorns: 0, revivals: 0, curse: 1, enemyHp: 1, enemySpeed: 1, noHeal: false, overcharge: 0,
-  rerolls: 0, banishes: 0, skips: 0,
+  rerolls: 0, banishes: 0, skips: 0, enemyDmg: 1,
 };
 
 // Level deltas: dmg/amount/pierce/chains are additive, area/speed/duration additive fractions,
@@ -57,7 +57,7 @@ export const WEAPONS = {
     name: 'Starfall', element: 'fire', behavior: 'meteor',
     desc: 'Drags burning stars from the dead sky onto your foes.',
     base: { dmg: 32, cd: 2.5, amount: 1, area: 1, knock: 20 },
-    levels: L({ amount: 1 }, { dmg: 12 }, { area: 0.2 }, { amount: 1, cdMul: 0.9 }, { dmg: 15 }, { amount: 1 }, { amount: 2, area: 0.25 }),
+    levels: L({ amount: 1 }, { dmg: 12 }, { area: 0.2 }, { amount: 1, cdMul: 0.9 }, { dmg: 15 }, { amount: 1 }, { amount: 1, dmg: 8, area: 0.25 }),
   },
   moonglaive: {
     name: 'Moonglaive', element: 'spirit', behavior: 'glaive',
@@ -74,8 +74,8 @@ export const WEAPONS = {
   bloomMines: {
     name: 'Bloom Mines', element: 'nature', behavior: 'mine',
     desc: 'Plants volatile blossoms that erupt when stepped on.',
-    base: { dmg: 30, cd: 1.7, amount: 1, area: 1, duration: 8, knock: 18 },
-    levels: L({ amount: 1 }, { dmg: 10 }, { area: 0.2 }, { amount: 1, cdMul: 0.9 }, { dmg: 12 }, { amount: 1 }, { amount: 2, area: 0.25 }),
+    base: { dmg: 30, cd: 1.9, amount: 1, area: 1, duration: 8, knock: 18 },
+    levels: L({ amount: 1 }, { dmg: 10 }, { area: 0.2 }, { amount: 1, cdMul: 0.9 }, { dmg: 12 }, { amount: 1 }, { amount: 1, area: 0.25 }),
   },
   sparkDrones: {
     name: 'Spark Drones', element: 'storm', behavior: 'drone',
@@ -86,8 +86,8 @@ export const WEAPONS = {
   sunRing: {
     name: 'Sunring', element: 'fire', behavior: 'aura',
     desc: 'A ring of living flame scorches anything that comes close.',
-    base: { dmg: 5, cd: 0.5, area: 1, knock: 3 },
-    levels: L({ area: 0.15 }, { dmg: 3 }, { cdMul: 0.9 }, { area: 0.15 }, { dmg: 4 }, { cdMul: 0.85, area: 0.15 }, { dmg: 6, area: 0.2 }),
+    base: { dmg: 5, cd: 0.6, area: 1, knock: 3 },
+    levels: L({ area: 0.15 }, { dmg: 3 }, { cdMul: 0.9 }, { area: 0.15 }, { dmg: 4 }, { cdMul: 0.85, area: 0.15 }, { dmg: 4, area: 0.2 }),
   },
   iceLance: {
     name: 'Rime Lance', element: 'frost', behavior: 'lance',
@@ -98,8 +98,8 @@ export const WEAPONS = {
   gravewell: {
     name: 'Gravewell', element: 'void', behavior: 'vortex',
     desc: 'Opens a vortex in the horde that drags foes inward, grinds them, then implodes.',
-    base: { dmg: 4, cd: 4.8, amount: 1, area: 1, duration: 2.2, knock: 0 },
-    levels: L({ dmg: 1 }, { area: 0.15 }, { duration: 0.5 }, { amount: 1 }, { dmg: 2, cdMul: 0.92 }, { area: 0.2 }, { amount: 1, dmg: 2 }),
+    base: { dmg: 6, cd: 4.2, amount: 1, area: 1, duration: 2.2, knock: 0 },
+    levels: L({ dmg: 2 }, { area: 0.15 }, { duration: 0.5 }, { amount: 1 }, { dmg: 2, cdMul: 0.92 }, { area: 0.2 }, { amount: 1, dmg: 2 }),
   },
   sanctum: {
     name: 'Sanctum Quills', element: 'holy', behavior: 'radial',
@@ -159,19 +159,19 @@ export const PASSIVES = {
   haste: { name: 'Quicksilver', desc: '-7% weapon cooldowns', max: 5, apply: (s, l) => (s.cooldown *= Math.pow(0.93, l)) },
   reach: { name: 'Wide Lens', desc: '+10% area', max: 5, apply: (s, l) => (s.area += 0.1 * l) },
   velocity: { name: 'Gale Feather', desc: '+12% projectile speed', max: 5, apply: (s, l) => (s.projSpeed += 0.12 * l) },
-  multicast: { name: 'Echo Shard', desc: '+1 projectile on every weapon', max: 2, apply: (s, l) => (s.amount += l) },
+  multicast: { name: 'Echo Shard', desc: '+1 projectile on every weapon (weapons without projectiles gain +15% damage, +10% area)', max: 2, apply: (s, l) => (s.amount += l) },
   vitality: { name: 'Iron Root', desc: '+20 max health', max: 5, apply: (s, l) => (s.maxHp += 20 * l) },
   regen: { name: 'Living Moss', desc: '+0.4 health/sec', max: 5, apply: (s, l) => (s.regen += 0.4 * l) },
   swift: { name: 'Wind Boots', desc: '+10% move speed', max: 5, apply: (s, l) => (s.moveSpeed *= 1 + 0.1 * l) },
   magnet: { name: 'Lodestone', desc: '+30% pickup radius', max: 5, apply: (s, l) => (s.magnet *= 1 + 0.3 * l) },
-  luck: { name: 'Lucky Bone', desc: '+10% luck (crits, drops, chests)', max: 5, apply: (s, l) => (s.luck += 0.1 * l) },
+  luck: { name: 'Lucky Bone', desc: '+10% luck (drops, chests, +1% crit)', max: 5, apply: (s, l) => (s.luck += 0.1 * l) },
   crit: { name: 'Hawk Eye', desc: '+5% crit chance, +15% crit damage', max: 5, apply: (s, l) => { s.crit += 0.05 * l; s.critMul += 0.15 * l; } },
   duration: { name: 'Hourglass', desc: '+12% effect duration', max: 5, apply: (s, l) => (s.duration += 0.12 * l) },
   armor: { name: 'Bark Plate', desc: '+1 armor, +3% damage taken reduction', max: 5, apply: (s, l) => (s.armor += l) },
   growth: { name: 'Sage Tome', desc: '+8% experience', max: 5, apply: (s, l) => (s.growth += 0.08 * l) },
-  greed: { name: 'Gilded Tooth', desc: '+15% cinders', max: 5, apply: (s, l) => (s.greed += 0.15 * l) },
+  greed: { name: 'Gilded Tooth', desc: '+15% cinders, +5% luck', max: 5, apply: (s, l) => { s.greed += 0.15 * l; s.luck += 0.05 * l; } },
   reservoir: { name: 'Ember Reservoir', desc: '+20% Flare charge rate', max: 5, apply: (s, l) => (s.flareGain += 0.2 * l) },
-  thorns: { name: 'Thorn Mail', desc: 'When struck in melee, thorns burst out: nearby foes take 300% of the damage dealt', max: 5, apply: (s, l) => (s.thorns += 3 * l) },
+  thorns: { name: 'Thorn Mail', desc: 'When struck in melee, thorns burst out for 200% of the blow (+100% per level)', max: 5, apply: (s, l) => (s.thorns += 1 + l) },
 };
 
 // Dark Pacts: rare, risky draft cards. Max 3 per run.
@@ -180,6 +180,7 @@ export const PACTS = {
   glass: { name: 'Pact of Glass', desc: '-35% max health · +45% damage · +10% crit', apply: (s) => { s.maxHp *= 0.65; s.might += 0.45; s.crit += 0.1; } },
   frenzy: { name: 'Pact of Frenzy', desc: 'Enemies +20% speed · -18% cooldowns · +10% move', apply: (s) => { s.enemySpeed *= 1.2; s.cooldown *= 0.82; s.moveSpeed *= 1.1; } },
   avarice: { name: 'Pact of Avarice', desc: '+50% enemy health · +100% cinders · +30% luck', apply: (s) => { s.enemyHp += 0.5; s.greed += 1; s.luck += 0.3; } },
+  wick: { name: 'Pact of the Wick', desc: 'Enemies hit +35% harder · +1 revival · +10% move', apply: (s) => { s.enemyDmg *= 1.35; s.revivals += 1; s.moveSpeed *= 1.1; } },
   ashes: { name: 'Pact of Ashes', desc: 'Healing pickups vanish · +1 projectile · +20% area', apply: (s) => { s.noHeal = true; s.amount += 1; s.area += 0.2; } },
 };
 
@@ -240,6 +241,7 @@ export const ENEMIES = {
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },
   frostwisp: { tex: 'frostwisp', hp: 22, speed: 60, dmg: 6, xp: 2, r: 14, wobble: true, chill: true, alpha: 0.92 },
   lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
+  thief: { tex: 'imp', hp: 60, speed: 112, dmg: 0, xp: 8, r: 13, anim: 8, flee: true, loot: true, tint: 0xffd040 },
   hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
 };
@@ -265,16 +267,23 @@ export const WAVES = [
 ];
 
 export const EVENTS = [
+  { at: 20, type: 'ring', enemy: 'gloomling', count: 14 },
+  { at: 45, type: 'stampede', enemy: 'moth', count: 18 },
+  { at: 60, type: 'elite', enemy: 'gloomling' },
   { at: 75, type: 'ring', enemy: 'moth', count: 36 },
   { at: 90, type: 'elite', enemy: 'husk' },
+  { at: 120, type: 'thief' },
   { at: 140, type: 'stampede', enemy: 'beetle', count: 0, alt: 'gloomling', altCount: 30 },
   { at: 180, type: 'elite', enemy: 'wraith' },
+  { at: 200, type: 'omen' },
   { at: 240, type: 'ring', enemy: 'wraith', count: 48 },
   { at: 270, type: 'elite', enemy: 'splitter' },
   { at: 300, type: 'boss', enemy: 'matron' },
   { at: 360, type: 'stampede', enemy: 'beetle', count: 26 },
   { at: 390, type: 'elite', enemy: 'beetle' },
+  { at: 420, type: 'thief' },
   { at: 450, type: 'ring', enemy: 'husk', count: 40 },
+  { at: 480, type: 'omen' },
   { at: 480, type: 'elite', enemy: 'spitter' },
   { at: 540, type: 'stampede', enemy: 'moth', count: 60 },
   { at: 570, type: 'elite', enemy: 'sentinel' },
@@ -282,7 +291,7 @@ export const EVENTS = [
   { at: 660, type: 'ring', enemy: 'beetle', count: 56 },
   { at: 690, type: 'elite', enemy: 'husk' },
   { at: 720, type: 'stampede', enemy: 'wraith', count: 70 },
-  { at: 750, type: 'elite', enemy: 'sentinel' },
+  { at: 735, type: 'elite', enemy: 'sentinel' },
   { at: 750, type: 'boss', enemy: 'herald' },
   { at: 780, type: 'ring', enemy: 'sentinel', count: 30 },
   { at: 810, type: 'elite', enemy: 'beetle' },
@@ -458,6 +467,7 @@ export const BESTIARY = {
   matron: { name: 'The Brood Matron', lore: 'Mother of the swarm. Every few heartbeats she births another wave.' },
   colossus: { name: 'The Cinder Colossus', lore: 'A furnace that learned to walk. Watch for the red ring before it slams.' },
   herald: { name: 'The Gloam Herald', lore: 'It does not walk; it arrives. Shrouded, it shrugs off blows; strike in the moments after it erupts.' },
+  thief: { name: 'Ember Thief', lore: 'A glittering scavenger that steals warmth and runs. Catch it before the dark takes it back: it carries a chest.' },
   hollow: { name: 'The Hollow', lore: 'The Gloam\'s patience, given a shape. It cannot be harmed and it never tires. When it comes, the night is over: run, or be unmade.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
 };

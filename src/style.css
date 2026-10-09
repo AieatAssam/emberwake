@@ -88,7 +88,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); 
 
 /* ---------------- screens ---------------- */
 #screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
-#screen.show { display: flex; }
+#screen.show { display: flex; animation: screen-in 0.18s ease-out; }
+
+@keyframes screen-in { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
 #screen.dim { background: radial-gradient(ellipse at center, rgb(10 5 20 / 55%), rgb(5 2 10 / 88%)); backdrop-filter: blur(2px); }
 
 #screen.title { background:
@@ -347,3 +349,9 @@ table.records td img.sil { filter: brightness(0); }
 #goal.alarm { color: #c8a8ff; text-shadow: 0 0 12px #8040ff; animation: goal-pulse 1s ease-in-out infinite; }
 
 @keyframes goal-pulse { 50% { opacity: 0.45; } }
+
+.btn:focus-visible, .card:focus-visible, button:focus-visible { outline: 3px solid var(--ember2, #ffb347); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
