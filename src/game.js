@@ -6,6 +6,7 @@ import {
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
+import { buzz } from './haptics.js';
 import { moveVector, consumePressed, padButtons } from './input.js';
 import { save, persist } from './save.js';
 
@@ -697,7 +698,7 @@ export class Game {
       this.flash(0xffffff, 0.8);
       this.burst(x, y, 120, [0xffd060, 0xff4060, 0xffffff], 700, 1.3);
       this.shockwave(x, y, 0xffffff, 1000, 1);
-      sfx.boom();
+      sfx.boom(); buzz([60, 40, 120], 0);
       if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.08);
       if (e.d.final && !this.victory) { this.victory = true; this.hollowAt = Math.min(this.hollowAt, this.time + 120); this.hollowWarned = false; setTimeout(() => this.ui.showVictory(this), 1800); }
       return;
@@ -884,7 +885,7 @@ export class Game {
     this.shake = Math.max(this.shake, 6);
     this.hurtFlash = 0.5;
     if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.05);
-    sfx.hurt();
+    sfx.hurt(); buzz(30, 120);
     if (P.hp <= 0) {
       if (s.revivals > (this.usedRevivals || 0)) {
         this.usedRevivals = (this.usedRevivals || 0) + 1;
@@ -901,7 +902,7 @@ export class Game {
     if (this.dead) return;
     const P = this.player;
     this.dead = true;
-    sfx.death(); sfx.deathStinger(); fadeMusic(1.2);
+    sfx.death(); sfx.deathStinger(); fadeMusic(1.2); buzz([80, 40, 200], 0);
     this.burst(P.x, P.y, 80, [0xff8030, 0xffd080, 0xffffff], 400, 1);
     this.playerSprite.visible = false;
     setTimeout(() => this.ui.showResults(this, false), 1400);
@@ -911,7 +912,7 @@ export class Game {
   triggerFlare(kind = this.char.flare, free = false) {
     if (!free) { if (this.flare < 100) return; this.flare = 0; }
     const P = this.player;
-    sfx.flare(kind);
+    sfx.flare(kind); buzz([40, 30, 90], 0);
     this.shake = Math.max(this.shake, 20);
     const might = this.stats.might;
     switch (kind) {
@@ -1157,7 +1158,7 @@ export class Game {
         this.shockwave(P.x, P.y, 0xffd060, 260, 0.35);
         this.ui.toast('OVERCHARGE', 'kindle');
       } else {
-        sfx.levelup();
+        sfx.levelup(); buzz([25, 30, 25], 0);
         this.shockwave(P.x, P.y, 0x80d0ff, 400, 0.5);
         this.burst(P.x, P.y, 40, [0x80d0ff, 0xffffff, 0xffd060], 420, 0.9);
         this.ui.showLevelUp(this, choices);
