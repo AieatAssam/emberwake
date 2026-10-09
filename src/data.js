@@ -364,6 +364,27 @@ export const DIFFICULTY = {
   brutal: { name: 'Brutal', hp: 1.9, dmg: 1.75, spawn: 1.4, speed: 1.12, xp: 1.2, cinders: 2.4, desc: 'For the unburnable. +20% XP, +140% cinders.' },
 };
 
+// Seals: lasting marks of mastery earned per stage. Each pays cinders once; a stage's Dawn Seal also
+// unlocks that stage's Keepsake (a small capped perk you can carry into any run).
+export const SEALS = {
+  dawn: { name: 'Dawn Seal', desc: 'Win the stage', cinders: 60, icon: 'seal_dawn' },
+  swift: { name: 'Swift Seal', desc: 'Complete the objective by 12:00 in a won run', cinders: 80, icon: 'seal_swift' },
+  ember: { name: 'Ember Seal', desc: 'Win at Heat 3 or higher', cinders: 120, icon: 'seal_ember' },
+  iron: { name: 'Iron Seal', desc: 'Win on Hard or Brutal', cinders: 120, icon: 'seal_iron' },
+  fellow: { name: 'Fellowship Seal', desc: 'Win with three different Bearers', cinders: 100, icon: 'seal_fellow' },
+};
+export const sealCount = (s) => Object.values(s.seals || {}).reduce((a, x) => a + Object.keys(x).length, 0);
+export const hasSeal = (s, stage, id) => !!(s.seals && s.seals[stage] && s.seals[stage][id]);
+export const dawnSeals = (s) => Object.keys(s.seals || {}).filter((k) => hasSeal(s, k, 'dawn')).length;
+export const KEEPSAKES = {
+  gloam: { name: 'Moss Charm', desc: '+0.3 health/sec', apply: (s) => { s.regen += 0.3; } },
+  ashfields: { name: 'Forge Coal', desc: '+4% damage', apply: (s) => { s.might += 0.04; } },
+  rimewood: { name: 'Rime Bead', desc: '+5% area', apply: (s) => { s.area += 0.05; } },
+  marsh: { name: 'Bog Lantern', desc: '+15% pickup radius', apply: (s) => { s.magnet *= 1.15; } },
+  reliquary: { name: 'Candle Stub', desc: '+1 reroll per run', apply: (s) => { s.rerolls += 1; } },
+  glassdunes: { name: 'Sun Shard', desc: '+4% luck', apply: (s) => { s.luck += 0.04; } },
+};
+
 // Highest Heat level a stage can reach (one level unlocked per win).
 export const HEAT_MAX = 10;
 

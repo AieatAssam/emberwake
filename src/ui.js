@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
+import { SEALS, KEEPSAKES, hasSeal, sealCount, DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, duck, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
@@ -154,6 +154,12 @@ export class UI {
             return `<div class="heat-row"><span>Heat</span>${Array.from({ length: mx + 1 }, (_, i) => `<button class="heat-btn ${i === cur ? 'on' : ''}" data-a="heat" data-h="${i}">${i}</button>`).join('')}
               <em>${cur ? `+${cur * 25}% enemy health (growing +${cur * 3}%/min) · +${cur * 10}% spawns · more elites · weaker Overcharge · +${cur * 30}% cinders` : 'Standard difficulty'}</em></div>`;
           })()}
+          ${(() => {
+            const ks = Object.keys(KEEPSAKES).filter((k) => hasSeal(save, k, 'dawn'));
+            if (!ks.length) return `<div class="heat-row muted">Win a stage to earn its <b>Dawn Seal</b> and a Keepsake to carry into any run.</div>`;
+            return `<div class="heat-row"><span>Keepsake</span><button class="heat-btn ${!save.keepsakeSel ? 'on' : ''}" data-a="keep" data-k="">None</button>${ks.map((k) => `<button class="heat-btn ${save.keepsakeSel === k ? 'on' : ''}" data-a="keep" data-k="${k}" title="${esc(KEEPSAKES[k].desc)}">${KEEPSAKES[k].name}</button>`).join('')}
+              <em>${save.keepsakeSel && KEEPSAKES[save.keepsakeSel] ? KEEPSAKES[save.keepsakeSel].desc : 'Choose one'}</em></div>`;
+          })()}
           <div class="row">
             <button class="btn" data-a="back">Back</button>
             ${un ? `<button class="btn primary" data-a="go">Begin</button>`
@@ -166,6 +172,7 @@ export class UI {
         pick: (el) => { sel = el.dataset.id; render(); },
         skin: (el, ev) => { ev.stopPropagation(); const id = el.dataset.id; save.skins[id] = save.skins[id] === 'dawn' ? '' : 'dawn'; persist(); sel = id; render(); },
         diff: () => { const ids = Object.keys(DIFFICULTY); save.settings.difficulty = ids[(ids.indexOf(save.settings.difficulty || 'normal') + 1) % ids.length]; persist(); sfx.select(); render(); },
+        keep: (el) => { save.keepsakeSel = el.dataset.k; persist(); sfx.select(); render(); },
         heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
           const id = el.dataset.id, st = STAGES[id];
@@ -286,6 +293,9 @@ export class UI {
         <div class="codex-grid">${fus}</div>
         <h3>Feats — ${Object.keys(save.feats).length}/${Object.keys(FEATS).length}</h3>
         <div class="mini-grid">${Object.entries(FEATS).map(([id, f]) => `<div class="card mini feat ${save.feats[id] ? 'done' : ''}"><div class="feat-ic">${save.feats[id] ? '★' : '☆'}</div><div><b>${f.name}</b><div class="mdesc">${f.desc} · ${f.reward} ✦</div></div></div>`).join('')}</div>
+        <h3>Seals — ${sealCount(save)}/${Object.keys(STAGES).length * Object.keys(SEALS).length}</h3>
+        <table class="dmg records seals"><tr><th>Stage</th>${Object.values(SEALS).map((x) => `<th title="${esc(x.desc)}"><img src="${iconURL(x.icon)}" alt="${x.name}"></th>`).join('')}<th>Keepsake</th></tr>
+        ${Object.entries(STAGES).map(([id, st]) => `<tr><td style="color:${st.color}">${st.name}</td>${Object.keys(SEALS).map((k) => `<td class="${hasSeal(save, id, k) ? 'got' : 'no'}">${hasSeal(save, id, k) ? '✓' : '·'}</td>`).join('')}<td>${KEEPSAKES[id] ? (hasSeal(save, id, 'dawn') ? `${KEEPSAKES[id].name}<small> ${KEEPSAKES[id].desc}</small>` : '🔒') : '—'}</td></tr>`).join('')}</table>
         <h3>Records</h3>
         <table class="dmg records"><tr><th>Stage</th><th>Best time</th><th>Wins</th><th>Highest Heat cleared</th></tr>
         ${Object.entries(STAGES).map(([id, st]) => { const r = save.records['stage:' + id]; return `<tr><td style="color:${st.color}">${st.name}</td><td>${r ? fmtTime(r.time) : '—'}</td><td>${r ? r.wins : 0}</td><td>${r && r.heatWon >= 0 ? 'Heat ' + r.heatWon : '—'}</td></tr>`; }).join('')}</table>
@@ -694,7 +704,25 @@ export class UI {
       }
       if (milestoneCount) save.milestones[g.stageId] = claimed + milestoneCount;
     }
-    const total = base + milestoneGain;
+    // Seals: lasting marks of mastery, earned on wins (never on the Daily Ember)
+    const sealsEarned = [];
+    let sealGain = 0;
+    if (win && !g.daily) {
+      const SG = save.seals[g.stageId] || (save.seals[g.stageId] = {});
+      const grant = (id) => {
+        if (SG[id]) return;
+        SG[id] = 1; sealsEarned.push(id);
+        sealGain += Math.round(SEALS[id].cinders * Math.sqrt(STAGES[g.stageId].greedMul));
+      };
+      grant('dawn');
+      if (g.obj.done && g.obj.doneAt <= 720) grant('swift');
+      if ((g.heat || 0) >= 3) grant('ember');
+      if (g.diff.name === 'Hard' || g.diff.name === 'Brutal') grant('iron');
+      const wb = save.stageBearers[g.stageId] || (save.stageBearers[g.stageId] = []);
+      if (!wb.includes(g.charId)) wb.push(g.charId);
+      if (wb.length >= 3) grant('fellow');
+    }
+    const total = base + milestoneGain + sealGain;
     save.cinders += total;
     let dailyBonus = 0;
     if (g.daily) {
@@ -734,6 +762,7 @@ export class UI {
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
         ${newBest ? '<div class="newbest">NEW BEST TIME</div>' : ''}
         ${heatUnlocked ? `<div class="newbest">HEAT ${heatUnlocked} UNLOCKED</div>` : ''}
+        ${sealsEarned.length ? `<div class="seals-earned">${sealsEarned.map((id) => `<span><img src="${iconURL(SEALS[id].icon)}" alt="">${SEALS[id].name}${id === 'dawn' && KEEPSAKES[g.stageId] ? ` · Keepsake: ${KEEPSAKES[g.stageId].name}` : ''}</span>`).join('')}</div>` : ''}
         ${!win && !abandoned && g.lastHitBy ? `<div class="death-recap">Felled by <b>${esc(srcName(g.lastHitBy))}</b>${g.dmgLog ? ` · most damage from ${Object.entries(g.dmgLog).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${esc(srcName(k))} (${Math.round(v)})`).join(', ')}` : ''}</div>` : ''}
         ${g.daily ? `<div class="sub">Daily Ember ${g.daily.key}${dailyBonus ? ` · first run bonus <b>+${dailyBonus} ✦</b>` : ''}</div>` : ''}
         ${g.heat ? `<div class="sub">${STAGES[g.stageId].name} · Heat ${g.heat}</div>` : ''}
@@ -745,7 +774,7 @@ export class UI {
         </div>
         <table class="dmg"><tr><th></th><th>Weapon</th><th></th><th>Damage</th><th>Kills</th></tr>${rows}</table>
         ${g.featsEarned.length ? `<div class="run-feats">${g.featsEarned.map((id) => `<span>★ ${FEATS[id].name} +${FEATS[id].reward}</span>`).join('')}</div>` : ''}
-        <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus${milestoneGain ? ` · +${milestoneGain} milestone` : ''} = <b>${total} ✦</b>${g.diff && g.diff.cinders !== 1 ? ` <small>(${g.diff.name}: x${g.diff.cinders} cinders, x${g.diff.xp} XP)</small>` : ''}</div>
+        <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus${milestoneGain ? ` · +${milestoneGain} milestone` : ''}${sealGain ? ` · +${sealGain} seals` : ''} = <b>${total} ✦</b>${g.diff && g.diff.cinders !== 1 ? ` <small>(${g.diff.name}: x${g.diff.cinders} cinders, x${g.diff.xp} XP)</small>` : ''}</div>
         <div class="hook">${affordable ? `${affordable} Hearth upgrade${affordable > 1 ? 's' : ''} affordable!` : nextChar ? `${nextChar[1].cost - save.cinders > 0 ? nextChar[1].cost - save.cinders + ' ✦ until ' + nextChar[1].name + ' unlocks' : nextChar[1].name + ' can be unlocked!'}` : ''}</div>
         <div class="row">
           <button class="btn primary" data-a="again">Again [Enter]</button>

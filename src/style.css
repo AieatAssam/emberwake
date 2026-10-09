@@ -280,6 +280,13 @@ table.dmg th { color: var(--muted); font-weight: 600; text-align: left; font-siz
 table.dmg td { padding: 3px 4px; text-align: left; border-top: 1px solid rgb(255 255 255 / 5%); }
 table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 .earned { margin-top: 10px; color: var(--muted); }
+.seals-earned { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.seals-earned span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--ember2); border-radius: 14px; font-size: 13px; background: rgb(255 170 60 / 10%); }
+.seals-earned img { width: 22px; height: 22px; image-rendering: pixelated; }
+.records.seals img { width: 22px; height: 22px; image-rendering: pixelated; }
+.records.seals td.got { color: var(--ember2); }
+.records.seals td.no { color: var(--muted); }
+.records.seals small { color: var(--muted); }
 .earned b { color: var(--ember2); font-size: 20px; }
 .hook { color: #7aff9a; margin-top: 6px; font-weight: 600; min-height: 20px; }
 

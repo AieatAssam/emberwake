@@ -1,7 +1,7 @@
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
-import { DIFFICULTY, ETERNAL,
+import { DIFFICULTY, ETERNAL, KEEPSAKES, hasSeal,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
 import { BEHAVIORS } from './weapons.js';
@@ -267,6 +267,7 @@ export class Game {
   recalcStats() {
     const s = { ...BASE_STATS };
     for (const k in META) { const l = save.meta[k] || 0; if (l) META[k].apply(s, WHOLE_META.has(k) ? l : l * TUNE.metaPower); }
+    if (!this.daily && save.keepsakeSel && KEEPSAKES[save.keepsakeSel] && hasSeal(save, save.keepsakeSel, 'dawn')) KEEPSAKES[save.keepsakeSel].apply(s);
     for (const k in ETERNAL) { const l = save.eternal[k] || 0; if (l) ETERNAL[k].apply(s, l); }
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
