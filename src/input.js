@@ -46,7 +46,16 @@ export function initInput() {
   addEventListener('pointercancel', end);
 }
 
+// Dev/test hook: when set, the bot's vector replaces keyboard, touch and gamepad movement.
+let botVec = null;
+export function setBotInput(v) {
+  if (!v) { botVec = null; return; }
+  const l = Math.hypot(v.x, v.y);
+  botVec = l > 1 ? { x: v.x / l, y: v.y / l } : { x: v.x, y: v.y };
+}
+
 export function moveVector() {
+  if (botVec) return botVec;
   let x = 0, y = 0;
   if (keys.has('KeyW') || keys.has('ArrowUp')) y -= 1;
   if (keys.has('KeyS') || keys.has('ArrowDown')) y += 1;

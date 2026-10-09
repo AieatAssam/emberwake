@@ -6,7 +6,7 @@ export default [
   { ignores: ['dist/**', 'node_modules/**', '.playwright-mcp/**'] },
   js.configs.recommended,
   {
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
@@ -46,5 +46,11 @@ export default [
       'no-alert': 'error',
       yoda: 'error',
     },
+  },
+  {
+    // Node-side tooling (balance harness); callbacks passed to page.evaluate run in the browser
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'no-console': 'off' },
   },
 ];
