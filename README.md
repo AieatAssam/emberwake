@@ -39,6 +39,7 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 - **Totems** — breakable obelisks hiding magnets, bombs, frost, healing and flare charge.
 - **Overcharge** — once everything is maxed, every level-up auto-applies stacking power. Forever.
 - **Gloam Pressure** — erase the horde faster than it arrives and the dark pushes harder, so a god-tier build always has a tide to carve through.
+- **The Gloam settles** — stand still and the dark closes in: after a few seconds of near-stillness it drains a share of your max health that armor cannot stop, smothers healing and draws a crowd. No build, however strong, can win by idling (shrines, healing springs and hearths are exempt). Verified with a motionless bot at full strength: dead in about 38 seconds, every time.
 - **Soft obstacles** — pillars, tombs, crystals and trees resist you (you slide along them, or wade through at a fraction of your speed) but never wall you in; mud and dunes drag at your heels; Ashfield vents erupt after a warning. Enemies pass through scenery, as in Vampire Survivors.
 - **Signature perks** — every Bearer has a passive perk beyond their stats (longer Kindle, dodge, bell toll, Marked Prey, Hearthheart...).
 - **Random events** — healing springs, meteor showers with telegraphed impacts, Blood Moons, Ember Thieves running off with a chest, stampedes and rings of enemies closing in.
@@ -181,6 +182,18 @@ npm run balance -- --url http://localhost:5173 --runs 8 --skills novice,average,
 # override balance knobs per run, no code edits needed:
 npm run balance -- --runs 8 --tune xp=0.5,enemyDmg=1.3,spawn=1.1
 ```
+### What the bots say about the shipped balance
+Measured on the Gloam as Kael at Normal difficulty (win rate over 6-10 seeded runs per cell; bots stay noisy, so read the shape, not single numbers):
+
+| Hearth progress (share of total cost spent) | Average bot | Skilled bot |
+|---|---|---|
+| none | ~20% wins, dies ~12-16 min otherwise | ~30% |
+| 30% | ~40% | ~60-100% |
+| 60% | ~60% | ~60-90% |
+| everything | ~75% | ~90% |
+
+Novice bots die around 5-9 minutes with no upgrades. Harder stages, Hard (+1 level of difficulty) and Brutal pull these numbers down in order; Easy lifts them. Typical income per run at no upgrades is about 150 cinders for a novice, 750 for an average run and 1,200-1,900 for a win, so the first Bearer comes in a run or two and the whole catalogue takes dozens of runs, with Eternal Embers beyond. `--stand` runs a motionless bot to prove idling can never win.
+
 Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.1 s step (validated against 0.05 s; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
 
 ## Quality gates
