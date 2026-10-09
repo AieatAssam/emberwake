@@ -903,11 +903,16 @@ export class Game {
   }
   // cinders banked at the end of a run: what you gathered plus a survival bonus
   runReward(win) {
-    const bonus = Math.round(((Math.floor(this.time / 60) * 6 + this.kills / 80) * this.stats.greed + (win ? 300 : 0)) * TUNE.cinders);
+    // survival pay does not depend on how many cinder pickups you scooped; the win bonus is a flat prize
+    const bonus = Math.round((Math.floor(this.time / 60) * 8 + this.kills / 150) * this.stats.greed + (win ? 800 * this.stats.greed : 0));
     return { gathered: this.cinders, bonus, total: this.cinders + bonus };
   }
   addCinders(v, useKindle) {
-    this.cinders += Math.max(1, Math.round(v * TUNE.cinders * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1)));
+    // fractions carry over so small pickups still add up under a low cinder multiplier
+    this.cinderAcc = (this.cinderAcc || 0) + v * TUNE.cinders * this.stats.greed * (useKindle ? KINDLE_TIERS[this.kindleTier].mul : 1);
+    const whole = Math.floor(this.cinderAcc);
+    this.cinderAcc -= whole;
+    this.cinders += whole;
   }
   heal(v, show) {
     const P = this.player;
@@ -1862,7 +1867,7 @@ export class Game {
         const near = Math.random() < 0.3;
         const x = near ? P.x + rand(-140, 140) : P.x + rand(-this.halfW, this.halfW) * 0.9;
         const y = near ? P.y + rand(-140, 140) : P.y + rand(-this.halfH, this.halfH) * 0.9;
-        this.zones.push({ type: 'telegraph', x, y, r: 72, t: 0.95, max: 0.95, color: 0xff6030, onEnd: () => this.meteorImpact(x, y) });
+        this.zones.push({ type: 'telegraph', x, y, r: 72, t: 1.15, max: 1.15, color: 0xff6030, onEnd: () => this.meteorImpact(x, y) });
       }
     }
   }
@@ -1873,7 +1878,7 @@ export class Game {
     sfx.boom();
     if (this.dead) return;
     const P = this.player;
-    if (Math.hypot(P.x - x, P.y - y) < 80) this.hurtPlayer(14 * (1 + this.time / 900), 'meteor');
+    if (Math.hypot(P.x - x, P.y - y) < 80) this.hurtPlayer(10 * (1 + this.time / 900), 'meteor');
   }
   drawZones() {
     const g = this.zoneG;
