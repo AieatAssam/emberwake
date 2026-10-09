@@ -56,13 +56,13 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 | Bearer | Weapon | Bonus | Flare | Perk |
 |---|---|---|---|---|
 | **Kael**, the Ashen Warden | Ember Bolt | +10% damage | **Supernova** — a colossal ring of fire | **Slow Burn** — Kindle lasts 35% longer |
-| **Ysolde**, the Rime Oracle | Rime Pulse | +15% area, +10% duration | **Absolute Zero** — freeze every enemy; frozen foes shatter for double damage | **Rime Heart** — foes that die frozen charge your Flare 2.5x faster |
+| **Ysolde**, the Rime Oracle | Rime Pulse | +15% area, +10% duration, +10% damage | **Absolute Zero** — freeze every enemy; frozen foes shatter for double damage | **Rime Heart** — foes that die frozen charge your Flare 2.5x faster |
 | **Pip**, the Clockwork Tinker | Spark Drones | -10% cooldowns, +15% projectile speed | **Overclock** — all weapons fire 3x faster | **Salvage** — every 40s a gadget drops (magnet, bomb, stillwater, flare orb) |
 | **Grahm**, the Blood Reaver | Crescent Arc | +40 health, +1 armor, +0.5 regen | **Bloodrage** — double damage, +30% speed, lifesteal | **Bloodthirst** — every kill heals a little |
 | **Lune**, the Moon Dancer | Moonglaive | +20% move speed, +20% luck | **Moonfall** — twelve glaives spiral out, then you blink untouchable | **Moonstep** — 14% chance to slip any hit; longer invulnerability after being struck |
 | **Brannoc**, the Bellwright | Gravewell | +25% max health, +15% area, -10% move speed | **Great Toll** — every foe on screen stunned and struck by three rings of sound | **Tollbearer** — every 15s the bell tolls, hurling nearby foes away |
-| **Sable**, the Gloam Hunter | Rime Lance | +12% crit chance, +25% crit damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +25% damage to elites and bosses |
-| **Orin**, the Hearthkeeper | Sunring | +30% health, +1 regen, -8% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
+| **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +10% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +25% damage to elites and bosses |
+| **Orin**, the Hearthkeeper | Sunring | +30% health, +1.2 regen, +20% area, -5% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
 
 ![Character select](docs/img/select.png)
 

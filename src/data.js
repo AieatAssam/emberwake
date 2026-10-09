@@ -195,7 +195,7 @@ export const CHARACTERS = {
   },
   oracle: {
     name: 'Ysolde', title: 'The Rime Oracle', sprite: 'oracle', weapon: 'frostPulse', cost: 250,
-    bonus: '+15% area, +10% duration', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.maxHp -= 10; },
+    bonus: '+15% area, +10% duration, +10% damage', apply: (s) => { s.area += 0.15; s.duration += 0.1; s.might += 0.1; s.maxHp -= 5; },
     flare: 'absoluteZero', flareName: 'Absolute Zero', flareDesc: 'Freeze every enemy solid for 5s; frozen foes shatter for double damage.',
     color: '#8ae0ff',
     perk: 'rimeheart', perkName: 'Rime Heart', perkDesc: 'Foes that die frozen charge your Flare 2.5x faster.',
@@ -230,14 +230,14 @@ export const CHARACTERS = {
   },
   hunter: {
     name: 'Sable', title: 'The Gloam Hunter', sprite: 'hunter', weapon: 'iceLance', cost: 3000,
-    bonus: '+12% crit chance, +25% crit damage, -10 health', apply: (s) => { s.crit += 0.12; s.critMul += 0.25; s.maxHp -= 10; },
+    bonus: '+15% crit chance, +35% crit damage, +10% damage', apply: (s) => { s.crit += 0.15; s.critMul += 0.35; s.might += 0.1; s.maxHp -= 5; },
     flare: 'deadeye', flareName: 'Deadeye', flareDesc: 'Every strike is a critical hit for 6s and projectiles fly 50% faster.',
     color: '#6af0a0',
     perk: 'markedprey', perkName: 'Marked Prey', perkDesc: 'Deal 25% more damage to elites and bosses.',
   },
   hearthkeeper: {
     name: 'Orin', title: 'The Hearthkeeper', sprite: 'hearthkeeper', weapon: 'sunRing', cost: 4000,
-    bonus: '+30% health, +1 regen, -8% move speed', apply: (s) => { s.maxHp *= 1.3; s.regen += 1; s.moveSpeed *= 0.92; },
+    bonus: '+30% health, +1.2 regen, +20% area, -5% move speed', apply: (s) => { s.maxHp *= 1.3; s.regen += 1.2; s.area += 0.2; s.moveSpeed *= 0.95; },
     flare: 'hearthfire', flareName: 'Hearthfire', flareDesc: 'Plant a roaring hearth for 8s: foes inside burn and you mend.',
     color: '#ffc060',
     perk: 'hearthheart', perkName: 'Hearthheart', perkDesc: 'Every level-up restores 20% of your health.',
