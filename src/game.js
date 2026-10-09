@@ -163,6 +163,7 @@ export class Game {
     this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
     this.zoneG = new Graphics();
     this.world.addChildAt(this.zoneG, this.world.getChildIndex(this.L.pickups.pc));
+    this.stillT = 0; this.stillSev = 0; this.posLog = []; this.posLogT = 0; this.settleWarned = false;
     this.zones = []; this.obstacles = new Map(); this.meteorT = 0; this.perkT = 0;
     this.shrine = null; this.shrineT = 150;
     this.playerGlow = new Sprite(T.softglow);
@@ -922,6 +923,7 @@ export class Game {
     const P = this.player;
     if (this.stats.noHeal && show) return;
     const before = P.hp;
+    v *= 1 - this.stillSev; // the Gloam smothers healing on anyone standing still
     P.hp = Math.min(this.stats.maxHp, P.hp + v);
     if (show && P.hp > before) {
       sfx.heal();
@@ -949,16 +951,67 @@ export class Game {
     this.hurtFlash = 0.5;
     if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.05);
     sfx.hurt(); buzz(30, 120);
-    if (P.hp <= 0) {
-      if (s.revivals > (this.usedRevivals || 0)) {
-        this.usedRevivals = (this.usedRevivals || 0) + 1;
-        P.hp = s.maxHp * 0.5; P.iframes = 3;
-        this.flash(0xffa040, 1);
-        this.ui.toast('SECOND WICK', 'pickup');
-        sfx.revive();
-        this.triggerFlare('supernova', true);
-      } else this.die();
+    if (P.hp <= 0) this.onZeroHp();
+  }
+
+  // out of health: a Second Wick revives you once, otherwise the run ends
+  onZeroHp() {
+    const P = this.player, s = this.stats;
+    if (s.revivals > (this.usedRevivals || 0)) {
+      this.usedRevivals = (this.usedRevivals || 0) + 1;
+      P.hp = s.maxHp * 0.5; P.iframes = 3;
+      this.stillT = 0; this.posLog.length = 0;
+      this.flash(0xffa040, 1);
+      this.ui.toast('SECOND WICK', 'pickup');
+      sfx.revive();
+      this.triggerFlare('supernova', true);
+    } else this.die();
+  }
+
+  // The Gloam settles on anyone who stops running: no build, armor or healing can make idling a strategy.
+  // Near-stillness (little ground covered over the last six seconds, so jittering in place does not help)
+  // builds up; past a short grace period it bites a share of max health that armor cannot stop, chokes
+  // healing, and draws a crowd. Deliberate stand-your-ground moments (shrines, springs, hearths) are exempt.
+  updateSettle(dt) {
+    const P = this.player;
+    if (this.dead) return;
+    const inZone = this.zones.some((z) => (z.type === 'spring' || z.type === 'hearth') && Math.hypot(P.x - z.x, P.y - z.y) < z.r);
+    const inShrine = this.shrine && Math.hypot(P.x - this.shrine.x, P.y - this.shrine.y) < this.shrine.r;
+    this.posLogT -= dt;
+    if (this.posLogT <= 0) {
+      this.posLogT = 0.5;
+      this.posLog.push(P.x, P.y);
+      if (this.posLog.length > 24) this.posLog.splice(0, 2); // 12 samples = 6 seconds
     }
+    let still = false;
+    if (this.posLog.length >= 24) {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let i = 0; i < this.posLog.length; i += 2) {
+        x0 = Math.min(x0, this.posLog[i]); x1 = Math.max(x1, this.posLog[i]);
+        y0 = Math.min(y0, this.posLog[i + 1]); y1 = Math.max(y1, this.posLog[i + 1]);
+      }
+      still = Math.hypot(x1 - x0, y1 - y0) < 220;
+    }
+    if (inZone || inShrine) { this.stillT = 0; this.posLog.length = 0; }
+    else if (still) this.stillT += dt;
+    else this.stillT = Math.max(0, this.stillT - dt * 2);
+    const sev = Math.max(0, Math.min(1, (this.stillT - TUNE.settleAfter) / 6));
+    this.stillSev = sev;
+    if (sev > 0) {
+      if (!this.settleWarned) { this.settleWarned = true; this.ui.toast('THE GLOAM SETTLES: KEEP MOVING', 'boss'); sfx.bossWarn(); }
+      this.smolder(this.stats.maxHp * (TUNE.settleDps + (0.10 - TUNE.settleDps) * sev) * dt);
+      this.settleSfxT = (this.settleSfxT || 0) - dt;
+      if (this.settleSfxT <= 0) { this.settleSfxT = 1; sfx.hurt(); }
+    } else if (this.stillT < 1) this.settleWarned = false;
+  }
+  smolder(amount) {
+    const P = this.player;
+    if (this.dead || P.hp <= 0 || this.buffs.invuln > 0) return;
+    this.lastHitBy = 'settle';
+    (this.dmgLog || (this.dmgLog = {})).settle = ((this.dmgLog || {}).settle || 0) + amount;
+    P.hp -= amount;
+    this.hurtFlash = Math.max(this.hurtFlash || 0, 0.25 + 0.3 * this.stillSev);
+    if (P.hp <= 0) this.onZeroHp();
   }
 
   die() {
@@ -1209,6 +1262,7 @@ export class Game {
       this.director(dt);
       for (const w of this.weapons) for (const part of w.parts) BEHAVIORS[part.behavior].update(this, part, this.eff(part), dt);
       this.updateShrine(dt);
+      this.updateSettle(dt);
       this.updatePerks(dt); this.updateHazards(dt); this.updateZones(dt);
     }
     this.updateNovas(dt);
@@ -1282,7 +1336,7 @@ export class Game {
     let rate = wave.rate, min = wave.min;
     if (t > 900) { const m = (t - 900) / 60; rate *= 1 + m * 0.25; min *= 1 + m * 0.15; }
     const heatSpawn = 1 + 0.1 * (this.heat || 0) * Math.min(1, t / (180 + 30 * (this.heat || 0)));
-    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn; min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn;
+    rate *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev); min *= this.stats.curse * heatSpawn * this.diff.spawn * TUNE.spawn * (1 + 1.5 * this.stillSev);
     if (this.boss) { rate *= 0.6; }
     let alive = 0;
     for (const e of this.enemies) if (!e.inert && !e.d.hollow && e.alive) alive++;

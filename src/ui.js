@@ -786,5 +786,5 @@ function srcName(src) {
   const name = (BESTIARY[id] && BESTIARY[id].name) || id;
   if (kind === 'touch') return (elite ? 'an elite ' : '') + name;
   if (kind === 'shot') return id ? `${name}'s orbs` : 'Spitter venom';
-  return { slam: "the Colossus's slam", 'imp-ember': 'Cinder Imp embers', volatile: 'a volatile elite\'s embers' }[kind] || kind;
+  return { settle: 'standing still: the Gloam settled on you', slam: "the Colossus's slam", 'imp-ember': 'Cinder Imp embers', volatile: 'a volatile elite\'s embers' }[kind] || kind;
 }

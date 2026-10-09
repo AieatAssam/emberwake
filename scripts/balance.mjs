@@ -18,7 +18,7 @@ const list = (name, def) => String(arg(name, def)).split(',').map((s) => s.trim(
 if (argv.includes('--help') || argv.includes('-h')) {
   console.log('Usage: node scripts/balance.mjs [--url U] [--runs N] [--skills a,b] [--chars a,b] [--stages a,b]\n'
     + '  [--difficulty a,b] [--meta 0,0.5] [--heat 0,3] [--secs S] [--workers W] [--dt 0.0333] [--seed0 0]\n'
-    + '  [--timeout SECS_PER_RUN] [--out file.json] [--quiet]');
+    + '  [--timeout SECS_PER_RUN] [--out file.json] [--stand: bots never move, to prove idling cannot win] [--quiet]');
   process.exit(0);
 }
 
@@ -87,7 +87,7 @@ const t0 = Date.now();
 
 async function runOne(slot, job) {
   const { cell, seed } = job;
-  const opts = { skill: cell.skill, difficulty: cell.difficulty, stage: cell.stage, heat: cell.heat, meta: cell.meta, seed, dt: DT, tune: TUNE_ARG };
+  const opts = { skill: cell.skill, difficulty: cell.difficulty, stage: cell.stage, heat: cell.heat, meta: cell.meta, seed, dt: DT, tune: TUNE_ARG, stand: argv.includes('--stand') };
   let timer;
   const guard = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('run timeout')), RUN_TIMEOUT_MS); });
   try {

@@ -16,6 +16,8 @@ export const TUNE = {
   chestBig: 0.5, // chance of 3- and 5-item chests
   eliteChest: 0.6, // chance a slain elite drops a chest
   metaPower: 0.3, // strength of Hearth stat upgrades (whole-number upgrades like Twin Flame are unaffected)
+  settleAfter: 3, // seconds of near-stillness before the Gloam starts to settle on you
+  settleDps: 0.03, // max-health fraction lost per second when it starts (ramps to 0.10 over 6s)
   hpMid: 5.5, // extra enemy health from minute 4, growing to (1+hpMid)x by minute 15
   dmgMid: 0.6, // extra enemy damage on the same ramp
   eliteEvery: 1.4, // multiplier on the gap between periodic elites
