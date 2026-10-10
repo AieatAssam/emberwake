@@ -123,7 +123,7 @@ function nests(g, cfg) {
   o.update = (dt) => {
     const P = g.player;
     while (spawned < o.n && g.time >= cfg.at[spawned] && !g.boss) {
-      const s = spot(P, 1000, 1400);
+      const s = spot(P, 800, 1150);
       const e = g.spawnEnemy('forge', s.x, s.y, { force: true });
       if (!e) break;
       e.nestT = 2;
@@ -134,12 +134,12 @@ function nests(g, cfg) {
     relief = Math.max(0, relief - dt);
     for (const e of forges) {
       if (!e.alive) continue;
-      if (Math.hypot(e.x - P.x, e.y - P.y) < 900 && !g.boss) {
+      if (Math.hypot(e.x - P.x, e.y - P.y) < 750 && !g.boss) {
         e.nestT -= dt;
         if (e.nestT <= 0) {
           e.nestT = 5;
           let imps = 0; for (const x of g.enemies) if (x.alive && x.type === 'imp') imps++;
-          for (let i = 0; i < 2 && imps < 12; i++) g.spawnEnemy('imp', e.x + rand(-50, 50), e.y + rand(-50, 50), { force: true });
+          for (let i = 0; i < 2 && imps < 10; i++) { const m = g.spawnEnemy('imp', e.x + rand(-50, 50), e.y + rand(-50, 50), { force: true }); if (m) m.noBurst = true; }
           g.burst(e.x, e.y, 10, [0xff7a30, 0xffd060], 160, 0.7);
         }
       }
@@ -454,7 +454,6 @@ function marked(g, cfg) {
 // ---------- DEFEND: hold the lighthouse through three sieges (Stormbreak Coast) ----------
 function defend(g, cfg) {
   const o = base(g, cfg);
-  const ex = makeExempt();
   const at = cfg.at.slice();
   let lh = null;
   o.update = (dt) => {
@@ -472,7 +471,7 @@ function defend(g, cfg) {
     const drain = Math.min(9, near.length * 0.8) * (1 + g.time / 1500);
     lh.hp = near.length ? lh.hp - drain * dt : Math.min(cfg.hp, lh.hp + 4 * dt);
     lh.t -= dt;
-    o.exempt = ex.tick(Math.hypot(P.x - lh.x, P.y - lh.y) < lh.r + 160, dt);
+    o.exempt = Math.hypot(P.x - lh.x, P.y - lh.y) < lh.r + 160; // a siege is a bounded hold, so no farming cap
     lh.spr.tint = lh.hp < cfg.hp * 0.35 ? 0xff9090 : 0xffffff;
     if (lh.hp <= 0) {
       g.ui.toast('THE BEACON FALLS: it relights shortly', 'warn');

@@ -279,7 +279,7 @@ export const ENEMIES = {
   scarab: { tex: 'scarab', hp: 18, speed: 98, dmg: 7, xp: 2, r: 12, anim: 10 },
   acolyte: { tex: 'acolyte', hp: 26, speed: 42, dmg: 7, xp: 3, r: 15, ranged: true, anim: 6 },
   stormkite: { tex: 'stormkite', hp: 20, speed: 88, dmg: 9, xp: 3, r: 14, wobble: true, anim: 10 },
-  forge: { tex: 'forge', hp: 160, speed: 0, dmg: 0, xp: 6, r: 32, nest: true, knockRes: 1, anim: 8 },
+  forge: { tex: 'forge', hp: 110, speed: 0, dmg: 0, xp: 6, r: 32, nest: true, knockRes: 1, anim: 8 },
   sunbearer: { tex: 'sunbearer', hp: 36, speed: 104, dmg: 0, xp: 6, r: 13, flee: true, sunbearer: true, anim: 8 },
   thief: { tex: 'imp', hp: 60, speed: 112, dmg: 0, xp: 8, r: 13, anim: 8, flee: true, loot: true, tint: 0xffd040 },
   hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },

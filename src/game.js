@@ -590,7 +590,7 @@ export class Game {
     const scale = (elite ? 1.55 : 1) * (o.scale || 1);
     // pooled: enemies die by the hundreds per second late-game, so avoid churning objects
     const e = this.enemyPool.pop() || {};
-    e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.uid = uidCounter++;
+    e.type = type; e.d = d; e.x = x; e.y = y; e.kx = 0; e.ky = 0; e.hp = hp; e.maxHp = hp; e.alive = true; e.noBurst = false; e.uid = uidCounter++;
     e.speed = d.speed * (elite ? 0.9 : 1) * rand(0.92, 1.08) * stSpd;
     e.dmg = (d.boss ? d.dmg : d.dmg * (elite ? 1.3 : 1) * (1 + this.time / 900) * this.stats.enemyDmg) * this.diff.dmg * TUNE.enemyDmg * (1 + TUNE.dmgMid * midRamp(this.time));
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
@@ -759,7 +759,7 @@ export class Game {
       for (let k = 0; k < 10; k++) { const a = off + (k / 10) * TAU; this.enemyShot(x, y, Math.cos(a) * 120, Math.sin(a) * 120, e.dmg * 0.5, T.bolt, 0.9); }
       this._shotSrc = null;
     }
-    if (e.d.deathBurst) {
+    if (e.d.deathBurst && !e.noBurst) {
       this._shotSrc = 'imp-ember';
       const off = Math.random() * TAU;
       for (let k = 0; k < 6; k++) { const a = off + (k / 6) * TAU; this.enemyShot(x, y, Math.cos(a) * 95, Math.sin(a) * 95, e.dmg * 0.6, T.bolt, 0.8); }

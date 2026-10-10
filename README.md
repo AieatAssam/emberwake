@@ -113,6 +113,9 @@ Each stage has its own ground, scenery, music, enemy mix and cinder multiplier. 
 |---|---|---|
 | ![Gloam](docs/img/stage_gloam.jpg) | ![Ashfields](docs/img/stage_ashfields.jpg) | ![Rimewood](docs/img/stage_rimewood.jpg) |
 | ![Marsh](docs/img/stage_marsh.jpg) | ![Reliquary](docs/img/stage_reliquary.jpg) | ![Glass Dunes](docs/img/stage_glassdunes.jpg) |
+| ![Wayfarer's March](docs/img/stage_wayfarers.jpg) | ![Stormbreak Coast](docs/img/stage_stormcoast.jpg) | |
+
+The objective block at the bottom of each shot is always on screen. The March shot sits on a biome border, where frost trees and ash scenery blend; the Coast shot is the start of the first lighthouse siege.
 
 ## Enemies and bosses
 Gloomlings, Dusk Moths, Husks, Wraiths, Bloaters (which burst into Broodlings), Ram Beetles (telegraphed charges), Spitters (ranged), Sentinels, plus stage specials: Cinder Imps, Frost Wisps, Mire Lurkers, Glass Scarabs, Candle Acolytes and Stormkites; objective creatures such as Cinder Forges and golden Sun-Bearers. From three minutes, elites roll **affixes**: swift, vampiric, warded or volatile.
@@ -138,6 +141,8 @@ Rings of foes close in, stampedes rush through, **Ember Thieves** sprint away wi
 - **Feats** — 16 one-time achievements that pay cinders.
 - **Dawn skins** — win with a Bearer to unlock their Dawn variant.
 - **Codex** — Ascensions, feats, records and a bestiary that fills as you meet things.
+
+![Seals in the Codex](docs/img/seals.png)
 
 ![The Hearth](docs/img/hearth.png)
 
