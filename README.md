@@ -5,7 +5,7 @@
 
 **The sun is dead. You carry the last Ember.** Burn brighter than the Gloam — or be swallowed by it.
 
-Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vampire Survivors*, built with **PixiJS v8** (WebGL, batched `ParticleContainer`s). You steer; your weapons fire on their own. Survive fifteen minutes of ever-denser hordes, draft a build from a pile of weapons, relics and Dark Pacts, fuse your best weapons into Ascended forms, and break the Eclipse Tyrant at the end of the night. Every sprite and sound effect is generated procedurally in code; the music is a mix of recorded CC0 tracks and a procedural score.
+Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vampire Survivors*, built with **PixiJS v8** (WebGL, batched `ParticleContainer`s). You steer; your weapons fire on their own. Survive fifteen minutes of ever-denser hordes, draft a build from a pile of weapons, relics and Dark Pacts, fuse your best weapons into Ascended forms, and break the Eclipse Tyrant at the end of the night. Every sprite and sound effect is generated procedurally in code; the music is a mix of recorded CC0 tracks (every stage has one) and a procedural score.
 
 ▶ **Play:** https://aieatassam.github.io/emberwake/ (desktop, tablet and phone)
 
@@ -207,6 +207,8 @@ Measured on the Gloam as Kael at Normal difficulty (win rate over 6-10 seeded ru
 | everything | ~75% | ~90% |
 
 With stage objectives on (bots pursue them), the later stages measured at 30% Hearth progress: Ashfields about 13% for both average and skilled bots (objective done in ~90-100% of runs), Glass Dunes 0% average / 25% skilled, Stormbreak Coast and Wayfarer's March roughly 0-20% average and 15-65% skilled. The Gloam stays at 50-75%. Late stages are meant to be hard without Hearth upgrades and Heat.
+
+New Bearers on the Gloam (20 runs each, 30% Hearth): Kael ~46% average / ~100% skilled, Wren ~35% / ~75%, Mordrel ~45% / ~90%.
 
 Novice bots die around 5-9 minutes with no upgrades. Harder stages, Hard (+1 level of difficulty) and Brutal pull these numbers down in order; Easy lifts them. Typical income per run at no upgrades is about 150 cinders for a novice, 750 for an average run and 1,200-1,900 for a win, so the first Bearer comes in a run or two and the whole catalogue takes dozens of runs, with Eternal Embers beyond. `--stand` runs a motionless bot to prove idling can never win.
 
