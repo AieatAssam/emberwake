@@ -55,7 +55,7 @@ const browser = await chromium.launch({
 
 const CHAR_IDS = ['wayfarer', 'pactbound', 'warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', ...CHARS];
 const seedSave = JSON.stringify({
-  cinders: 0, meta: {}, fusions: {}, feats: {}, seen: {}, daily: {}, records: {}, skins: {}, heatSel: {},
+  cheatAll: true, cinders: 0, meta: {}, fusions: {}, feats: {}, seen: {}, daily: {}, records: {}, skins: {}, heatSel: {},
   hints: { move: true, gems: true, kindle: true, flare: true, chest: true },
   unlocked: Object.fromEntries(CHAR_IDS.map((c) => [c, true])),
   stages: Object.fromEntries([...STAGES, 'gloam', 'ashfields', 'rimewood'].map((s) => [s, true])),
