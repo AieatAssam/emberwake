@@ -53,7 +53,7 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 
-const CHAR_IDS = ['warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', ...CHARS];
+const CHAR_IDS = ['wayfarer', 'pactbound', 'warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', ...CHARS];
 const seedSave = JSON.stringify({
   cinders: 0, meta: {}, fusions: {}, feats: {}, seen: {}, daily: {}, records: {}, skins: {}, heatSel: {},
   hints: { move: true, gems: true, kindle: true, flare: true, chest: true },

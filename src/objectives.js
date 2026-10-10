@@ -69,9 +69,9 @@ function kindle(g, cfg) {
   o.update = (dt) => {
     const P = g.player;
     if (!stone && o.count < o.n && g.time >= cfg.at[o.count] && !g.boss) {
-      const s = spot(P, 700, 1100);
+      const s = cfg.dirs ? { x: Math.cos(cfg.dirs[o.count]) * cfg.dist, y: Math.sin(cfg.dirs[o.count]) * cfg.dist } : spot(P, 700, 1100);
       stone = { x: s.x, y: s.y, r: 160, prog: 0, t: 0, spr: addSpr(g, 'waystone0', s.x, s.y) };
-      g.ui.toast('A WAYSTONE STIRS: follow the arrow', 'pickup');
+      g.ui.toast(cfg.dirs ? 'A WAYMARK STIRS far across the wilds: follow the arrow' : 'A WAYSTONE STIRS: follow the arrow', 'pickup');
       sfx.shrineSpawn();
     }
     o.exempt = false;
@@ -91,18 +91,18 @@ function kindle(g, cfg) {
       const sp = stone.spr; setTimeout(() => killSpr(g, sp), 2500);
       stone = null;
       ringOfFoes(g, 1);
-      bump(o, g, 'WAYSTONE KINDLED');
+      bump(o, g, cfg.dirs ? 'WAYMARK LIT' : 'WAYSTONE KINDLED');
     }
   };
   o.onKill = () => {};
   o.spawnMul = () => 1;
   o.slowAt = () => 1;
   o.hud = () => {
-    if (o.done) return { title: o.title, count: `${o.n}/${o.n}`, prog: 1, sub: 'All waystones blaze', state: 'done' };
+    if (o.done) return { title: o.title, count: `${o.n}/${o.n}`, prog: 1, sub: cfg.dirs ? 'The road is lit' : 'All waystones blaze', state: 'done' };
     const next = o.count < o.n ? cfg.at[o.count] : 0;
     return {
       title: o.title, count: `${o.count}/${o.n}`, prog: stone ? stone.prog : 0,
-      sub: stone ? 'Stand in the ring to kindle it (keep moving inside)' : `The next waystone stirs at ${fmt(next)}`, state: '',
+      sub: stone ? (cfg.dirs ? 'Journey to the waymark, then stand in its ring' : 'Stand in the ring to kindle it (keep moving inside)') : `The next ${cfg.dirs ? 'waymark' : 'waystone'} stirs at ${fmt(next)}`, state: '',
     };
   };
   o.targets = () => (stone ? [stone] : []);
@@ -450,7 +450,66 @@ function marked(g, cfg) {
   return o;
 }
 
-const TYPES = { kindle, nests, carry, purge, escort, marked };
+// ---------- DEFEND: hold the lighthouse through three sieges (Stormbreak Coast) ----------
+function defend(g, cfg) {
+  const o = base(g, cfg);
+  const ex = makeExempt();
+  const at = cfg.at.slice();
+  let lh = null;
+  o.update = (dt) => {
+    const P = g.player;
+    if (!lh && o.count < o.n && g.time >= at[o.count] && !g.boss) {
+      const s = spot(P, 380, 520);
+      lh = { x: s.x, y: s.y, r: 190, hp: cfg.hp, t: cfg.dur, spr: addSpr(g, 'lighthouse', s.x, s.y, 0.95, 1.5) };
+      g.ui.toast('THE STORM BREAKS: hold the lighthouse', 'warn');
+      sfx.bossWarn();
+      g.runEvent({ type: 'ring', enemy: 'stormkite', count: 14 + Math.floor(g.time / 45) });
+    }
+    o.exempt = false;
+    if (!lh) return;
+    const near = g.enemiesIn(lh.x, lh.y, lh.r, g.qZone).filter((e) => e.alive && !e.inert && !e.d.boss);
+    const drain = Math.min(9, near.length * 0.8) * (1 + g.time / 1500);
+    lh.hp = near.length ? lh.hp - drain * dt : Math.min(cfg.hp, lh.hp + 4 * dt);
+    lh.t -= dt;
+    o.exempt = ex.tick(Math.hypot(P.x - lh.x, P.y - lh.y) < lh.r + 160, dt);
+    lh.spr.tint = lh.hp < cfg.hp * 0.35 ? 0xff9090 : 0xffffff;
+    if (lh.hp <= 0) {
+      g.ui.toast('THE BEACON FALLS: it relights shortly', 'warn');
+      g.shockwave(lh.x, lh.y, 0xff6050, 400, 0.5);
+      killSpr(g, lh.spr); lh = null; at[o.count] = g.time + 18;
+    } else if (lh.t <= 0) {
+      g.dropPickup('chest', lh.x, lh.y, 1);
+      g.heal(g.stats.maxHp * 0.2, true);
+      g.burst(lh.x, lh.y, 60, [0xffe080, 0xffffff, 0x80c0ff], 520, 1);
+      g.shockwave(lh.x, lh.y, 0xffe080, 520, 0.7);
+      const sp = lh.spr; setTimeout(() => killSpr(g, sp), 2500);
+      lh = null;
+      bump(o, g, 'SIEGE HELD');
+    }
+  };
+  o.onKill = () => {};
+  o.spawnMul = () => (lh ? 1.25 : 1);
+  o.slowAt = () => 1;
+  o.hud = () => {
+    if (o.done) return { title: o.title, count: `${o.n}/${o.n}`, prog: 1, sub: 'The beacon burns bright', state: 'done' };
+    if (!lh) return { title: o.title, count: `${o.count}/${o.n}`, prog: 0, sub: `The next siege breaks at ${fmt(at[o.count])}`, state: '' };
+    return {
+      title: o.title, count: `${o.count}/${o.n}`, prog: 1 - lh.t / cfg.dur,
+      sub: `Beacon ${Math.max(0, Math.ceil((lh.hp / cfg.hp) * 100))}% · hold ${Math.ceil(lh.t)}s · keep foes off the tower`,
+      state: lh.hp < cfg.hp * 0.35 ? 'warn' : '',
+    };
+  };
+  o.targets = () => (lh ? [lh] : []);
+  o.botTargets = () => (lh ? [{ x: lh.x, y: lh.y, r: lh.r * 0.7, v: 5, camp: true, k: lh }] : []);
+  o.draw = (gfx) => {
+    if (!lh) return;
+    ring(gfx, lh.x, lh.y, lh.r, 0xffe080, 0.05);
+    arcProg(gfx, lh.x, lh.y, lh.r - 14, lh.hp / cfg.hp, lh.hp < cfg.hp * 0.35 ? 0xff6050 : 0x80e0ff);
+  };
+  return o;
+}
+
+const TYPES = { kindle, march: kindle, nests, carry, purge, escort, marked, defend };
 
 export function makeObjective(g) {
   const cfg = g.stage.objective;

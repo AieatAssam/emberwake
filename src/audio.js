@@ -115,6 +115,10 @@ export const sfx = {
         tone(55, 1, 'sawtooth', 0.22, 70); tone(58, 1, 'sawtooth', 0.2, 72); noise(0.9, 0.2, 600); break;
       case 'toll':
         tone(midi(48), 2.5, 'sine', 0.3); tone(midi(48) * 2.76, 1.6, 'sine', 0.1); tone(midi(60), 2, 'triangle', 0.1); noise(0.2, 0.2, 800); break;
+      case 'lanternroad':
+        [0, 4, 7, 12].forEach((n, i) => tone(midi(72 + n), 0.5, 'triangle', 0.12, null, i * 0.06)); noise(0.4, 0.1, 3000, 1, 'highpass'); break;
+      case 'debtcalled':
+        tone(midi(36), 1.6, 'sawtooth', 0.2, midi(30)); tone(midi(43), 1.4, 'square', 0.08, midi(37)); noise(0.8, 0.22, 400); break;
       case 'moonfall':
         tone(1200, 0.8, 'sine', 0.12, 200); tone(900, 0.8, 'triangle', 0.08, 150, 0.1); noise(0.5, 0.25, 500, 1, 'lowpass', 0.6); tone(70, 0.5, 'sine', 0.3, 30, 0.6); break;
       default:
@@ -188,6 +192,10 @@ const THEMES = {
     mel: [7, -99, 10, 12, -99, 7, 5, -99, 3, -99, 7, -99, 10, -99, -99, -99] },
   glassdunes: { bpm: 116, roots: [41, 44, 41, 39], arp: [0, 1, 4, 5, 7, 5, 4, 1], bass: 'sawtooth', lead: 'triangle', bell: false, drive: 1.1,
     mel: [0, -99, 1, 4, 5, -99, 4, 1, 0, -99, -2, -99, 1, -99, -99, -99] },
+  wayfarers: { bpm: 100, roots: [45, 47, 43, 50], arp: [0, 4, 7, 12, 7, 4, 9, 7], bass: 'triangle', lead: 'triangle', bell: true, drive: 0.7,
+    mel: [7, -99, 9, 12, -99, 14, 12, -99, 9, -99, 7, -99, 4, -99, -99, -99] },
+  stormcoast: { bpm: 126, roots: [38, 41, 43, 36], arp: [0, 3, 7, 10, 14, 10, 7, 3], bass: 'sawtooth', lead: 'sine', bell: false, drive: 1.2,
+    mel: [12, -99, 10, 7, -99, 10, 12, -99, 15, -99, 14, 12, -99, 7, -99, -99] },
   menu: { bpm: 70, roots: [45, 41, 48, 43], arp: [0, 7, 12, 15, 19, 15, 12, 7], bass: 'sine', lead: 'sine', bell: true, drive: 0.4, noKick: true,
     mel: [12, -99, -99, 7, -99, 10, -99, -99, 12, -99, 15, -99, 10, -99, -99, -99] },
 };
