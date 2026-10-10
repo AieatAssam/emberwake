@@ -73,6 +73,10 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 
 ![Character select](docs/img/select.png)
 
+On phones the Bearer and stage pickers are swipeable strips, the Begin row stays pinned at the bottom, and picking something no longer scrolls you back to the top.
+
+![Mobile select screen](docs/img/select_mobile.png)
+
 ## Weapons, Ascensions and relics
 
 **15 weapons**, each with 8 levels: Ember Bolt (seeking fireballs), Halo Sickles (orbiting blades), Storm Coil (chain lightning), Rime Pulse (freezing shockwave), Wisp Swarm (hunting wisps), Crescent Arc (sweeping cleave), Starfall (meteors), Moonglaive (returning glaive), Prism Beam (rotating beams), Bloom Mines (volatile blossoms), Spark Drones (hovering sparkers), Sunring (flame aura), Rime Lance (piercing icicles), Gravewell (vortex that implodes), Sanctum Quills (radial quills).
