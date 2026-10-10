@@ -206,9 +206,11 @@ Measured on the Gloam as Kael at Normal difficulty (win rate over 6-10 seeded ru
 | 60% | ~60% | ~60-90% |
 | everything | ~75% | ~90% |
 
+With stage objectives on (bots pursue them), the later stages measured at 30% Hearth progress: Ashfields about 13% for both average and skilled bots (objective done in ~90-100% of runs), Glass Dunes 0% average / 25% skilled, Stormbreak Coast and Wayfarer's March roughly 0-20% average and 15-65% skilled. The Gloam stays at 50-75%. Late stages are meant to be hard without Hearth upgrades and Heat.
+
 Novice bots die around 5-9 minutes with no upgrades. Harder stages, Hard (+1 level of difficulty) and Brutal pull these numbers down in order; Easy lifts them. Typical income per run at no upgrades is about 150 cinders for a novice, 750 for an average run and 1,200-1,900 for a win, so the first Bearer comes in a run or two and the whole catalogue takes dozens of runs, with Eternal Embers beyond. `--stand` runs a motionless bot to prove idling can never win.
 
-Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.1 s step (validated against 0.05 s; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
+Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.05 s step (0.1 s makes bots noticeably weaker; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
 
 ## Quality gates
 - **CI** (`.github/workflows/ci.yml`) runs on every push and PR: ESLint, Stylelint and html-validate with warnings treated as errors, a production build, and a check that dev-only hooks never ship.
