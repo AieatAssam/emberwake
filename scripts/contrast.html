@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>contrast</title></head>
+<body>
+<pre id="out">running</pre>
+<script type="module">
+import { buildAtlas, atlasCanvas, SS, makeGroundCanvas } from '/src/atlas.js';
+import { STAGES } from '/src/data.js';
+import { ELITE_TINT, PROP_RULE } from '/src/palette.js';
+
+const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+const rel = (rgb) => 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+const ratio = (a, b) => {
+  const hi = Math.max(rel(a), rel(b)), lo = Math.min(rel(a), rel(b));
+  return (hi + 0.05) / (lo + 0.05);
+};
+const mul = (rgb, tint) => [
+  rgb[0] * ((tint >> 16) & 255) / 255,
+  rgb[1] * ((tint >> 8) & 255) / 255,
+  rgb[2] * (tint & 255) / 255,
+];
+const over = (fg, bg, a) => fg.map((v, i) => v * a + bg[i] * (1 - a));
+
+const ENEMIES = ['gloomling0', 'moth0', 'husk0', 'wraith0', 'splitter0', 'broodling0', 'beetle0', 'spitter0', 'sentinel0', 'imp0', 'frostwisp0', 'lurker0', 'scarab0', 'acolyte0', 'stormkite0', 'forge0', 'totem', 'matron0', 'colossus0', 'herald0', 'tyrant0', 'hollow0'];
+const PICKUPS = ['gem0', 'gem1', 'gem2', 'gem3', 'gem4', 'heart', 'magnet', 'bomb', 'freeze', 'cinder', 'flareorb', 'chest', 'chest_silver', 'chest_gold', 'chest_ascend', 'waystone0', 'waystone1', 'hearthstone', 'brazier0', 'heartflame', 'chapel', 'pilgrim0', 'sunshard', 'lighthouse', 'rotpool', 'sunbearer0'];
+const BEARERS = ['warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', 'wren', 'mordrel'];
+const STAGE_PROPS = {
+  gloam: ['grass', 'rock1', 'rock0', 'flower', 'shroom', 'bones', 'pillar'],
+  ashfields: ['stump', 'vent', 'basalt', 'rock1', 'bones', 'pillar'],
+  rimewood: ['pine', 'icecluster', 'snowrock', 'rock1', 'grass', 'pillar'],
+  marsh: ['reeds', 'lilypad', 'sunklantern', 'rock1', 'bones', 'grass', 'pillar'],
+  reliquary: ['tomb', 'candelabra', 'banner', 'cobble', 'pillar', 'bones', 'rock0'],
+  glassdunes: ['glasscluster', 'bonespire', 'rock1', 'bones', 'basalt'],
+  wayfarers: ['grass', 'flower', 'rock0', 'shroom', 'pillar', 'signpost', 'milestone'],
+  stormcoast: ['wreck', 'tidepool', 'kelp', 'lightrod', 'rock1', 'bones', 'grass', 'milestone'],
+};
+
+await document.fonts.ready;
+buildAtlas();
+const frames = window.__frames;
+const ctx = atlasCanvas.getContext('2d', { willReadFrequently: true });
+const ink = [0x0b, 0x06, 0x14];
+
+// Core mean is the average in linear light, encoded back to sRGB. An average of the
+// stored bytes is darker than that and does not match the published contrast table.
+const enc = (v) => Math.round(255 * Math.min(1, v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055));
+function core(name) {
+  const f = frames[name];
+  if (!f) return null;
+  const img = ctx.getImageData(f.x * SS, f.y * SS, f.w * SS, f.h * SS);
+  const d = img.data;
+  let lr = 0, lg = 0, lb = 0, n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 150) continue;
+    if (Math.abs(d[i] - ink[0]) + Math.abs(d[i + 1] - ink[1]) + Math.abs(d[i + 2] - ink[2]) < 40) continue;
+    lr += lin(d[i]); lg += lin(d[i + 1]); lb += lin(d[i + 2]);
+    n++;
+  }
+  if (!n) return null;
+  const rgb = [enc(lr / n), enc(lg / n), enc(lb / n)];
+  const y = 0.2126 * (lr / n) + 0.7152 * (lg / n) + 0.0722 * (lb / n);
+  return { rgb, y, n };
+}
+
+const grounds = {};
+for (const [id, st] of Object.entries(STAGES)) {
+  const g = makeGroundCanvas(st.ground);
+  const img = g.getContext('2d').getImageData(0, 0, g.width, g.height);
+  const d = img.data;
+  let r = 0, gv = 0, b = 0, n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 150) continue;
+    r += d[i]; gv += d[i + 1]; b += d[i + 2]; n++;
+  }
+  grounds[id] = mul([r / n, gv / n, b / n], st.tint);
+}
+
+const eliteOf = (rgb) => mul(rgb, ELITE_TINT);
+const fails = [];
+const worstOf = (sample) => {
+  let min = 99, at = '';
+  for (const [id, gnd] of Object.entries(grounds)) {
+    const r = ratio(sample, gnd);
+    if (r < min) { min = r; at = id; }
+  }
+  return { min, at };
+};
+const enemies = {};
+for (const name of ENEMIES) {
+  const c = core(name);
+  if (!c) { fails.push(name + ' missing'); continue; }
+  const body = worstOf(c.rgb), elite = worstOf(eliteOf(c.rgb));
+  enemies[name] = { body: +body.min.toFixed(2), bodyAt: body.at, elite: +elite.min.toFixed(2), eliteAt: elite.at, y: +c.y.toFixed(4) };
+  if (body.min < 3) fails.push(name + ' body ' + body.min.toFixed(2) + ' on ' + body.at);
+  if (elite.min < 3) fails.push(name + ' elite ' + elite.min.toFixed(2) + ' on ' + elite.at);
+}
+const pickups = {};
+for (const name of PICKUPS) {
+  const c = core(name);
+  if (!c) { fails.push(name + ' missing'); continue; }
+  const m = worstOf(c.rgb);
+  pickups[name] = { contrast: +m.min.toFixed(2), at: m.at, y: +c.y.toFixed(4) };
+  if (m.min < 4.5) fails.push(name + ' ' + m.min.toFixed(2) + ' on ' + m.at);
+}
+const bearers = {};
+for (const name of BEARERS) {
+  const c = core(name);
+  if (!c) { fails.push(name + ' missing'); continue; }
+  const m = worstOf(c.rgb);
+  bearers[name] = { contrast: +m.min.toFixed(2), at: m.at, y: +c.y.toFixed(4) };
+  if (m.min < 4) fails.push(name + ' bearer ' + m.min.toFixed(2) + ' on ' + m.at);
+}
+const props = {};
+const union = [...new Set(Object.values(STAGE_PROPS).flat())];
+for (const name of union) {
+  const c = core(name);
+  if (!c) { fails.push('prop ' + name + ' missing'); continue; }
+  props[name] = { y: +c.y.toFixed(4) };
+  for (const [id, gnd] of Object.entries(grounds)) {
+    const r = ratio(over(c.rgb, gnd, PROP_RULE.alpha), gnd);
+    props[name][id] = +r.toFixed(2);
+    if (r < 1.4 || r > 2) fails.push('prop ' + name + ' ' + r.toFixed(2) + ' on ' + id);
+  }
+}
+const worst = (rows, key) => rows.reduce((a, b) => (a[key] < b[key] ? a : b));
+const summary = {
+  enemyBody: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.body })), 'v'),
+  enemyElite: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.elite })), 'v'),
+  pickup: worst(Object.entries(pickups).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
+  bearer: worst(Object.entries(bearers).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
+};
+let propMin = 99, propMax = 0, propMinAt = '', propMaxAt = '';
+for (const [name, by] of Object.entries(props)) {
+  for (const [id, r] of Object.entries(by)) {
+    if (id === 'y' || typeof r !== 'number') continue;
+    if (r < propMin) { propMin = r; propMinAt = name + ' ' + id; }
+    if (r > propMax) { propMax = r; propMaxAt = name + ' ' + id; }
+  }
+}
+const out = { fails, summary, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props };
+document.getElementById('out').textContent = JSON.stringify(out);
+</script>
+</body>
+</html>

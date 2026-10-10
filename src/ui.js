@@ -1,3 +1,4 @@
+import { HEX } from './palette.js';
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
 import { SEALS, KEEPSAKES, hasSeal, sealCount, DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
@@ -315,7 +316,7 @@ export class UI {
           <li><b>Ascension</b> — two max-level partner weapons fuse at the next chest into one Ascended weapon, freeing a slot.</li>
           <li><b>Dark Pacts</b> — rare blood-red draft cards. Power at a price, for the rest of the run.</li>
           <li><b>Totems</b> — golden obelisks in the dark hold relics: health, magnets, bombs, frost, flare.</li>
-          <li><b>Elite affixes</b> — from 3:00 elites carry an aura: <span style="color:#40e0ff">swift</span>, <span style="color:#ff4060">vampiric</span> (regenerates), <span style="color:#7a9aff">warded</span> (resists damage) or <span style="color:#ff8a20">volatile</span> (bursts into embers on death).</li>
+          <li><b>Elite affixes</b> — from 3:00 elites carry an aura: <span style="color:${HEX.FROST}">swift</span>, <span style="color:${HEX.ROSE_L}">vampiric</span> (regenerates), <span style="color:${HEX.VOID}">warded</span> (resists damage) or <span style="color:${HEX.HFIRE}">volatile</span> (bursts into embers on death).</li>
           <li><b>Ember Shrines</b> — glowing circles appear every few minutes. Hold your ground inside for 5s to earn a relic chest — but the dark answers.</li>
           <li><b>Overcharge</b> — once everything is maxed, power keeps climbing. Forever.</li>
         </ul>
@@ -553,7 +554,7 @@ export class UI {
     const fusion = res.items.some((x) => x.kind === 'fusion');
     const tier = fusion ? 'ascend' : n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze';
     const tierIdx = { bronze: 0, silver: 1, gold: 2, ascend: 3 }[tier];
-    const col = { bronze: '#d89050', silver: '#8ad0ff', gold: '#ffd040', ascend: '#e070ff' }[tier];
+    const col = { bronze: HEX.R_BRONZE, silver: HEX.FROST, gold: HEX.R_GOLD, ascend: HEX.R_VIOLET }[tier];
     const title = fusion ? 'ASCENSION' : n >= 5 ? 'RADIANT HOARD' : n >= 3 ? 'GILDED CACHE' : 'RELIC CACHE';
     this.open(`
       <div class="panel chest ${fusion ? 'fusion' : ''} tier${n} ct-${tier}" style="--tc:${col}">

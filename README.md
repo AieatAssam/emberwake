@@ -17,6 +17,7 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 - [Stages](#stages) · [Enemies and bosses](#enemies-and-bosses) · [Random events and scenery](#random-events-and-scenery)
 - [Progression](#progression) · [Difficulty](#difficulty) · [Controls](#controls) · [Mobile](#mobile)
 - [Audio](#audio) · [Development](#development) · [Balance bots](#balance-bots) · [Quality gates](#quality-gates)
+- [Art style guide](docs/art/style-guide.md) — the art source of truth (palette, contrast, silhouettes)
 
 ## How a run works
 1. **Pick a Bearer and a stage**, and optionally a Heat level, a difficulty and a Keepsake.
@@ -183,7 +184,9 @@ npm run dev     # local dev server
 npm run build   # static build in dist/ (relative paths, GitHub Pages ready)
 npm run lint    # ESLint + Stylelint + html-validate, all with --max-warnings 0
 ```
-Layout: `src/game.js` (simulation and rendering), `src/weapons.js` (weapon behaviours), `src/data.js` (all content data), `src/tuning.js` (global balance knobs), `src/atlas.js` (procedural sprites), `src/audio.js` (SFX, music), `src/ui.js` and `src/style.css` (menus and HUD), `src/input.js` (keyboard, gamepad, touch), `src/devsim.js` (dev-only bots).
+Layout: `src/game.js` (simulation and rendering), `src/weapons.js` (weapon behaviours), `src/data.js` (all content data), `src/tuning.js` (global balance knobs), `src/atlas.js` (procedural sprites), `src/palette.js` (the locked 72-swatch palette), `src/audio.js` (SFX, music), `src/ui.js` and `src/style.css` (menus and HUD), `src/input.js` (keyboard, gamepad, touch), `src/devsim.js` (dev-only bots).
+
+Art direction lives in [`docs/art/style-guide.md`](docs/art/style-guide.md), with the swatch table in [`docs/art/palette.md`](docs/art/palette.md). `npm run contrast` checks the atlas against those contrast bands.
 
 In `npm run dev` the console exposes a headless simulator: `await __sim(900, 'warden', { skill: 'average' })` runs the real game loop with a bot and reports level curve, kills, cinders earned and what killed you.
 

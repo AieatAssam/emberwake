@@ -1,3 +1,4 @@
+import { PAL } from './palette.js';
 // Weapon behaviors. Each fused (Ascended) weapon simply runs both parents' behaviors
 // with boosted stats, so every behavior reads its knobs from the effective stat block `st`.
 import { T } from './atlas.js';
@@ -5,9 +6,9 @@ import { sfx } from './audio.js';
 
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
-const PRISM = [0xff6a8a, 0xffd060, 0x6affc0, 0x6ac0ff, 0xc08aff];
+const PRISM = [PAL.CRIMSON, PAL.EMBER_L, PAL.R_GREEN, PAL.FROST, PAL.VOID];
 
-export function lightning(g, x1, y1, x2, y2, tint = 0xbfe0ff, width = 1) {
+export function lightning(g, x1, y1, x2, y2, tint = PAL.FROST_L, width = 1) {
   const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
   const busy = g.fx.length > g.maxFx * 0.5; // under load: coarser bolts, no end glow
   const n = busy ? 2 : Math.max(2, Math.min(7, Math.round(len / 40)));
@@ -91,7 +92,7 @@ export const BEHAVIORS = {
           g.addProjectile({
             tex: T.flame0, frames: [T.flame0, T.flame1], faceVel: true, x: P.x, y: P.y - 16, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: st.duration,
             dmg: st.dmg, pierce: st.pierce, r: 9 * st.area, scale: (st.explode ? 1.25 : 1) * Math.sqrt(st.area), w: part.w,
-            homing: 4, target: tg, explode: st.explode * st.area, trail: 0.025, trailTint: 0xff7a20, knock: st.knock,
+            homing: 4, target: tg, explode: st.explode * st.area, trail: 0.025, trailTint: PAL.EMBER, knock: st.knock,
           });
           sfx.shoot();
         }
@@ -145,9 +146,9 @@ export const BEHAVIORS = {
         const e = g.randomVisibleEnemy();
         if (!e) break;
         fired = true;
-        lightning(g, e.x + rand(-30, 30), e.y - 260, e.x, e.y - 10, 0xd0e8ff, 1.3);
-        chainFrom(g, e, st.chains, st.dmg, part.w, 170 * st.area, 0xbfe0ff);
-        if (g.fx.length < 2500) g.burst(e.x, e.y - 10, 6, [0xbfe0ff, 0xffffff], 200, 0.5);
+        lightning(g, e.x + rand(-30, 30), e.y - 260, e.x, e.y - 10, PAL.FROST_L, 1.3);
+        chainFrom(g, e, st.chains, st.dmg, part.w, 170 * st.area, PAL.FROST_L);
+        if (g.fx.length < 2500) g.burst(e.x, e.y - 10, 6, [PAL.FROST_L, PAL.WHITE], 200, 0.5);
       }
       if (fired) sfx.zap();
       else S.t = 0.2;
@@ -166,11 +167,11 @@ export const BEHAVIORS = {
         const R = (S.ringPool && S.ringPool.pop()) || { hit: new Set() };
         R.x = P.x; R.y = P.y - 12; R.r = 0; R.max = max; R.zaps = 0; R.hit.clear();
         S.rings.push(R);
-        g.shockwave(P.x, P.y - 12, 0x9ae8ff, max, 0.42);
-        g.spawnFx(T.glow, P.x, P.y - 12, { life: 0.3, s0: max / 50, s1: max / 30, tint: 0x4ab0ff, a: 0.35 });
+        g.shockwave(P.x, P.y - 12, PAL.FROST_L, max, 0.42);
+        g.spawnFx(T.glow, P.x, P.y - 12, { life: 0.3, s0: max / 50, s1: max / 30, tint: PAL.R_BLUE, a: 0.35 });
         for (let i = 0; i < 18 && g.fx.length < 2800; i++) {
           const a = (i / 18) * TAU;
-          g.spawnFx(T.shard, P.x, P.y - 12, { vx: Math.cos(a) * max * 2.6, vy: Math.sin(a) * max * 2.6, life: 0.38, s0: 0.9, s1: 0.2, tint: 0xd0f4ff, rot: a, drag: 2 });
+          g.spawnFx(T.shard, P.x, P.y - 12, { vx: Math.cos(a) * max * 2.6, vy: Math.sin(a) * max * 2.6, life: 0.38, s0: 0.9, s1: 0.2, tint: PAL.FROST_L, rot: a, drag: 2 });
         }
         sfx.pulse();
       }
@@ -183,7 +184,7 @@ export const BEHAVIORS = {
           if (R.hit.has(e.uid)) continue;
           R.hit.add(e.uid);
           g.damage(e, st.dmg, { w: part.w, knock: st.knock, fx: R.x, fy: R.y, freeze: st.freeze, slow: st.duration });
-          if (st.zap && (R.zaps || 0) < 6 && Math.random() < 0.18 && e.alive) { R.zaps = (R.zaps || 0) + 1; chainFrom(g, e, 3, st.dmg * 0.8, part.w, 160, 0xffffff); }
+          if (st.zap && (R.zaps || 0) < 6 && Math.random() < 0.18 && e.alive) { R.zaps = (R.zaps || 0) + 1; chainFrom(g, e, 3, st.dmg * 0.8, part.w, 160, PAL.WHITE); }
         }
         if (R.r >= R.max) { S.rings.splice(i, 1); (S.ringPool || (S.ringPool = [])).push(R); }
       }
@@ -203,7 +204,7 @@ export const BEHAVIORS = {
         g.addProjectile({
           tex: T.spirit0, frames: [T.spirit0, T.spirit1], faceVel: true, x: P.x, y: P.y - 18, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, life: st.duration,
           dmg: st.dmg, pierce: st.pierce, r: 10 * st.area, scale: Math.sqrt(st.area) * (st.explode ? 1.3 : 1), w: part.w,
-          homing: 3.2, target: tg, explode: st.explode * st.area, trail: 0.04, trailTint: 0x80ffe0, knock: st.knock, fade: true,
+          homing: 3.2, target: tg, explode: st.explode * st.area, trail: 0.04, trailTint: PAL.FROST_L, knock: st.knock, fade: true,
         }).speed = st.speed;
       }
     },
@@ -229,10 +230,10 @@ export const BEHAVIORS = {
       const a = base + offs[k % offs.length];
       const R = 115 * st.area;
       const cx = P.x + Math.cos(a) * R * 0.35, cy = P.y - 14 + Math.sin(a) * R * 0.35;
-      const tint = g.charId === 'reaver' ? 0xff5060 : 0xffe8e0;
+      const tint = g.charId === 'reaver' ? PAL.CRIMSON : PAL.BONE;
       const f = g.spawnFx(T.slash, cx, cy, { life: 0.22, s0: R / 58, s1: R / 52, rot: a, tint, drag: 0 });
       if (f) f.p.scaleY *= (k % 2 ? -1 : 1);
-      g.spawnFx(T.slash, cx, cy, { life: 0.12, s0: R / 64, s1: R / 60, rot: a, tint: 0xffffff, a: 0.6, drag: 0 });
+      g.spawnFx(T.slash, cx, cy, { life: 0.12, s0: R / 64, s1: R / 60, rot: a, tint: PAL.WHITE, a: 0.6, drag: 0 });
       sfx.slash();
       tmpA.length = 0;
       g.grid.query(P.x, P.y - 14, R, tmpA);
@@ -259,7 +260,7 @@ export const BEHAVIORS = {
           const e = g.randomVisibleEnemy();
           const x = e ? e.x + rand(-20, 20) : P.x + rand(-250, 250), y = e ? e.y + rand(-20, 20) : P.y + rand(-200, 200);
           const R = 70 * st.area;
-          g.spawnFx(T.target, x, y, { life: 0.55 + i * 0.08, s0: R / 30, s1: R / 28, tint: 0xff6030, a: 0.7, drag: 0, add: true });
+          g.spawnFx(T.target, x, y, { life: 0.55 + i * 0.08, s0: R / 30, s1: R / 28, tint: PAL.EMBER_D, a: 0.7, drag: 0, add: true });
           const p = g.L.projAdd.add(T.meteor, x + 160, y - 420);
           p.scaleX = p.scaleY = 1.1 * Math.sqrt(st.area);
           S.falling.push({ x, y, t: 0.55 + i * 0.08, max: 0.55 + i * 0.08, p, R });
@@ -270,13 +271,13 @@ export const BEHAVIORS = {
         m.t -= dt;
         const k = Math.max(0, m.t / m.max);
         m.p.x = m.x + 160 * k; m.p.y = m.y - 420 * k; m.p.rotation += dt * 6;
-        if (g.fx.length < 2800 && Math.random() < 0.7) g.spawnFx(T.dot, m.p.x + rand(-6, 6), m.p.y + rand(-6, 6), { life: 0.35, s0: 2, s1: 0, tint: 0xff8030, a: 0.8 });
+        if (g.fx.length < 2800 && Math.random() < 0.7) g.spawnFx(T.dot, m.p.x + rand(-6, 6), m.p.y + rand(-6, 6), { life: 0.35, s0: 2, s1: 0, tint: PAL.EMBER, a: 0.8 });
         if (m.t <= 0) {
           g.L.projAdd.kill(m.p);
           S.falling.splice(i, 1);
-          g.explodeAt(m.x, m.y, m.R, st.dmg, part.w, 0xff7a20, st.knock);
+          g.explodeAt(m.x, m.y, m.R, st.dmg, part.w, PAL.EMBER, st.knock);
           g.shake = Math.max(g.shake, 4);
-          for (let k2 = 0; k2 < 3; k2++) g.spawnFx(T.smoke, m.x + rand(-20, 20), m.y + rand(-20, 20), { life: 0.9, s0: 0.8, s1: 2, tint: 0x302430, a: 0.5, add: false, vy: -30 });
+          for (let k2 = 0; k2 < 3; k2++) g.spawnFx(T.smoke, m.x + rand(-20, 20), m.y + rand(-20, 20), { life: 0.9, s0: 0.8, s1: 2, tint: PAL.SLATE_D, a: 0.5, add: false, vy: -30 });
         }
       }
     },
@@ -298,8 +299,8 @@ export const BEHAVIORS = {
         g.addProjectile({
           tex: T.glaive, x: P.x, y: P.y - 16, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 4,
           dmg: st.dmg, pierce: 99999, r: 20 * st.area, scale: st.area, w: part.w, rehit: 0.4, spin: 16,
-          returnTo: true, retT: 0.5 * st.duration, knock: st.knock, tint: st.pierceAll ? 0xffc080 : 0xffffff,
-          trail: st.pierceAll ? 0.03 : 0, trailTint: 0xff9040,
+          returnTo: true, retT: 0.5 * st.duration, knock: st.knock, tint: st.pierceAll ? PAL.SKIN : PAL.WHITE,
+          trail: st.pierceAll ? 0.03 : 0, trailTint: PAL.EMBER,
         });
       }
       sfx.slash();
@@ -378,10 +379,10 @@ export const BEHAVIORS = {
         if (boom) {
           g.L.proj.kill(m.p);
           S.mines.splice(i, 1);
-          g.explodeAt(m.x, m.y, R, st.dmg, part.w, 0xff6ab0, st.knock);
+          g.explodeAt(m.x, m.y, R, st.dmg, part.w, PAL.R_PINK, st.knock);
           for (let k = 0; k < 8 && g.fx.length < 2800; k++) {
             const a = Math.random() * TAU;
-            g.spawnFx(T.dot, m.x, m.y, { vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, life: 0.6, s0: 1.4, s1: 0, tint: 0xffa0d0, grav: 300 });
+            g.spawnFx(T.dot, m.x, m.y, { vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, life: 0.6, s0: 1.4, s1: 0, tint: PAL.R_PINK, grav: 300 });
           }
         }
       }
@@ -414,7 +415,7 @@ export const BEHAVIORS = {
             tex: T.zap0, frames: [T.zap0, T.zap1], x: d.x, y: d.y, vx: Math.cos(ang) * st.speed, vy: Math.sin(ang) * st.speed, life: 1.1,
             dmg: st.dmg, pierce: st.pierce, r: 7, scale: 0.9, w: part.w, knock: st.knock, spin: 9,
           });
-          g.spawnFx(T.glow, d.x, d.y, { life: 0.1, s0: 0.4, s1: 0.1, tint: 0x80f0ff });
+          g.spawnFx(T.glow, d.x, d.y, { life: 0.1, s0: 0.4, s1: 0.1, tint: PAL.FROST_L });
         }
       }
       while (S.d.length > n) S.d.pop();
@@ -430,11 +431,11 @@ export const BEHAVIORS = {
       const ps = ensure(g, S, 'ps', 2, T.aura, g.L.projAdd);
       S.a = (S.a || 0) + dt;
       ps[0].x = ps[1].x = P.x; ps[0].y = ps[1].y = P.y - 10;
-      ps[0].scaleX = ps[0].scaleY = R / 72; ps[0].rotation = S.a * 0.8; ps[0].tint = 0xff9a30; ps[0].alpha = 0.75;
-      ps[1].scaleX = ps[1].scaleY = (R / 72) * 0.92; ps[1].rotation = -S.a * 1.3; ps[1].tint = 0xffd060; ps[1].alpha = 0.45;
+      ps[0].scaleX = ps[0].scaleY = R / 72; ps[0].rotation = S.a * 0.8; ps[0].tint = PAL.EMBER; ps[0].alpha = 0.75;
+      ps[1].scaleX = ps[1].scaleY = (R / 72) * 0.92; ps[1].rotation = -S.a * 1.3; ps[1].tint = PAL.EMBER_L; ps[1].alpha = 0.45;
       if (g.fx.length < 2600 && Math.random() < dt * 30) {
         const a = Math.random() * TAU, d = R * rand(0.7, 1);
-        g.spawnFx(T.dot, P.x + Math.cos(a) * d, P.y - 10 + Math.sin(a) * d, { life: 0.5, s0: 1.2, s1: 0, tint: 0xff8030, vy: -50, a: 0.8 });
+        g.spawnFx(T.dot, P.x + Math.cos(a) * d, P.y - 10 + Math.sin(a) * d, { life: 0.5, s0: 1.2, s1: 0, tint: PAL.EMBER, vy: -50, a: 0.8 });
       }
       S.t = (S.t ?? 0) - dt;
       if (S.t > 0) return;
@@ -473,7 +474,7 @@ export const BEHAVIORS = {
       g.addProjectile({
         tex: T.icicle, layer: g.L.proj, x: P.x, y: P.y - 16, vx: Math.cos(a) * st.speed, vy: Math.sin(a) * st.speed,
         life: st.duration, dmg: st.dmg, pierce: st.pierce, r: 9 * st.area, scale: 1.1 * Math.sqrt(st.area), w: part.w,
-        faceVel: true, freeze: st.freeze, slow: 1.2, knock: st.knock, trail: 0.03, trailTint: 0xa0e8ff,
+        faceVel: true, freeze: st.freeze, slow: 1.2, knock: st.knock, trail: 0.03, trailTint: PAL.FROST_L,
       });
       sfx.shoot();
     },
@@ -514,12 +515,12 @@ export const BEHAVIORS = {
         }
         if (g.fx.length < 2400 && Math.random() < dt * 30) {
           const a = Math.random() * TAU;
-          g.spawnFx(T.dot, w.x + Math.cos(a) * w.R, w.y + Math.sin(a) * w.R, { life: 0.4, s0: 1.2, s1: 0, tint: 0xc080ff, vx: -Math.cos(a) * w.R * 2.2, vy: -Math.sin(a) * w.R * 2.2, drag: 0 });
+          g.spawnFx(T.dot, w.x + Math.cos(a) * w.R, w.y + Math.sin(a) * w.R, { life: 0.4, s0: 1.2, s1: 0, tint: PAL.VOID, vx: -Math.cos(a) * w.R * 2.2, vy: -Math.sin(a) * w.R * 2.2, drag: 0 });
         }
         if (w.life <= 0) {
           g.L.fxAdd.kill(w.p);
           S.wells.splice(i, 1);
-          g.explodeAt(w.x, w.y, w.R * 0.7, st.dmg * 3.5, part.w, 0xc080ff, 18);
+          g.explodeAt(w.x, w.y, w.R * 0.7, st.dmg * 3.5, part.w, PAL.VOID, 18);
           g.shake = Math.max(g.shake, 5);
         }
       }
@@ -540,10 +541,10 @@ export const BEHAVIORS = {
         g.addProjectile({
           tex: T.feather, x: P.x, y: P.y - 16, vx: Math.cos(a) * st.speed, vy: Math.sin(a) * st.speed,
           life: st.duration, dmg: st.dmg, pierce: st.pierce, r: 9 * st.area, scale: Math.sqrt(st.area), w: part.w,
-          faceVel: true, freeze: st.freeze, knock: st.knock, fade: true, tint: st.freeze ? 0xc0f0ff : 0xffffff,
+          faceVel: true, freeze: st.freeze, knock: st.knock, fade: true, tint: st.freeze ? PAL.FROST_L : PAL.WHITE,
         });
       }
-      g.spawnFx(T.glow, P.x, P.y - 16, { life: 0.2, s0: 0.6, s1: 1.6, tint: 0xfff0c0, a: 0.6 });
+      g.spawnFx(T.glow, P.x, P.y - 16, { life: 0.2, s0: 0.6, s1: 1.6, tint: PAL.EMBER_H, a: 0.6 });
       sfx.shoot();
     },
   },

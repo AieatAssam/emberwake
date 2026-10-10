@@ -5,6 +5,7 @@ import { UI } from './ui.js';
 import { initInput, consumePressed, padButtons } from './input.js';
 import { initAudio, startMusic, setMuted, setMusic, setVolumes } from './audio.js';
 import { save } from './save.js';
+import { HEX } from './palette.js';
 import './style.css';
 
 const coarse = matchMedia('(pointer: coarse)').matches;
@@ -13,7 +14,7 @@ document.body.classList.toggle('touch', coarse);
 const app = new Application();
 await app.init({
   resizeTo: window,
-  background: '#0a0812',
+  background: HEX.INK,
   antialias: false,
   // phones: cap the render scale lower, a 3x screen is far more pixels than the swarm needs
   resolution: Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2),
@@ -22,6 +23,7 @@ await app.init({
 });
 document.getElementById('game').appendChild(app.canvas);
 
+await document.fonts.ready;
 buildAtlas();
 initInput();
 setVolumes(save.settings.volume / 100, save.settings.musicVolume / 100);

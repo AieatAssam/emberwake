@@ -1,3 +1,4 @@
+import { PAL, PROP_RULE, ELITE_TINT, ELITE_HALO, BOSS_HALO, AFFIX_TINT } from './palette.js';
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
@@ -22,29 +23,28 @@ export const KINDLE_TIERS = [
 const KINDLE_REWARDS = { 3: 'flare', 4: 'magnet', 6: 'chest' };
 // drifting ambient motes per stage: tint(s), vertical drift, sway, blink, scale
 const MOTES = {
-  gloam: { tints: [0xb080ff, 0x80a0ff], vy: -8, sway: 12, blink: 0, s: [0.4, 0.8] },
-  ashfields: { tints: [0xff7a30, 0xffc060], vy: -38, sway: 16, blink: 9, s: [0.3, 0.6] },
-  marsh: { tints: [0xc8ff70], vy: -4, sway: 22, blink: 2, s: [0.4, 0.8] },
-  rimewood: { tints: [0xe8f4ff], vy: 24, sway: 18, blink: 0, s: [0.3, 0.6] },
-  reliquary: { tints: [0xffd080, 0xc890ff], vy: -14, sway: 10, blink: 5, s: [0.3, 0.6] },
-  glassdunes: { tints: [0xffe0a0, 0x70f0e0], vy: 6, sway: 30, blink: 3, s: [0.3, 0.7] },
-  wayfarers: { tints: [0xfff0b0, 0xc8e8ff], vy: -6, sway: 26, blink: 2, s: [0.3, 0.6] },
-  stormcoast: { tints: [0xc8e8ff, 0xffffff], vy: 8, sway: 40, blink: 4, s: [0.25, 0.55] },
+  gloam: { tints: [PAL.SLATE_L, PAL.FROST], vy: -8, sway: 12, blink: 0, s: [0.4, 0.8] },
+  ashfields: { tints: [PAL.HFIRE, PAL.SAND], vy: -38, sway: 16, blink: 9, s: [0.3, 0.6] },
+  marsh: { tints: [PAL.SAND], vy: -4, sway: 22, blink: 2, s: [0.4, 0.8] },
+  rimewood: { tints: [PAL.FROST_H], vy: 24, sway: 18, blink: 0, s: [0.3, 0.6] },
+  reliquary: { tints: [PAL.SAND, PAL.SLATE_L], vy: -14, sway: 10, blink: 5, s: [0.3, 0.6] },
+  glassdunes: { tints: [PAL.SAND, PAL.FROST_L], vy: 6, sway: 30, blink: 3, s: [0.3, 0.7] },
+  wayfarers: { tints: [PAL.BONE, PAL.FROST_L], vy: -6, sway: 26, blink: 2, s: [0.3, 0.6] },
+  stormcoast: { tints: [PAL.FROST_L, PAL.WHITE], vy: 8, sway: 40, blink: 4, s: [0.25, 0.55] },
 };
 const MAX_ENEMIES = 1100;
 const MAX_FX = 2600;
 const GEM_CAP = 650;
 const AFFIXES = ['swift', 'vampiric', 'warded', 'volatile'];
-const AFFIX_TINT = { swift: 0x40e0ff, vampiric: 0xff2040, warded: 0x4a7aff, volatile: 0xff8a20 };
 const ENEMY_COLORS = {
-  herald: 0xb8a8ff,
-  gloomling: 0x8a5ad0, moth: 0xff8ad0, husk: 0xff7a30, wraith: 0x70e0d0, splitter: 0x9ad04a, broodling: 0x9ad04a,
-  beetle: 0xff5a6a, spitter: 0x4ad8b0, sentinel: 0xff4a8a, matron: 0xd070ff, colossus: 0xff8030, tyrant: 0xffd060,
-  imp: 0xff8a30, frostwisp: 0xa8e8ff, lurker: 0x8ad070, scarab: 0x2fd8c8, acolyte: 0xffc060, thief: 0xffd040,
+  herald: PAL.GLOOM_L,
+  gloomling: PAL.GLOOM, moth: PAL.ROSE_L, husk: PAL.HFIRE, wraith: PAL.SPIRIT_L, splitter: PAL.BOG_L, broodling: PAL.BOG_L,
+  beetle: PAL.HEYE, spitter: PAL.SPIRIT, sentinel: PAL.HEYE, matron: PAL.VOID, colossus: PAL.HFIRE, tyrant: PAL.BOG_L,
+  imp: PAL.HFIRE, frostwisp: PAL.FROST_L, lurker: PAL.BOG, scarab: PAL.SPIRIT, acolyte: PAL.HFIRE_H, thief: PAL.R_GOLD,
 };
 // Hearth upgrades that are counted in whole items, not scaled stats
 const WHOLE_META = new Set(['amount', 'revival', 'reroll', 'banish', 'spark']);
-const CHEST_COL = { bronze: 0xd89050, silver: 0x8ad0ff, gold: 0xffd040, ascend: 0xe070ff };
+const CHEST_COL = { bronze: PAL.R_BRONZE, silver: PAL.FROST, gold: PAL.R_GOLD, ascend: PAL.R_VIOLET };
 const chestTierOf = (n) => (n >= 5 ? 'gold' : n >= 3 ? 'silver' : 'bronze');
 
 // ---------- particle layer with in-place compaction ----------
@@ -65,7 +65,7 @@ class Layer {
     let p = this.pool.pop();
     if (!p) p = new Particle({ texture: tex, anchorX: 0.5, anchorY: 0.5 });
     p.texture = tex; p.x = x; p.y = y; p.scaleX = 1; p.scaleY = 1; p.rotation = 0;
-    p.anchorX = 0.5; p.anchorY = 0.5; p.tint = 0xffffff; p.alpha = 1; p._dead = false;
+    p.anchorX = 0.5; p.anchorY = 0.5; p.tint = PAL.WHITE; p.alpha = 1; p._dead = false;
     this.list.push(p);
     this.dirty = true;
     return p;
@@ -201,17 +201,17 @@ export class Game {
     this.root.addChild(this.vignette);
     const edgeTex = Texture.from(makeEdgeGlowCanvas());
     this.hurtVignette = new Sprite(edgeTex);
-    this.hurtVignette.tint = 0xff0020; this.hurtVignette.alpha = 0; this.hurtVignette.blendMode = 'add';
+    this.hurtVignette.tint = PAL.HURT; this.hurtVignette.alpha = 0; this.hurtVignette.blendMode = 'add';
     this.root.addChild(this.hurtVignette);
     // Kindle glow: screen edges warm as the kill streak climbs
     this.kindleGlow = new Sprite(edgeTex);
-    this.kindleGlow.tint = 0xff7a20; this.kindleGlow.alpha = 0; this.kindleGlow.blendMode = 'add';
+    this.kindleGlow.tint = PAL.EMBER; this.kindleGlow.alpha = 0; this.kindleGlow.blendMode = 'add';
     this.root.addChildAt(this.kindleGlow, this.root.getChildIndex(this.hurtVignette));
     this.indicators = new Graphics();
     this.root.addChild(this.indicators);
     this.flashG = new Graphics();
     this.root.addChild(this.flashG);
-    this.flashAlpha = 0; this.flashColor = 0xffffff;
+    this.flashAlpha = 0; this.flashColor = PAL.WHITE;
 
     this.grid = new Grid(64);
     this.qa = []; this.qb = []; this.qExp = []; this.qNova = []; this.qZone = [];
@@ -363,10 +363,10 @@ export class Game {
     this.weapons.push(w);
     save.fusions[fid] = true; persist();
     sfx.fusion();
-    this.flash(0xffe0a0, 0.7);
+    this.flash(PAL.EMBER_H, 0.7);
     this.shake = Math.max(this.shake, 18);
-    this.burst(this.player.x, this.player.y, 80, [0xffd060, 0xff7a20, 0xffffff], 500, 1.2);
-    this.shockwave(this.player.x, this.player.y, 0xffc060, 900, 0.8);
+    this.burst(this.player.x, this.player.y, 80, [PAL.EMBER_L, PAL.EMBER, PAL.WHITE], 500, 1.2);
+    this.shockwave(this.player.x, this.player.y, PAL.EMBER_L, 900, 0.8);
     this.ui.toast(`ASCENDED: ${F.name}`, 'fusion');
   }
 
@@ -437,7 +437,7 @@ export class Game {
     if (c.kind === 'weapon') {
       if (this.weapons.some((w) => w.id === c.id)) this.levelWeapon(c.id); else this.addWeapon(c.id);
     } else if (c.kind === 'passive') this.addPassive(c.id);
-    else if (c.kind === 'pact') { this.pacts.push(c.id); this.recalcStats(); this.flash(0xff1040, 0.4); this.ui.toast(c.name.toUpperCase(), 'pact'); }
+    else if (c.kind === 'pact') { this.pacts.push(c.id); this.recalcStats(); this.flash(PAL.VOID, 0.4); this.ui.toast(c.name.toUpperCase(), 'pact'); }
     else if (c.kind === 'overcharge') { this.overcharge = (this.overcharge || 0) + 1; this.recalcStats(); }
     else if (c.kind === 'heal') this.heal(this.stats.maxHp * 0.5, true);
     else if (c.kind === 'cinderBag') this.addCinders(40, false);
@@ -527,7 +527,7 @@ export class Game {
     if (this.fx.length >= this.maxFx) return null;
     const layer = o.add === false ? this.L.fx : this.L.fxAdd;
     const p = layer.add(tex, x, y);
-    p.tint = o.tint ?? 0xffffff;
+    p.tint = o.tint ?? PAL.WHITE;
     p.rotation = o.rot ?? 0;
     const f = this.fxPool.pop() || {};
     f.p = p; f.layer = layer; f.vx = o.vx || 0; f.vy = o.vy || 0; f.life = o.life; f.max = o.life;
@@ -549,7 +549,7 @@ export class Game {
   shockwave(x, y, tint, radius, life = 0.45) {
     this.spawnFx(T.ring, x, y, { life, s0: 0.1, s1: radius / 58, tint, a: 0.9, drag: 0 });
   }
-  dmgNumber(x, y, val, crit, tint = 0xffffff) {
+  dmgNumber(x, y, val, crit, tint = PAL.WHITE) {
     if (!save.settings.numbers || this.numbers.length > 120 || (this.pressure > 2 && !crit)) return;
     const str = String(Math.max(1, Math.round(val))) + (crit ? '!' : '');
     const sc = crit ? 0.8 : 0.55;
@@ -560,7 +560,7 @@ export class Game {
     for (let i = 0; i < str.length; i++) {
       const p = this.L.nums.add(T['d' + str[i]], x + (i - (str.length - 1) / 2) * w, y);
       p.scaleX = p.scaleY = sc;
-      p.tint = crit ? 0xffd040 : tint;
+      p.tint = crit ? PAL.R_GOLD : tint;
       parts.push(p);
     }
     n.x = x; n.y = y; n.vy = -60; n.life = 0.7; n.sc = sc; n.w = w;
@@ -608,11 +608,11 @@ export class Game {
     }
     if (elite || e.boss) {
       e.glow = this.L.glowUnder.add(T.softglow, x, y);
-      e.glow.tint = e.boss ? 0xff4060 : AFFIX_TINT[e.affix] || 0xffc040;
+      e.glow.tint = e.boss ? BOSS_HALO : AFFIX_TINT[e.affix] || ELITE_HALO;
       e.glow.scaleX = e.glow.scaleY = (e.r * 3.2) / 64;
       e.glow.alpha = 0.6;
     }
-    e.p.tint = elite ? 0xffe0a0 : d.tint || 0xffffff;
+    e.p.tint = elite ? ELITE_TINT : d.tint || PAL.WHITE;
     this.enemies.push(e);
     if (!d.inert) this.seenRun[type] = true;
     if (e.boss) {
@@ -663,12 +663,12 @@ export class Game {
       if (o.slow) { e.slowT = Math.max(e.slowT, o.slow); }
     }
     if (this.buffs.bloodrage > 0) this.heal(dmg * 0.004, false);
-    if (!e.inert) this.dmgNumber(e.x + rand(-6, 6), e.y - e.r - 6, dmg, crit, o && o.w ? elementTint(o.w.id) : 0xffffff);
+    if (!e.inert) this.dmgNumber(e.x + rand(-6, 6), e.y - e.r - 6, dmg, crit, o && o.w ? elementTint(o.w.id) : PAL.WHITE);
     if (crit) sfx.crit(); else sfx.hit();
     // impact sparks (budgeted per frame) and a flick of hit-stop on crits against bosses
     if ((crit || this.hitFxBudget > 0) && !e.inert && this.fx.length < this.maxFx * 0.6) {
       this.hitFxBudget--;
-      this.spawnFx(T.spark, e.x + rand(-4, 4), e.y - e.r * 0.6, { life: 0.14, s0: crit ? 1.1 : 0.6, s1: 0.1, rot: Math.random() * TAU, tint: o && o.w ? elementTint(o.w.id) : 0xffe0a0, drag: 0 });
+      this.spawnFx(T.spark, e.x + rand(-4, 4), e.y - e.r * 0.6, { life: 0.14, s0: crit ? 1.1 : 0.6, s1: 0.1, rot: Math.random() * TAU, tint: o && o.w ? elementTint(o.w.id) : PAL.EMBER_H, drag: 0 });
     }
     if (crit && e.boss && this.hitStopCd <= 0 && !this.rm) { this.hitStop = Math.max(this.hitStop, 0.025); this.hitStopCd = 0.3; }
     if (e.hp <= 0) this.killEnemy(e, o && o.w);
@@ -680,8 +680,8 @@ export class Game {
     const x = e.x, y = e.y;
     this.obj.onKill(e);
     if (e.inert) {
-      this.burst(x, y, 24, [0xffd060, 0xfff0c0, 0x8060ff], 260, 0.8);
-      this.spawnFx(T.glow, x, y, { life: 0.35, s0: 1.5, s1: 3, tint: 0xffc060 });
+      this.burst(x, y, 24, [PAL.BOG_L, PAL.BONE, PAL.VOID], 260, 0.8);
+      this.spawnFx(T.glow, x, y, { life: 0.35, s0: 1.5, s1: 3, tint: PAL.HFIRE_H });
       const roll = weighted([['heart', this.stats.noHeal ? 0 : 25], ['magnet', 18], ['bomb', 14], ['freeze', 14], ['flareorb', 16], ['cinderbag', 13]]);
       this.dropPickup(roll === 'cinderbag' ? 'cinder' : roll, x, y, roll === 'cinderbag' ? 25 : 1);
       sfx.pickup();
@@ -705,21 +705,21 @@ export class Game {
         else if (rw === 'magnet') { this.dropPickup('magnet', P.x + 40, P.y, 1); this.ui.toast('KINDLED: A MAGNET FALLS', 'kindle'); }
         else { this.dropPickup('chest', P.x + 40, P.y, 1); this.ui.toast('KINDLED: A CHEST IS SENT', 'kindle'); }
       }
-      this.burst(this.player.x, this.player.y, 24, [0xffa030, 0xffe080], 300, 0.8);
+      this.burst(this.player.x, this.player.y, 24, [PAL.HFIRE_H, PAL.BOG_L], 300, 0.8);
     }
     if (this.combo >= this.nextStreak) { sfx.streak(this.kindleTier); this.nextStreak += 250; }
     this.flare = Math.min(100, this.flare + (e.boss ? 35 : e.elite ? 8 : 0.32) * this.stats.flareGain * (this.perk === 'rimeheart' && e.freezeT > 0 ? 2.5 : 1));
     if (this.perk === 'bloodthirst' && !e.boss) this.heal(0.35, false);
     // death fx
-    const col = ENEMY_COLORS[e.type] || 0xb080ff;
+    const col = ENEMY_COLORS[e.type] || PAL.VOID;
     const big = e.boss ? 4 : e.elite ? 2 : 1;
     if ((this.fx.length < this.maxFx * 0.8 && this.deathFxBudget-- > 0) || big > 1) {
       // death pop: the creature's white silhouette swells and fades
       const pop = this.spawnFx(e.d._w[(e.anim | 0) & 1], x, y, { life: 0.16, s0: e.scale, s1: e.scale * 1.6, a: 0.85, add: false, drag: 0 });
       if (pop) pop.p.anchorY = 0.62;
-      this.burst(x, y, 5 * big, [col, 0xffffff], 160 * big, 0.6, 'shard');
+      this.burst(x, y, 5 * big, [col, PAL.WHITE], 160 * big, 0.6, 'shard');
       this.spawnFx(T.glow, x, y, { life: 0.22, s0: 0.5 * big * e.scale, s1: 1.4 * big * e.scale, tint: col, a: 0.8 });
-      this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: 0x302040, a: 0.5, add: false, vy: -20 });
+      this.spawnFx(T.smoke, x, y, { life: 0.5, s0: 0.6 * e.scale, s1: 1.3 * e.scale, tint: PAL.SLATE_D, a: 0.5, add: false, vy: -20 });
     }
     sfx.kill(e.r);
     if (e.d.loot) this.dropPickup('chest', x, y, 1);
@@ -731,9 +731,9 @@ export class Game {
       this.dropPickup('chest', x, y, e.d.final ? 5 : 3);
       this.slowT = 1.2;
       this.shake = Math.max(this.shake, 30);
-      this.flash(0xffffff, 0.8);
-      this.burst(x, y, 120, [0xffd060, 0xff4060, 0xffffff], 700, 1.3);
-      this.shockwave(x, y, 0xffffff, 1000, 1);
+      this.flash(PAL.WHITE, 0.8);
+      this.burst(x, y, 120, [PAL.BOG_L, PAL.HEYE, PAL.WHITE], 700, 1.3);
+      this.shockwave(x, y, PAL.WHITE, 1000, 1);
       sfx.boom(); buzz([60, 40, 120], 0);
       if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.08);
       if (e.d.final && !this.victory) { this.victory = true; this.hollowAt = Math.min(this.hollowAt, this.time + 120); this.hollowWarned = false; setTimeout(() => this.ui.showVictory(this), 1800); }
@@ -743,10 +743,10 @@ export class Game {
       if (Math.random() < TUNE.eliteChest) this.dropPickup('chest', x, y, 1);
       sfx.eliteKill();
       if (!this.rm) this.hitStop = Math.max(this.hitStop, 0.045);
-      this.shockwave(x, y, 0xffd060, 90, 0.3);
+      this.shockwave(x, y, PAL.BOG_L, 90, 0.3);
       this.slowT = 0.35;
       this.shake = Math.max(this.shake, 10);
-      this.burst(x, y, 40, [0xffd060, 0xffffff], 400, 1);
+      this.burst(x, y, 40, [PAL.BOG_L, PAL.WHITE], 400, 1);
     }
     this.dropPickup('gem', x, y, (e.xp * (this.buffs.bloodMoon > 0 ? 2 : 1)) / this.pressure);
     if (Math.random() < 0.012 * this.stats.luck) {
@@ -872,18 +872,18 @@ export class Game {
         if (this.vault === pk) this.vault = null;
         this.gainXp(pk.value);
         sfx.gem(this.combo);
-        this.spawnFx(T.glow, P.x, P.y - 14, { life: 0.18, s0: 0.3, s1: 0.7, tint: 0x80c0ff, a: 0.5 });
+        this.spawnFx(T.glow, P.x, P.y - 14, { life: 0.18, s0: 0.3, s1: 0.7, tint: PAL.R_BLUE, a: 0.5 });
         break;
       }
       case 'cinder': this.addCinders(pk.value, true); sfx.cinder(); break;
       case 'heart': this.heal(this.stats.maxHp * 0.3, true); break;
       case 'magnet':
         for (const g of this.pickups) if (g.type === 'gem' || g.type === 'cinder') g.attract = true;
-        sfx.pickup(); this.shockwave(P.x, P.y, 0x80b0ff, 600); this.ui.toast('LODESTAR', 'pickup');
+        sfx.pickup(); this.shockwave(P.x, P.y, PAL.R_BLUE, 600); this.ui.toast('LODESTAR', 'pickup');
         break;
       case 'bomb': {
-        sfx.bomb(); this.flash(0xfff0c0, 0.9); this.shake = 26;
-        this.shockwave(P.x, P.y, 0xffd060, 1100, 0.7);
+        sfx.bomb(); this.flash(PAL.R_LIGHT, 0.9); this.shake = 26;
+        this.shockwave(P.x, P.y, PAL.R_GOLD, 1100, 0.7);
         const list = this.enemies.slice();
         for (const e of list) {
           if (!e.alive || e.inert || !this.inView(e.x, e.y, 60)) continue;
@@ -895,7 +895,7 @@ export class Game {
         break;
       }
       case 'freeze':
-        sfx.freeze(); this.flash(0x80e0ff, 0.5);
+        sfx.freeze(); this.flash(PAL.FROST, 0.5);
         for (const e of this.enemies) if (!e.inert) e.freezeT = Math.max(e.freezeT, e.boss ? 2.5 : 7);
         this.ui.toast('STILLWATER', 'pickup');
         break;
@@ -905,7 +905,7 @@ export class Game {
         sfx.pickup();
         this.chestQueue.push(pk.n || pk.value);
         this.L.glowUnder.kill(pk.beam); this.L.glowUnder.kill(pk.ring);
-        this.shockwave(pk.x, pk.y, CHEST_COL[pk.tier] || 0xffd040, 160, 0.4);
+        this.shockwave(pk.x, pk.y, CHEST_COL[pk.tier] || PAL.R_GOLD, 160, 0.4);
         break;
     }
   }
@@ -925,10 +925,10 @@ export class Game {
   onObjectiveDone() {
     this.ui.toast('OBJECTIVE COMPLETE', 'fusion');
     sfx.ascendReady(); sfx.levelup();
-    this.flash(0xffe0a0, 0.6);
+    this.flash(PAL.EMBER_H, 0.6);
     const P = this.player;
-    this.shockwave(P.x, P.y, 0xffd060, 600, 0.7);
-    this.burst(P.x, P.y, 50, [0xffd060, 0xffffff], 520, 1);
+    this.shockwave(P.x, P.y, PAL.EMBER_L, 600, 0.7);
+    this.burst(P.x, P.y, 50, [PAL.EMBER_L, PAL.WHITE], 520, 1);
     const b = this.boss;
     if (b && b.alive && b.d.final) { b.freezeT = Math.max(b.freezeT, 2); this.ui.toast('THE WARD SHATTERS', 'boss'); }
   }
@@ -954,7 +954,7 @@ export class Game {
     P.hp = Math.min(this.stats.maxHp, P.hp + v);
     if (show && P.hp > before) {
       sfx.heal();
-      this.burst(P.x, P.y - 20, 16, [0x60ff90, 0xc0ffd0], 160, 0.6);
+      this.burst(P.x, P.y - 20, 16, [PAL.R_GREEN, PAL.SPIRIT_L], 160, 0.6);
     }
   }
 
@@ -963,8 +963,8 @@ export class Game {
     if (P.iframes > 0 || this.buffs.invuln > 0 || this.dead) return;
     if (this.perk === 'moonstep' && Math.random() < 0.14) {
       P.iframes = 0.5;
-      this.burst(P.x, P.y - 10, 12, [0xc9a0ff, 0xffffff], 220, 0.7);
-      this.shockwave(P.x, P.y, 0xc9a0ff, 120, 0.3);
+      this.burst(P.x, P.y - 10, 12, [PAL.MOON, PAL.WHITE], 220, 0.7);
+      this.shockwave(P.x, P.y, PAL.MOON, 120, 0.3);
       sfx.blink();
       return;
     }
@@ -988,7 +988,7 @@ export class Game {
       this.usedRevivals = (this.usedRevivals || 0) + 1;
       P.hp = s.maxHp * 0.5; P.iframes = 3;
       this.stillT = 0; this.posLog.length = 0;
-      this.flash(0xffa040, 1);
+      this.flash(PAL.EMBER, 1);
       this.ui.toast('SECOND WICK', 'pickup');
       sfx.revive();
       this.triggerFlare('supernova', true);
@@ -1046,7 +1046,7 @@ export class Game {
     const P = this.player;
     this.dead = true;
     sfx.death(); sfx.deathStinger(); fadeMusic(1.2); buzz([80, 40, 200], 0);
-    this.burst(P.x, P.y, 80, [0xff8030, 0xffd080, 0xffffff], 400, 1);
+    this.burst(P.x, P.y, 80, [PAL.EMBER, PAL.EMBER_L, PAL.WHITE], 400, 1);
     this.playerSprite.visible = false;
     setTimeout(() => this.ui.showResults(this, false), 1400);
   }
@@ -1060,34 +1060,34 @@ export class Game {
     const might = this.stats.might;
     switch (kind) {
       case 'supernova': {
-        this.flash(0xffb040, 0.7);
+        this.flash(PAL.EMBER, 0.7);
         this.novas = this.novas || [];
         this.novas.push({ x: P.x, y: P.y, r: 0, max: 900, dmg: (60 + this.level * 12) * might, hit: new Set(), t: 0 });
-        this.shockwave(P.x, P.y, 0xffa030, 900, 0.9);
-        this.shockwave(P.x, P.y, 0xffffff, 700, 0.7);
-        this.burst(P.x, P.y, 120, [0xffa030, 0xffe080, 0xff5020], 900, 1.2);
+        this.shockwave(P.x, P.y, PAL.EMBER, 900, 0.9);
+        this.shockwave(P.x, P.y, PAL.WHITE, 700, 0.7);
+        this.burst(P.x, P.y, 120, [PAL.EMBER, PAL.EMBER_L, PAL.EMBER_D], 900, 1.2);
         break;
       }
       case 'absoluteZero':
-        this.flash(0xa0f0ff, 0.8);
+        this.flash(PAL.FROST_L, 0.8);
         for (const e of this.enemies) if (!e.inert) e.freezeT = Math.max(e.freezeT, e.boss ? 2.5 : 5);
         this.buffs.shatter = 5;
-        this.shockwave(P.x, P.y, 0x80e0ff, 1100, 0.9);
-        this.burst(P.x, P.y, 100, [0xa0f0ff, 0xffffff], 800, 1, 'shard');
+        this.shockwave(P.x, P.y, PAL.FROST, 1100, 0.9);
+        this.burst(P.x, P.y, 100, [PAL.FROST_L, PAL.WHITE], 800, 1, 'shard');
         break;
       case 'overclock':
-        this.flash(0x80ffd0, 0.5);
+        this.flash(PAL.R_GREEN, 0.5);
         this.buffs.overclock = 7;
-        this.shockwave(P.x, P.y, 0x80ffd0, 500, 0.6);
+        this.shockwave(P.x, P.y, PAL.R_GREEN, 500, 0.6);
         break;
       case 'bloodrage':
-        this.flash(0xff2030, 0.6);
+        this.flash(PAL.EMBER_D, 0.6);
         this.buffs.bloodrage = 8;
-        this.shockwave(P.x, P.y, 0xff3040, 600, 0.6);
-        this.burst(P.x, P.y, 60, [0xff2030, 0xff8080], 500, 1);
+        this.shockwave(P.x, P.y, PAL.CRIMSON, 600, 0.6);
+        this.burst(P.x, P.y, 60, [PAL.EMBER_D, PAL.SKIN_D], 500, 1);
         break;
       case 'toll': {
-        this.flash(0xffd27a, 0.6);
+        this.flash(PAL.EMBER_L, 0.6);
         const dmg = (40 + this.level * 8) * might;
         for (const e of this.enemies) {
           if (!e.alive || e.inert || !this.inView(e.x, e.y, 40)) continue;
@@ -1099,50 +1099,50 @@ export class Game {
           setTimeout(() => {
             if (this.dead) return;
             this.novas.push({ x: P.x, y: P.y, r: 0, max: 800, dmg: dmg * (1 + k * 0.25), hit: new Set(), t: 0 });
-            this.shockwave(P.x, P.y, 0xffc860, 800, 0.8);
+            this.shockwave(P.x, P.y, PAL.EMBER_L, 800, 0.8);
             sfx.pulse();
           }, k * 260);
         }
-        this.burst(P.x, P.y - 20, 60, [0xffd27a, 0xffffff], 600, 1);
+        this.burst(P.x, P.y - 20, 60, [PAL.EMBER_L, PAL.WHITE], 600, 1);
         break;
       }
       case 'deadeye':
-        this.flash(0x80ffb0, 0.5);
+        this.flash(PAL.R_GREEN, 0.5);
         this.buffs.deadeye = 6;
-        this.shockwave(P.x, P.y, 0x6af0a0, 520, 0.6);
-        this.burst(P.x, P.y, 50, [0x6af0a0, 0xffffff], 500, 0.9);
+        this.shockwave(P.x, P.y, PAL.R_GREEN, 520, 0.6);
+        this.burst(P.x, P.y, 50, [PAL.R_GREEN, PAL.WHITE], 500, 0.9);
         break;
       case 'lanternroad':
-        this.flash(0xffe080, 0.5);
+        this.flash(PAL.EMBER_L, 0.5);
         this.buffs.lantern = 8; this.lanternT = 0;
-        this.shockwave(P.x, P.y, 0xffd060, 480, 0.6);
-        this.burst(P.x, P.y, 50, [0xffd060, 0xffffff], 450, 0.9);
+        this.shockwave(P.x, P.y, PAL.EMBER_L, 480, 0.6);
+        this.burst(P.x, P.y, 50, [PAL.EMBER_L, PAL.WHITE], 450, 0.9);
         break;
       case 'debtcalled': {
         const n = this.pacts.length;
-        this.flash(0xc050ff, 0.7);
+        this.flash(PAL.R_VIOLET, 0.7);
         this.novas = this.novas || [];
         this.novas.push({ x: P.x, y: P.y, r: 0, max: 700 + n * 80, dmg: (50 + this.level * 10) * might * (1 + n * 0.5), hit: new Set(), t: 0 });
-        this.shockwave(P.x, P.y, 0xb040ff, 760, 0.9);
-        this.burst(P.x, P.y, 70 + n * 20, [0xc050ff, 0xff4080, 0xffffff], 700, 1.1);
+        this.shockwave(P.x, P.y, PAL.R_VIOLET, 760, 0.9);
+        this.burst(P.x, P.y, 70 + n * 20, [PAL.R_VIOLET, PAL.CRIMSON, PAL.WHITE], 700, 1.1);
         if (n) this.heal(this.stats.maxHp * 0.08 * n, true);
         break;
       }
       case 'hearthfire':
-        this.flash(0xffc060, 0.5);
-        this.zones.push({ type: 'hearth', x: P.x, y: P.y, r: 200, t: 8, max: 8, tick: 0, dmg: (14 + this.level * 1.5) * might, color: 0xffb040 });
-        this.shockwave(P.x, P.y, 0xffb040, 420, 0.7);
-        this.burst(P.x, P.y, 70, [0xffb040, 0xffe080, 0xff6020], 420, 1);
+        this.flash(PAL.EMBER_L, 0.5);
+        this.zones.push({ type: 'hearth', x: P.x, y: P.y, r: 200, t: 8, max: 8, tick: 0, dmg: (14 + this.level * 1.5) * might, color: PAL.EMBER });
+        this.shockwave(P.x, P.y, PAL.EMBER, 420, 0.7);
+        this.burst(P.x, P.y, 70, [PAL.EMBER, PAL.EMBER_L, PAL.EMBER_D], 420, 1);
         break;
       case 'moonfall': {
-        this.flash(0xd0b0ff, 0.6);
+        this.flash(PAL.MOON, 0.6);
         this.buffs.invuln = 3;
         for (let i = 0; i < 12; i++) {
           const a = (i / 12) * TAU;
           this.addProjectile({
             tex: T.glaive, layer: this.L.projAdd, x: P.x, y: P.y, vx: Math.cos(a) * 520, vy: Math.sin(a) * 520,
             life: 2.2, dmg: (30 + this.level * 4) * might, pierce: 9999, r: 26, rehit: 0.3, spin: 18, scale: 1.5,
-            curve: 2.2, knock: 10, tint: 0xd8c8ff,
+            curve: 2.2, knock: 10, tint: PAL.MOON,
           });
         }
         break;
@@ -1163,7 +1163,7 @@ export class Game {
     pr.rehit = o.rehit || 0; pr.homing = o.homing || 0; pr.target = o.target || null; pr.explode = o.explode || 0;
     pr.freeze = o.freeze || 0; pr.slow = o.slow || 0; pr.knock = o.knock || 0; pr.spin = o.spin || 0;
     pr.faceVel = !!o.faceVel; pr.returnTo = !!o.returnTo; pr.retT = o.retT || 0; pr.curve = o.curve || 0;
-    pr.trail = o.trail || 0; pr.trailTint = o.trailTint ?? 0xffffff; pr.trailT = 0; pr.alive = true;
+    pr.trail = o.trail || 0; pr.trailTint = o.trailTint ?? PAL.WHITE; pr.trailT = 0; pr.alive = true;
     pr.speed = Math.hypot(o.vx, o.vy); pr.onHit = o.onHit || null; pr.scale = o.scale || 1; pr.fade = !!o.fade; pr.accel = o.accel || 0;
     pr.frames = o.frames || null; pr.frameT = 0; pr.frameI = 0;
     if (pr.faceVel) p.rotation = Math.atan2(pr.vy, pr.vx);
@@ -1171,13 +1171,13 @@ export class Game {
     return pr;
   }
 
-  explodeAt(x, y, radius, dmg, w, tint = 0xff8030, knock = 12) {
+  explodeAt(x, y, radius, dmg, w, tint = PAL.EMBER, knock = 12) {
     const list = this.enemiesIn(x, y, radius, this.qExp);
     for (const e of list) this.damage(e, dmg, { w, knock, fx: x, fy: y });
     // big additive glows are fill-rate heavy: only a few per frame (mine/meteor chains stack dozens)
     if (this.explGlowBudget-- > 0) this.spawnFx(T.glow, x, y, { life: 0.3, s0: radius / 40, s1: Math.min(radius / 18, 5), tint, a: 0.9 });
     this.shockwave(x, y, tint, radius, 0.3);
-    if (this.fx.length < this.maxFx * 0.7) this.burst(x, y, 8, [tint, 0xffffff], radius * 3, 0.6);
+    if (this.fx.length < this.maxFx * 0.7) this.burst(x, y, 8, [tint, PAL.WHITE], radius * 3, 0.6);
     sfx.boom();
   }
 
@@ -1332,12 +1332,12 @@ export class Game {
         // fully maxed build: power keeps climbing without interrupting the carnage
         this.applyChoice(choices.find((c) => c.kind === 'overcharge'));
         sfx.overcharge(this.overcharge || 0);
-        this.shockwave(P.x, P.y, 0xffd060, 260, 0.35);
+        this.shockwave(P.x, P.y, PAL.EMBER_L, 260, 0.35);
         this.ui.toast('OVERCHARGE', 'kindle');
       } else {
         sfx.levelup(); buzz([25, 30, 25], 0);
-        this.shockwave(P.x, P.y, 0x80d0ff, 400, 0.5);
-        this.burst(P.x, P.y, 40, [0x80d0ff, 0xffffff, 0xffd060], 420, 0.9);
+        this.shockwave(P.x, P.y, PAL.FROST, 400, 0.5);
+        this.burst(P.x, P.y, 40, [PAL.FROST, PAL.WHITE, PAL.EMBER_L], 420, 0.9);
         this.ui.showLevelUp(this, choices);
       }
     } else if (this.chestQueue.length && !this.dead && !this.ui.modalOpen) {
@@ -1490,7 +1490,7 @@ export class Game {
       this.spawnEnemy(ev.enemy, sp.x, sp.y, { elite: true, force: true });
     } else if (ev.type === 'spring') {
       const a = Math.random() * TAU, d = rand(260, 420);
-      this.zones.push({ type: 'spring', x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: 100, t: 22, max: 22, color: 0x70ffb8 });
+      this.zones.push({ type: 'spring', x: P.x + Math.cos(a) * d, y: P.y + Math.sin(a) * d, r: 100, t: 22, max: 22, color: PAL.R_GREEN });
       this.ui.toast('A HEALING SPRING BUBBLES UP', 'pickup');
       sfx.shrineSpawn();
     } else if (ev.type === 'meteors') {
@@ -1506,7 +1506,7 @@ export class Game {
       this.buffs.bloodMoon = 20;
       this.ui.toast('BLOOD MOON: double experience, faster foes', 'boss');
       sfx.bloodMoon();
-      this.flash(0xff2030, 0.35);
+      this.flash(PAL.HFIRE, 0.35);
     } else if (ev.type === 'boss') {
       const sp = this.spawnPointOffscreen(120);
       this.spawnEnemy(ev.enemy, sp.x, sp.y, { force: true });
@@ -1544,11 +1544,11 @@ export class Game {
       let mvx = 0, mvy = 0;
       if (e.freezeT > 0) {
         e.freezeT -= dt;
-        p.tint = 0x90e0ff;
+        p.tint = PAL.FROST;
       } else {
-        if (!e.elite) p.tint = e.d.tint || 0xffffff; else p.tint = 0xffe0a0;
+        if (!e.elite) p.tint = e.d.tint || PAL.WHITE; else p.tint = ELITE_TINT;
         const sp = e.speed * ES * (e.slowT > 0 ? 0.5 : 1);
-        if (e.slowT > 0) { e.slowT -= dt; p.tint = 0xb0d8ff; }
+        if (e.slowT > 0) { e.slowT -= dt; p.tint = PAL.FROST_L; }
         if (e.rush) { mvx = e.rush.x * sp * 2.4; mvy = e.rush.y * sp * 2.4; }
         else if (e.d.flee) { mvx = -dx * sp; mvy = -dy * sp; }
         else if (e.d.charge) {
@@ -1558,12 +1558,12 @@ export class Game {
             e.stT -= dt;
             if (e.stT <= 0 && dist < 380) { e.state = 1; e.stT = 0.55; e.dirX = dx; e.dirY = dy; }
           } else if (e.state === 1) {
-            e.stT -= dt; p.tint = 0xff8080;
+            e.stT -= dt; p.tint = PAL.HFIRE_H;
             e.p.x += rand(-1.5, 1.5);
             if (e.stT <= 0) { e.state = 2; e.stT = 0.75; }
           } else {
             mvx = e.dirX * sp * 5; mvy = e.dirY * sp * 5; e.stT -= dt;
-            if (this.fx.length < this.maxFx * 0.6 && Math.random() < 0.4) this.spawnFx(T.smoke, e.x, e.y + 8, { life: 0.4, s0: 0.4, s1: 0.8, tint: 0x504060, a: 0.4, add: false });
+            if (this.fx.length < this.maxFx * 0.6 && Math.random() < 0.4) this.spawnFx(T.smoke, e.x, e.y + 8, { life: 0.4, s0: 0.4, s1: 0.8, tint: PAL.SLATE, a: 0.4, add: false });
             if (e.stT <= 0) { e.state = 0; e.stT = rand(2, 3.5); }
           }
         } else if (e.d.ranged) {
@@ -1577,7 +1577,7 @@ export class Game {
               const a = Math.atan2(dy, dx) + (k - (n - 1) / 2) * 0.22;
               this.enemyShot(e.x, e.y - 10, Math.cos(a) * 140, Math.sin(a) * 140, e.dmg * 0.6);
             }
-            this.spawnFx(T.glow, e.x, e.y - 10, { life: 0.25, s0: 0.4, s1: 1, tint: 0xd060ff, a: 0.8 });
+            this.spawnFx(T.glow, e.x, e.y - 10, { life: 0.25, s0: 0.4, s1: 1, tint: PAL.VOID, a: 0.8 });
           }
         } else if (e.boss) {
           const wind = e.charging ? 0.15 : 1;
@@ -1585,9 +1585,9 @@ export class Game {
           if (dist > Math.max(this.halfW, this.halfH) * 1.6) {
             // bosses leap after a fleeing Bearer and land just off-screen
             const lp = this.spawnPointOffscreen(40);
-            this.shockwave(e.x, e.y, 0xff3a6a, 200, 0.4);
+            this.shockwave(e.x, e.y, PAL.HEYE, 200, 0.4);
             e.x = lp.x; e.y = lp.y;
-            this.shockwave(e.x, e.y, 0xff3a6a, 260, 0.5);
+            this.shockwave(e.x, e.y, PAL.HEYE, 260, 0.5);
             this.shake = Math.max(this.shake, 8);
           }
           this.bossAI(e, dt, dx, dy, dist);
@@ -1597,7 +1597,7 @@ export class Game {
       if (e.d.submerge) {
             // cycle: sink (fast, faint, resists damage) -> surface near the Bearer (exposed)
             e.stT -= dt;
-            if (e.stT <= 0) { e.sunk = !e.sunk; e.stT = e.sunk ? rand(1.8, 2.6) : rand(1.6, 2.2); if (!e.sunk) this.shockwave(e.x, e.y, 0x8ad070, 60, 0.35); }
+            if (e.stT <= 0) { e.sunk = !e.sunk; e.stT = e.sunk ? rand(1.8, 2.6) : rand(1.6, 2.2); if (!e.sunk) this.shockwave(e.x, e.y, PAL.BOG, 60, 0.35); }
             if (e.sunk) { mvx *= 1.4; mvy *= 1.4; }
           }
           if (e.d.wobble) { const w = Math.sin(e.t * 6 + e.phase) * sp * 0.7; mvx += -dy * w; mvy += dx * w; }
@@ -1650,8 +1650,8 @@ export class Game {
         const refl = contactDmg * this.stats.thorns;
         const near = this.enemiesIn(P.x, P.y - 10, 70, this.qExp);
         for (const t of near) if (!t.inert) this.damage(t, t.boss ? refl * 0.5 : refl);
-        this.burst(P.x, P.y - 10, 14, [0xd8e8c0, 0x9ab07a], 260, 0.7, 'shard');
-        this.shockwave(P.x, P.y - 10, 0x9ab07a, 70, 0.25);
+        this.burst(P.x, P.y - 10, 14, [PAL.BONE, PAL.BOG], 260, 0.7, 'shard');
+        this.shockwave(P.x, P.y - 10, PAL.BOG, 70, 0.25);
       }
       if (contactBoss) {
         // bosses shove you clear instead of juggling you to death
@@ -1659,7 +1659,7 @@ export class Game {
         const big = contactBoss.boss;
         P.x += (bx / bl) * (big ? 70 : 45); P.y += (by / bl) * (big ? 70 : 45);
         P.iframes = Math.max(P.iframes, big ? 1.1 : 0.8);
-        this.shockwave(P.x, P.y, 0xff3a6a, 120, 0.3);
+        this.shockwave(P.x, P.y, PAL.HEYE, 120, 0.3);
       }
     }
   }
@@ -1676,15 +1676,15 @@ export class Game {
     p.x = e.x; p.y = e.y + Math.sin(e.t * 3) * 4;
     p.scaleX = e.scale * (dx < 0 ? -1 : 1); p.scaleY = e.scale;
     p.alpha = 0.9;
-    if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.tint = 0x6a40c0; e.glow.alpha = 0.5 + Math.sin(e.t * 4) * 0.15; }
+    if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.tint = PAL.GLOOM; e.glow.alpha = 0.5 + Math.sin(e.t * 4) * 0.15; }
     if (this.fx.length < this.maxFx * 0.5 && Math.random() < dt * 24) {
-      this.spawnFx(T.smoke, e.x + rand(-20, 20), e.y + rand(-10, 20), { life: 0.9, s0: 0.6, s1: 1.4, tint: 0x20103a, a: 0.5, add: false });
+      this.spawnFx(T.smoke, e.x + rand(-20, 20), e.y + rand(-10, 20), { life: 0.9, s0: 0.6, s1: 1.4, tint: PAL.SLATE_D, a: 0.5, add: false });
     }
     if (this.buffs.invuln > 0 || this.dead) return;
     if (dist < e.r + P.r) {
       (this.dmgLog || (this.dmgLog = {})).hollow = 9999;
       this.lastHitBy = 'touch:hollow';
-      this.shockwave(P.x, P.y, 0x8040ff, 200, 0.5);
+      this.shockwave(P.x, P.y, PAL.VOID, 200, 0.5);
       this.die();
     }
   }
@@ -1694,15 +1694,15 @@ export class Game {
     if (e.charging && Math.random() < dt * 30) {
       // gathering light while winding up
       const a = Math.random() * TAU, r = e.r * 1.6;
-      this.spawnFx(T.dot, e.x + Math.cos(a) * r, e.y - 20 + Math.sin(a) * r, { life: 0.35, s0: 1.6, s1: 0, tint: e.d.slam ? 0xff7020 : 0xff3a6a, vx: -Math.cos(a) * r * 2.5, vy: -Math.sin(a) * r * 2.5, drag: 0 });
+      this.spawnFx(T.dot, e.x + Math.cos(a) * r, e.y - 20 + Math.sin(a) * r, { life: 0.35, s0: 1.6, s1: 0, tint: e.d.slam ? PAL.HFIRE : PAL.HEYE, vx: -Math.cos(a) * r * 2.5, vy: -Math.sin(a) * r * 2.5, drag: 0 });
     }
     if (e.stT > 0) return;
     // telegraph: slams and novas wind up visibly before they fire
     if ((e.d.slam || e.d.nova || e.d.blink) && !e.charging) {
       e.charging = e.d.slam ? 0.8 : e.d.blink ? 0.7 : 0.5;
       e.stT = e.charging;
-      if (e.d.slam) this.spawnFx(T.target, e.x, e.y, { life: 0.8, s0: 1, s1: 200 / 28, tint: 0xff3020, a: 0.85, drag: 0 });
-      else this.spawnFx(T.glow, e.x, e.y - 20, { life: 0.5, s0: 1, s1: 4.5, tint: 0xff3a6a, a: 0.7, drag: 0 });
+      if (e.d.slam) this.spawnFx(T.target, e.x, e.y, { life: 0.8, s0: 1, s1: 200 / 28, tint: PAL.HFIRE, a: 0.85, drag: 0 });
+      else this.spawnFx(T.glow, e.x, e.y - 20, { life: 0.5, s0: 1, s1: 4.5, tint: PAL.HEYE, a: 0.7, drag: 0 });
       return;
     }
     e.charging = 0;
@@ -1714,7 +1714,7 @@ export class Game {
         const c = this.spawnEnemy(e.d.summon, e.x + Math.cos(a) * 60, e.y + Math.sin(a) * 60, { force: true });
         if (c) { c.kx = Math.cos(a) * 300; c.ky = Math.sin(a) * 300; }
       }
-      this.shockwave(e.x, e.y, 0xd070ff, 200, 0.4);
+      this.shockwave(e.x, e.y, PAL.VOID, 200, 0.4);
       for (let k = 0; k < 10; k++) {
         const a = (k / 10) * TAU;
         this.enemyShot(e.x, e.y, Math.cos(a) * 140, Math.sin(a) * 140, e.dmg * 0.35);
@@ -1722,8 +1722,8 @@ export class Game {
     } else if (e.d.slam) {
       e.stT = 4.5;
       this.shake = Math.max(this.shake, 14);
-      this.shockwave(e.x, e.y, 0xff7020, 360, 0.6);
-      this.burst(e.x, e.y, 30, [0xff7020, 0x5a4a50], 400, 1, 'shard');
+      this.shockwave(e.x, e.y, PAL.HFIRE, 360, 0.6);
+      this.burst(e.x, e.y, 30, [PAL.HFIRE, PAL.HULK_D], 400, 1, 'shard');
       for (let k = 0; k < 20; k++) {
         const a = (k / 20) * TAU;
         this.enemyShot(e.x, e.y, Math.cos(a) * 200, Math.sin(a) * 200, e.dmg * 0.5);
@@ -1734,10 +1734,10 @@ export class Game {
       e.stT = 2.6; e.lastBlink = this.time;
       sfx.blink();
       const P = this.player, a = Math.random() * TAU, d = rand(110, 150);
-      this.shockwave(e.x, e.y, 0xb8a8ff, 160, 0.4);
-      this.burst(e.x, e.y - 40, 24, [0x2a2038, 0xb8a8ff], 260, 0.9, 'smoke');
+      this.shockwave(e.x, e.y, PAL.GLOOM_L, 160, 0.4);
+      this.burst(e.x, e.y - 40, 24, [PAL.SHROUD, PAL.GLOOM_L], 260, 0.9, 'smoke');
       e.x = P.x + Math.cos(a) * d; e.y = P.y + Math.sin(a) * d;
-      this.shockwave(e.x, e.y, 0xb8a8ff, 260, 0.5);
+      this.shockwave(e.x, e.y, PAL.GLOOM_L, 260, 0.5);
       this.shake = Math.max(this.shake, 8);
       for (let k = 0; k < 16; k++) {
         const b = (k / 16) * TAU;
@@ -1755,7 +1755,7 @@ export class Game {
         const a = (k / 28) * TAU + e.spiral;
         this.enemyShot(e.x, e.y, Math.cos(a) * 190, Math.sin(a) * 190, e.dmg * 0.45);
       }
-      this.shockwave(e.x, e.y, 0xff3a6a, 300, 0.5);
+      this.shockwave(e.x, e.y, PAL.HEYE, 300, 0.5);
       this._shotSrc = null;
       if (Math.random() < 0.5) for (let k = 0; k < 3; k++) {
         const sp = this.spawnPointOffscreen();
@@ -1825,11 +1825,11 @@ export class Game {
       p.x = g.x;
       p.y = g.y + (g.type === 'gem' ? Math.sin(g.t * 4 + g.x) * 2 : Math.sin(g.t * 3) * 3);
       this.animPickup(g, p, dt);
-      if (g.type === 'chest' && Math.random() < dt * 6) this.spawnFx(T.spark, g.x + rand(-18, 18), g.y + rand(-20, 6), { life: 0.6, s0: 0.5, s1: 0, tint: 0xffd060, vy: -40 });
+      if (g.type === 'chest' && Math.random() < dt * 6) this.spawnFx(T.spark, g.x + rand(-18, 18), g.y + rand(-20, 6), { life: 0.6, s0: 0.5, s1: 0, tint: PAL.R_GOLD, vy: -40 });
       // occasional tier-coloured glints on visible gems (budgeted per frame)
       else if (g.type === 'gem' && this.glintBudget > 0 && Math.random() < dt * 0.6 && this.inView(g.x, g.y, -20)) {
         this.glintBudget--;
-        const v = g.value, tint = v >= 200 ? 0xffe080 : v >= 40 ? 0xe0a0ff : v >= 10 ? 0xff9aa8 : v >= 3 ? 0xa0ffb8 : 0xbfe6ff;
+        const v = g.value, tint = v >= 200 ? PAL.R_GOLD : v >= 40 ? PAL.R_PINK : v >= 10 ? PAL.SLATE_H : v >= 3 ? PAL.OBJ : PAL.FROST_L;
         this.spawnFx(T.spark, g.x + rand(-4, 4), g.y - 6 + rand(-4, 4), { life: 0.35, s0: 0.7, s1: 0, tint, rot: Math.random(), spin: 4, drag: 0 });
       }
     }
@@ -1890,7 +1890,7 @@ export class Game {
       }
     }
     if (wading && (vx || vy) && Math.random() < dt * 8 && this.fx.length < this.maxFx * 0.5) {
-      this.spawnFx(T.dot, P.x + rand(-8, 8), P.y + 4, { life: 0.35, s0: 0.9, s1: 0, tint: 0xb8a890, a: 0.6, vy: -20, vx: rand(-20, 20) });
+      this.spawnFx(T.dot, P.x + rand(-8, 8), P.y + 4, { life: 0.35, s0: 0.9, s1: 0, tint: PAL.HULK_L, a: 0.6, vy: -20, vx: rand(-20, 20) });
     }
     out.x = vx * slow; out.y = vy * slow;
     return out;
@@ -1904,7 +1904,7 @@ export class Game {
       this.lanternT -= dt;
       if (this.lanternT <= 0) {
         this.lanternT = 0.35;
-        this.zones.push({ type: 'hearth', x: P.x, y: P.y, r: 90, t: 2.6, max: 2.6, tick: 0, dmg: (10 + this.level * 1.2) * this.stats.might, color: 0xffd060 });
+        this.zones.push({ type: 'hearth', x: P.x, y: P.y, r: 90, t: 2.6, max: 2.6, tick: 0, dmg: (10 + this.level * 1.2) * this.stats.might, color: PAL.EMBER_L });
       }
     }
     if (this.perk === 'salvage' && this.perkT > 40) {
@@ -1914,7 +1914,7 @@ export class Game {
       this.ui.toast('SALVAGE', 'pickup');
     } else if (this.perk === 'tollbearer' && this.perkT > 15) {
       this.perkT = 0;
-      this.shockwave(P.x, P.y, 0xffc860, 340, 0.5);
+      this.shockwave(P.x, P.y, PAL.EMBER_L, 340, 0.5);
       sfx.pulse();
       for (const e of this.enemiesIn(P.x, P.y, 180, this.qZone)) {
         if (e.inert || e.boss) continue;
@@ -1936,15 +1936,15 @@ export class Game {
         ob.t -= dt;
         if (ob.ph === 0 && ob.t <= 0) {
           ob.ph = 1; ob.t = 0.9;
-          this.zones.push({ type: 'telegraph', x: ob.x, y: ob.y, r: ob.haz.r + 8, t: 0.9, max: 0.9, color: ob.haz.color || 0xff5a20, onEnd: () => this.eruptVent(ob) });
+          this.zones.push({ type: 'telegraph', x: ob.x, y: ob.y, r: ob.haz.r + 8, t: 0.9, max: 0.9, color: ob.haz.color || PAL.HFIRE, onEnd: () => this.eruptVent(ob) });
         } else if (ob.ph === 1 && ob.t <= 0) { ob.ph = 0; ob.t = 4 + Math.random() * 5; }
       }
     }
   }
   eruptVent(ob) {
     const P = this.player;
-    this.burst(ob.x, ob.y, 30, ob.haz.fx || [0xff7a30, 0xffd060, 0xffffff], 380, 0.9);
-    this.shockwave(ob.x, ob.y, ob.haz.color || 0xff6a20, ob.haz.r * 2.6, 0.35);
+    this.burst(ob.x, ob.y, 30, ob.haz.fx || [PAL.HFIRE, PAL.BOG_L, PAL.WHITE], 380, 0.9);
+    this.shockwave(ob.x, ob.y, ob.haz.color || PAL.HFIRE, ob.haz.r * 2.6, 0.35);
     sfx.boom();
     if (Math.hypot(P.x - ob.x, P.y - ob.y) < ob.haz.r + 10) this.hurtPlayer(ob.haz.dmg * (1 + this.time / 1200), 'vent');
     const list = this.enemiesIn(ob.x, ob.y, ob.haz.r + 10, this.qZone);
@@ -1961,7 +1961,7 @@ export class Game {
       if (z.type === 'spring') {
         if (inside && !this.dead) {
           this.heal(this.stats.maxHp * 0.05 * dt, false);
-          if (Math.random() < dt * 14) this.spawnFx(T.dot, z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.7, { life: 0.8, s0: 1, s1: 0, tint: 0x80ffc0, vy: -50, a: 0.9 });
+          if (Math.random() < dt * 14) this.spawnFx(T.dot, z.x + rand(-z.r, z.r) * 0.7, z.y + rand(-z.r, z.r) * 0.7, { life: 0.8, s0: 1, s1: 0, tint: PAL.OBJ, vy: -50, a: 0.9 });
         }
       } else if (z.type === 'hearth') {
         z.tick -= dt;
@@ -1969,7 +1969,7 @@ export class Game {
           z.tick = 0.5;
           for (const e of this.enemiesIn(z.x, z.y, z.r, this.qZone)) if (!e.inert) this.damage(e, e.boss ? z.dmg * 0.5 : z.dmg, { knock: 2, fx: z.x, fy: z.y });
           if (inside) this.heal(2.5, false);
-          this.burst(z.x + rand(-z.r, z.r) * 0.6, z.y + rand(-z.r, z.r) * 0.6, 3, [0xffb040, 0xffe080], 80, 0.7);
+          this.burst(z.x + rand(-z.r, z.r) * 0.6, z.y + rand(-z.r, z.r) * 0.6, 3, [PAL.EMBER, PAL.EMBER_L], 80, 0.7);
         }
       }
       if (z.t <= 0) { if (z.onEnd) z.onEnd(); zs[i] = zs[zs.length - 1]; zs.pop(); }
@@ -1982,13 +1982,13 @@ export class Game {
         const near = Math.random() < 0.3;
         const x = near ? P.x + rand(-140, 140) : P.x + rand(-this.halfW, this.halfW) * 0.9;
         const y = near ? P.y + rand(-140, 140) : P.y + rand(-this.halfH, this.halfH) * 0.9;
-        this.zones.push({ type: 'telegraph', x, y, r: 72, t: 1.15, max: 1.15, color: 0xff6030, onEnd: () => this.meteorImpact(x, y) });
+        this.zones.push({ type: 'telegraph', x, y, r: 72, t: 1.15, max: 1.15, color: PAL.HFIRE, onEnd: () => this.meteorImpact(x, y) });
       }
     }
   }
   meteorImpact(x, y) {
-    this.explodeAt(x, y, 72, 50 + this.level * 3, null, 0xff8030, 14);
-    this.shockwave(x, y, 0xffa040, 190, 0.35);
+    this.explodeAt(x, y, 72, 50 + this.level * 3, null, PAL.HFIRE, 14);
+    this.shockwave(x, y, PAL.HFIRE_H, 190, 0.35);
     this.shake = Math.max(this.shake, 5);
     sfx.boom();
     if (this.dead) return;
@@ -2006,8 +2006,8 @@ export class Game {
       } else {
         const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
         const fade = Math.min(1, z.t / 1.5);
-        g.circle(z.x, z.y, z.r).fill({ color: z.color || 0x70ffb8, alpha: (0.1 + 0.05 * pulse) * fade });
-        g.circle(z.x, z.y, z.r).stroke({ color: z.color || 0x70ffb8, width: 3, alpha: (0.5 + 0.3 * pulse) * fade });
+        g.circle(z.x, z.y, z.r).fill({ color: z.color || PAL.R_GREEN, alpha: (0.1 + 0.05 * pulse) * fade });
+        g.circle(z.x, z.y, z.r).stroke({ color: z.color || PAL.R_GREEN, width: 3, alpha: (0.5 + 0.3 * pulse) * fade });
       }
     }
   }
@@ -2069,7 +2069,7 @@ export class Game {
     this.windAcc = (this.windAcc || 0) + dt;
     while (this.windAcc > 0.03) {
       this.windAcc -= 0.03;
-      this.spawnFx(T.dot, P.x + rand(-this.halfW, this.halfW), P.y + rand(-this.halfH, this.halfH), { life: 0.6, s0: 0.9, s1: 0.2, tint: 0xdff4ff, vx: w.vx * 5, vy: w.vy * 5, a: 0.55 });
+      this.spawnFx(T.dot, P.x + rand(-this.halfW, this.halfW), P.y + rand(-this.halfH, this.halfH), { life: 0.6, s0: 0.9, s1: 0.2, tint: PAL.FROST_H, vx: w.vx * 5, vy: w.vy * 5, a: 0.55 });
     }
   }
 
@@ -2099,8 +2099,8 @@ export class Game {
         if (solid || slow || haz) obs.push({ x: dx, y: dy - 4, r: solid || (slow ? slow[0] : haz.r), slow: slow ? slow[1] : 0, haz: haz || null, ph: 0, t: 2 + r() * 6 });
         p.anchorY = 0.85;
         if (r() < 0.5) p.scaleX = -1;
-        p.alpha = 0.8;
-        p.tint = cfg.own && cfg.own.includes(name) ? 0xffffff : cfg.decorTint || this.stage.decorTint;
+        p.alpha = PROP_RULE.alpha;
+        p.tint = PROP_RULE.decorTint;
         ps.push(p);
       }
       this.chunks.set(k, ps);
@@ -2148,15 +2148,15 @@ export class Game {
     ps.texture = T[this.char.sprite + (step > 0.35 ? '_s1' : step < -0.35 ? '_s2' : '')];
     if (P.fx !== 0) ps.scale.x = P.fx < 0 ? -1 : 1;
     ps.scale.y = 1 + Math.sin(P.bob * 0.5) * (P.moving ? 0 : 0.02);
-    ps.tint = P.hurtT > 0 ? 0xff6060 : P.chillT > 0 ? 0x9ad8ff : this.buffs.bloodrage > 0 ? 0xff9090 : 0xffffff;
+    ps.tint = P.hurtT > 0 ? PAL.CRIMSON : P.chillT > 0 ? PAL.FROST : this.buffs.bloodrage > 0 ? PAL.SKIN_D : PAL.WHITE;
     ps.alpha = P.iframes > 0 && Math.floor(this.time * 20) % 2 ? 0.6 : (this.buffs.invuln > 0 ? 0.55 : 1);
     const kt = this.kindleTier;
     this.playerGlow.x = P.x; this.playerGlow.y = P.y - 14;
     this.playerGlow.scale.set(2.2 + kt * 0.45 + Math.sin(this.time * 6) * 0.08);
-    this.playerGlow.tint = this.buffs.bloodrage > 0 ? 0xff3040 : this.buffs.overclock > 0 ? 0x60ffc0 : this.buffs.shatter > 0 ? 0x80e0ff : kt >= 4 ? 0xffe090 : 0xff9a40;
+    this.playerGlow.tint = this.buffs.bloodrage > 0 ? PAL.CRIMSON : this.buffs.overclock > 0 ? PAL.R_GREEN : this.buffs.shatter > 0 ? PAL.FROST : kt >= 4 ? PAL.EMBER_H : PAL.EMBER;
     this.playerGlow.alpha = 0.32 + kt * 0.06;
     if (kt >= 2 && Math.random() < rawDt * kt * 8) {
-      this.spawnFx(T.dot, P.x + rand(-14, 14), P.y - rand(0, 30), { life: 0.7, s0: rand(0.6, 1.2), s1: 0, vy: -rand(40, 90), tint: kt >= 4 ? 0xffe080 : 0xff8030, a: 0.9, drag: 0.5 });
+      this.spawnFx(T.dot, P.x + rand(-14, 14), P.y - rand(0, 30), { life: 0.7, s0: rand(0.6, 1.2), s1: 0, vy: -rand(40, 90), tint: kt >= 4 ? PAL.EMBER_L : PAL.EMBER, a: 0.9, drag: 0.5 });
     }
     // hp bar
     const hb = this.hpBar;
@@ -2166,9 +2166,9 @@ export class Game {
       // a pale ghost bar trails behind damage, then catches up
       if (P.hpGhost === undefined || r >= P.hpGhost) { P.hpGhost = r; P.ghostHold = 0.35; }
       else if ((P.ghostHold -= rawDt) <= 0) P.hpGhost = Math.max(r, P.hpGhost - rawDt * 0.6);
-      hb.rect(P.x - 18, P.y + 8, 36, 5).fill({ color: 0x120814, alpha: 0.85 });
-      if (P.hpGhost > r) hb.rect(P.x - 17, P.y + 9, 34 * P.hpGhost, 3).fill({ color: 0xffffff, alpha: 0.6 });
-      hb.rect(P.x - 17, P.y + 9, 34 * r, 3).fill(P.hurtT > 0.18 ? 0xffffff : r > 0.5 ? 0x5aff8a : r > 0.25 ? 0xffd040 : 0xff4050);
+      hb.rect(P.x - 18, P.y + 8, 36, 5).fill({ color: PAL.INK, alpha: 0.85 });
+      if (P.hpGhost > r) hb.rect(P.x - 17, P.y + 9, 34 * P.hpGhost, 3).fill({ color: PAL.WHITE, alpha: 0.6 });
+      hb.rect(P.x - 17, P.y + 9, 34 * r, 3).fill(P.hurtT > 0.18 ? PAL.WHITE : r > 0.5 ? PAL.R_GREEN : r > 0.25 ? PAL.R_GOLD : PAL.CRIMSON);
     }
 
     this.drawIndicators(sw, sh);
@@ -2181,7 +2181,7 @@ export class Game {
     const low = 1 - P.hp / this.stats.maxHp;
     const kt2 = this.kindleTier, target = kt2 >= 2 ? Math.min(0.42, (kt2 - 1) * 0.08) * (kt2 >= 5 ? 0.85 + Math.sin(this.time * 5) * 0.15 : 1) : 0;
     this.kindleGlow.alpha += (target - this.kindleGlow.alpha) * Math.min(1, rawDt * 3);
-    this.kindleGlow.tint = kt2 >= 5 ? 0xffc040 : 0xff7a20;
+    this.kindleGlow.tint = kt2 >= 5 ? PAL.EMBER_H : PAL.EMBER;
     this.hurtVignette.alpha = Math.max(this.hurtFlash, low > 0.6 ? (low - 0.6) * 1.5 * (0.7 + Math.sin(this.time * 6) * 0.3) : 0);
     this.flashAlpha = Math.max(0, this.flashAlpha - rawDt * 2.2);
     this.flashG.clear();
@@ -2235,12 +2235,12 @@ export class Game {
     if (inside && sh.prog < 1) sfx.shrineTick(sh.prog);
     if (inside && Math.random() < dt * 25) {
       const a = Math.random() * TAU;
-      this.spawnFx(T.dot, sh.x + Math.cos(a) * sh.r, sh.y + Math.sin(a) * sh.r, { life: 0.6, s0: 1.4, s1: 0, tint: 0x7af0ff, vx: -Math.cos(a) * 140, vy: -Math.sin(a) * 140, drag: 0 });
+      this.spawnFx(T.dot, sh.x + Math.cos(a) * sh.r, sh.y + Math.sin(a) * sh.r, { life: 0.6, s0: 1.4, s1: 0, tint: PAL.OBJ, vx: -Math.cos(a) * 140, vy: -Math.sin(a) * 140, drag: 0 });
     }
     if (sh.prog >= 1) {
       this.dropPickup('chest', sh.x, sh.y, 1);
-      this.burst(sh.x, sh.y, 60, [0x7af0ff, 0xffffff, 0xffd060], 500, 1.1);
-      this.shockwave(sh.x, sh.y, 0x7af0ff, 400, 0.6);
+      this.burst(sh.x, sh.y, 60, [PAL.OBJ, PAL.WHITE, PAL.EMBER_L], 500, 1.1);
+      this.shockwave(sh.x, sh.y, PAL.OBJ, 400, 0.6);
       sfx.chestOpen();
       this.ui.toast('SHRINE KINDLED', 'fusion');
       // the dark answers: a ring of the current wave closes in
@@ -2258,11 +2258,11 @@ export class Game {
     if (!sh) return;
     const fade = Math.min(1, sh.life / 3, sh.t * 2);
     const pulse = 1 + Math.sin(sh.t * 4) * 0.04;
-    g.circle(sh.x, sh.y, sh.r * pulse).fill({ color: 0x2ad0ff, alpha: 0.08 * fade }).stroke({ color: 0x7af0ff, width: 3, alpha: 0.7 * fade });
-    g.circle(sh.x, sh.y, sh.r * 0.35).fill({ color: 0x7af0ff, alpha: 0.25 * fade });
+    g.circle(sh.x, sh.y, sh.r * pulse).fill({ color: PAL.FROST, alpha: 0.08 * fade }).stroke({ color: PAL.OBJ, width: 3, alpha: 0.7 * fade });
+    g.circle(sh.x, sh.y, sh.r * 0.35).fill({ color: PAL.OBJ, alpha: 0.25 * fade });
     if (sh.prog > 0) {
       g.moveTo(sh.x + sh.r + 8, sh.y);
-      g.arc(sh.x, sh.y, sh.r + 8, 0, sh.prog * TAU).stroke({ color: 0xffd060, width: 6, alpha: 0.95 * fade });
+      g.arc(sh.x, sh.y, sh.r + 8, 0, sh.prog * TAU).stroke({ color: PAL.EMBER_L, width: 6, alpha: 0.95 * fade });
     }
   }
 
@@ -2279,12 +2279,12 @@ export class Game {
       const pulse = 1 + Math.sin(this.time * 8) * 0.12;
       const s = size * pulse, c = Math.cos(a), si = Math.sin(a);
       g.poly([ex + c * s * 1.4, ey + si * s * 1.4, ex - c * s * 0.6 - si * s, ey - si * s * 0.6 + c * s,
-        ex - c * s * 0.6 + si * s, ey - si * s * 0.6 - c * s]).fill({ color, alpha: 0.9 }).stroke({ color: 0x000000, width: 2, alpha: 0.6 });
+        ex - c * s * 0.6 + si * s, ey - si * s * 0.6 - c * s]).fill({ color, alpha: 0.9 }).stroke({ color: PAL.INK, width: 2, alpha: 0.6 });
     };
-    for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, CHEST_COL[pk.tier] || 0xffcf4a, 10);
-    if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, 0xff3a6a, 14);
-    if (this.shrine) mark(this.shrine.x, this.shrine.y, 0x7af0ff, 11);
-    for (const t of this.obj.targets()) mark(t.x, t.y, 0x40e8d8, 13);
+    for (const pk of this.pickups) if (pk.alive && pk.type === 'chest') mark(pk.x, pk.y, CHEST_COL[pk.tier] || PAL.R_GOLD, 10);
+    if (this.boss && this.boss.alive) mark(this.boss.x, this.boss.y, PAL.HEYE, 14);
+    if (this.shrine) mark(this.shrine.x, this.shrine.y, PAL.OBJ, 11);
+    for (const t of this.obj.targets()) mark(t.x, t.y, PAL.OBJ, 13);
   }
 
   destroy() {
@@ -2294,12 +2294,12 @@ export class Game {
 
 // ---------- utils ----------
 // damage numbers take their weapon's element colour (fusions use their first parent's)
-const ELEMENT_TINT = { fire: 0xffb070, frost: 0xb0e8ff, storm: 0x9ef0ff, steel: 0xe4e6ee, spirit: 0x9affe0, nature: 0xffa8d4, holy: 0xfff0b0, void: 0xd0b0ff };
+const ELEMENT_TINT = { fire: PAL.EMBER, frost: PAL.FROST_L, storm: PAL.FROST_L, steel: PAL.FROST_H, spirit: PAL.FROST_L, nature: PAL.SLATE_H, holy: PAL.EMBER_H, void: PAL.MOON };
 const tintCache = {};
 function elementTint(id) {
   if (tintCache[id] != null) return tintCache[id];
   const w = WEAPONS[id] || (FUSIONS[id] && WEAPONS[FUSIONS[id].parents[0]]);
-  return (tintCache[id] = (w && ELEMENT_TINT[w.element]) || 0xffffff);
+  return (tintCache[id] = (w && ELEMENT_TINT[w.element]) || PAL.WHITE);
 }
 function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', herald: 'THE GLOAM HERALD', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }
