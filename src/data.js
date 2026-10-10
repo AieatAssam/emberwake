@@ -250,7 +250,7 @@ export const CHARACTERS = {
     perk: 'stride', perkName: 'Stride', perkDesc: 'Deal 12% more damage while on the move.',
   },
   pactbound: {
-    name: 'Mordrel', title: 'The Pactbound', sprite: 'mordrel', weapon: 'stormCoil', cost: 5500,
+    name: 'Mordrel', title: 'The Pactbound', sprite: 'mordrel', weapon: 'stormCoil', startLevel: 4, cost: 5500,
     bonus: '+20% damage, +20 health', apply: (s) => { s.might += 0.2; s.maxHp += 20; },
     flare: 'debtcalled', flareName: 'Debt Called', flareDesc: 'Call in every Dark Pact: a ring of ruin that grows with each, and mends you for each.',
     color: '#c04aff',
