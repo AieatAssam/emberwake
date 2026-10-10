@@ -53,7 +53,7 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 
-const CHAR_IDS = ['warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', ...CHARS];
+const CHAR_IDS = ['wayfarer', 'pactbound', 'warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', ...CHARS];
 const seedSave = JSON.stringify({
   cinders: 0, meta: {}, fusions: {}, feats: {}, seen: {}, daily: {}, records: {}, skins: {}, heatSel: {},
   hints: { move: true, gems: true, kindle: true, flare: true, chest: true },
@@ -143,6 +143,7 @@ function summarize(runs, errors) {
     timedOutPct: (100 * runs.filter((r) => r.timedOut).length) / (n || 1),
     p25: pct(times, 0.25), median: pct(times, 0.5), p75: pct(times, 0.75),
     lvl5: mean(runs.map((r) => (r.series.find((x) => x.t === 300) || {}).lvl).filter(Number.isFinite)), lvl10: mean(runs.map((r) => (r.series.find((x) => x.t === 600) || {}).lvl).filter(Number.isFinite)),
+    objPct: (100 * runs.filter((r) => r.objDone).length) / (n || 1), objAt: mean(runs.filter((r) => r.objDone && r.objAt).map((r) => r.objAt)),
     level: mean(runs.map((r) => r.level)), kills: mean(runs.map((r) => r.kills)), cinders: mean(runs.map((r) => r.cinders)),
     wallMs: mean(runs.map((r) => r.wallMs)),
     killers: Object.entries(killers).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}x${v}`).join(' '),
@@ -150,8 +151,8 @@ function summarize(runs, errors) {
 }
 
 function printTable(rows) {
-  const head = ['cell', 'n', 'win%', 'dead%', 'tout%', 'p25', 'med', 'p75', 'lvl', 'L@5', 'L@10', 'kills', 'cinders', 'wall s', 'top killers'];
-  const body = rows.map(([label, s]) => [label, `${s.n}${s.errors ? '+' + s.errors + 'err' : ''}`, f0(s.winPct), f0(s.deadPct), f0(s.timedOutPct),
+  const head = ['cell', 'n', 'win%', 'obj%', 'objT', 'dead%', 'tout%', 'p25', 'med', 'p75', 'lvl', 'L@5', 'L@10', 'kills', 'cinders', 'wall s', 'top killers'];
+  const body = rows.map(([label, s]) => [label, `${s.n}${s.errors ? '+' + s.errors + 'err' : ''}`, f0(s.winPct), f0(s.objPct), mmss(s.objAt), f0(s.deadPct), f0(s.timedOutPct),
     mmss(s.p25), mmss(s.median), mmss(s.p75), f0(s.level), f0(s.lvl5), f0(s.lvl10), f0(s.kills), f0(s.cinders), f0(s.wallMs / 1000), s.killers]);
   const w = head.map((h, i) => Math.max(h.length, ...body.map((r) => String(r[i]).length)));
   const line = (r) => r.map((c, i) => (i === 0 || i === r.length - 1 ? String(c).padEnd(w[i]) : String(c).padStart(w[i]))).join('  ');

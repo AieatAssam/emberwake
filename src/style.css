@@ -280,6 +280,13 @@ table.dmg th { color: var(--muted); font-weight: 600; text-align: left; font-siz
 table.dmg td { padding: 3px 4px; text-align: left; border-top: 1px solid rgb(255 255 255 / 5%); }
 table.dmg img { width: 26px; height: 26px; border-radius: 5px; display: block; }
 .earned { margin-top: 10px; color: var(--muted); }
+.seals-earned { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.seals-earned span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--ember2); border-radius: 14px; font-size: 13px; background: rgb(255 170 60 / 10%); }
+.seals-earned img { width: 22px; height: 22px; image-rendering: pixelated; }
+.records.seals img { width: 22px; height: 22px; image-rendering: pixelated; }
+.records.seals td.got { color: var(--ember2); }
+.records.seals td.no { color: var(--muted); }
+.records.seals small { color: var(--muted); }
 .earned b { color: var(--ember2); font-size: 20px; }
 .hook { color: #7aff9a; margin-top: 6px; font-weight: 600; min-height: 20px; }
 
@@ -392,6 +399,17 @@ table.records td img.sil { filter: brightness(0); }
 .fuse-badge { position: absolute; left: -4px; top: -6px; font-style: normal; font-size: 13px; line-height: 1; filter: drop-shadow(0 0 3px #ffcf4a); }
 
 #goal { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); font-family: var(--display); font-size: 13px; letter-spacing: 2px; color: #ffd9a0; text-shadow: 0 1px 4px #000; white-space: nowrap; opacity: 0.9; }
+#objective { display: none; position: absolute; left: 50%; bottom: calc(46px + var(--sab)); transform: translateX(-50%); width: min(460px, 78vw); padding: 7px 12px 8px; border-radius: 10px; border: 1px solid rgb(64 232 216 / 45%); background: rgb(6 14 20 / 78%); box-shadow: 0 0 18px rgb(64 232 216 / 18%); text-align: center; }
+#objective.on { display: block; }
+#objective .ob-head { display: flex; justify-content: center; align-items: baseline; gap: 10px; font-family: var(--display); font-weight: 900; font-size: 13px; letter-spacing: 3px; color: #8af0e4; text-shadow: 0 1px 3px #000; }
+#objective .ob-count { color: #ffd9a0; font-size: 15px; }
+#objective .ob-bar { height: 6px; margin: 5px 0 4px; border-radius: 3px; background: rgb(255 255 255 / 12%); overflow: hidden; }
+#objective .ob-bar > div { height: 100%; width: 0; background: linear-gradient(90deg, #40e8d8, #ffd060); transition: width 0.15s; }
+#objective .ob-sub { font-size: 12px; color: #cfe8e4; text-shadow: 0 1px 2px #000; line-height: 1.3; }
+#objective.warn { border-color: #ff9a6a; box-shadow: 0 0 20px rgb(255 120 60 / 35%); }
+#objective.warn .ob-head { color: #ffb090; }
+#objective.done { border-color: #ffd060; box-shadow: 0 0 22px rgb(255 208 96 / 35%); }
+#objective.done .ob-head { color: #ffe9a0; }
 #goal.alarm { color: #c8a8ff; text-shadow: 0 0 12px #8040ff; animation: goal-pulse 1s ease-in-out infinite; }
 
 @keyframes goal-pulse { 50% { opacity: 0.45; } }
@@ -408,6 +426,7 @@ body.touch .touch-only { display: block; }
 body.touch .kbd-only { display: none !important; }
 body.touch .btn { min-height: 48px; }
 body.touch .card, body.touch .heat-btn { touch-action: manipulation; }
+body.touch #objective { left: calc(10px + var(--sal)); transform: none; width: calc(100vw - 132px - var(--sal)); bottom: calc(62px + var(--sab)); }
 body.touch #pausebtn { width: 46px; height: 46px; font-size: 16px; right: calc(14px + var(--sar)); }
 body.touch #flarebtn { width: 88px; height: 88px; font-size: 40px; right: calc(14px + var(--sar)); bottom: calc(76px + var(--sab)); }
 body.touch .card.pick { padding: 14px 12px; }

@@ -19,13 +19,14 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 - [Audio](#audio) · [Development](#development) · [Balance bots](#balance-bots) · [Quality gates](#quality-gates)
 
 ## How a run works
-1. **Pick a Bearer and a stage**, and optionally a Heat level and a difficulty.
+1. **Pick a Bearer and a stage**, and optionally a Heat level, a difficulty and a Keepsake.
 2. **Move; everything else is automatic.** Your starting weapon fires on its own. Defeated foes drop gems; collect them to level up.
 3. **Draft.** Each level-up offers a choice of weapon upgrades, passive relics, and now and then a risky Dark Pact. You hold up to six weapons and six relics, and you can reroll, banish or skip cards.
 4. **Open chests.** Elites, bosses, shrines and thieves drop chests. They are bronze, silver or gold by contents, violet when an Ascension is ready, each with a light beam you can see from across the screen. Opening one builds anticipation with a quickening heartbeat before the reveal.
 5. **Ascend.** Bring two partner weapons to max level, open a chest, and they fuse into one Ascended weapon, *freeing a slot*.
-6. **Survive the boss timeline.** The Brood Matron at 5:00, the Cinder Colossus at 10:00, the Gloam Herald at 12:30 and the **Eclipse Tyrant at 15:00**. Kill the Tyrant to win, then bank the victory or keep burning in Endless mode... until the **Hollow** comes for you.
-7. **Bank your cinders** at the Hearth for permanent upgrades, new Bearers and new stages, then go again.
+6. **Complete the stage objective, then break the Tyrant.** Every stage has one visible goal (kindle waystones, quench forges, carry a flame, drain pools, escort an Acolyte, slay Sun-Bearers, light far waymarks, hold a lighthouse). It sits in a block at the bottom of the screen with a progress bar, and arrows point at it. Until it is done the Eclipse Tyrant is **warded** and cannot be killed: no blind runs.
+7. **Survive the boss timeline.** The Brood Matron at 5:00, the Cinder Colossus at 10:00, the Gloam Herald at 12:30 and the **Eclipse Tyrant at 15:00**. Kill the Tyrant to win, then bank the victory or keep burning in Endless mode... until the **Hollow** comes for you.
+8. **Bank your cinders** at the Hearth for permanent upgrades, new Bearers and new stages, then go again.
 
 | Level-up draft | Opening a chest |
 |---|---|
@@ -49,7 +50,10 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 - **Difficulty setting** — Easy / Normal / Hard / Brutal: harder runs pay more cinders and XP, easier runs pay less.
 - **Feats** — 16 achievements that pay cinders, with live unlock banners.
 - **Daily Ember** — a fixed, shared setup that changes every day.
-- 8 Bearers, 15 weapons, 8 Ascensions, 17 relics, 6 Dark Pacts, 12+ enemy types, 4 bosses plus the Hollow, 6 stages, Endless mode.
+- **Stage objectives** — each stage asks something different of you (see [Stages](#stages)), kept visible on the HUD.
+- **Seals and Keepsakes** — five lasting marks per stage (Dawn, Swift, Ember, Iron, Fellowship) pay cinders once; a stage's Dawn Seal also unlocks its **Keepsake**, a small capped perk you can carry into any run.
+- **Shifting lands** — on the Wayfarer's March the world changes biome as you travel: frost to the north, ash to the east, glass dunes to the south, marsh to the west. The ground, scenery, hazards and enemies all blend gradually.
+- 10 Bearers, 15 weapons, 8 Ascensions, 17 relics, 6 Dark Pacts, 14+ enemy types, 4 bosses plus the Hollow, 8 stages, Endless mode.
 
 ## Bearers
 Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers unlock at the Hearth for cinders **and** an accomplishment.
@@ -64,6 +68,8 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 | **Brannoc**, the Bellwright | Gravewell | +25% max health, +15% area, -10% move speed | **Great Toll** — every foe on screen stunned and struck by three rings of sound | **Tollbearer** — every 15s the bell tolls, hurling nearby foes away |
 | **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +20% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +35% damage to elites and bosses |
 | **Orin**, the Hearthkeeper | Sunring | +30% health, +1.2 regen, +30% area, +15% damage, -5% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
+| **Wren**, the Wayfarer | Prism Beam (starts at level 2) | +10% move speed, +25% pickup radius, -10 health | **Lantern Road** — sprint 40% faster for 8s, trailing burning lanterns | **Stride** — +12% damage while moving |
+| **Mordrel**, the Pactbound | Storm Coil | +10% damage | **Debt Called** — a ring of ruin that grows with each sworn Pact and mends you for each | **Debtor** — four Pact slots, +7% damage per Pact sworn |
 
 ![Character select](docs/img/select.png)
 
@@ -92,22 +98,27 @@ Rare, risky draft cards (up to three per run): **Hunger** (more spawns, more dam
 ## Stages
 Each stage has its own ground, scenery, music, enemy mix and cinder multiplier. Harder stages pay more.
 
-| Stage | Flavour |
-|---|---|
-| **The Gloam** | Moss-choked ruins at the edge of the dark. Where every Bearer begins. |
-| **The Ashfields** | Scorched plains where husks and ram beetles stampede; basalt, stumps and erupting vents. |
-| **The Rimewood** | A frozen forest where wraiths and frost wisps drift between the trees. |
-| **The Drowned Marsh** | A black bog where lurkers sink and surface at your heels; mud and reeds slow you. |
-| **The Shattered Reliquary** | A drowned cathedral of tombs and guttering candles; Candle Acolytes keep their vigil. |
-| **The Glass Dunes** | Sun-fused wastes where Glass Scarabs scatter like sparks; sand drifts drag at your heels. |
+| Stage | Flavour | Objective |
+|---|---|---|
+| **The Gloam** | Moss-choked ruins at the edge of the dark. Where every Bearer begins. | **Kindle three waystones**: stand in each ring for five seconds while a ring of foes closes in. |
+| **The Ashfields** | Scorched plains where husks and ram beetles stampede; basalt, stumps and erupting vents. | **Quench four Cinder Forges** that keep breeding imps while you are near. |
+| **The Rimewood** | A frozen forest where wraiths and frost wisps drift between the trees. | **Carry the Heartflame** from the Hearthstone to four braziers. The flame gutters out if you stray, and the cold bites while you hold it. |
+| **The Drowned Marsh** | A black bog where lurkers sink and surface at your heels; mud and reeds slow you. | **Drain six rot pools** that grow while ignored; channel each one while lurkers rise. |
+| **The Shattered Reliquary** | A drowned cathedral of tombs and guttering candles; Candle Acolytes keep their vigil. | **Escort the Last Acolyte** through three chapels; it only walks while you stay close. |
+| **The Glass Dunes** | Sun-fused wastes where Glass Scarabs scatter like sparks; sand drifts drag at your heels. | **Gather seven sun-shards** from fleeing golden Sun-Bearers (and bosses); each shard fades in 20 seconds. |
+| **The Wayfarer's March** | An endless road: frost to the north, ash to the east, glass dunes to the south, marsh to the west. The land blends from one to the next as you walk, and each biome brings its own scenery, hazards and monsters. | **Light four far waymarks** placed across the changing wilds, one in each direction. |
+| **The Stormbreak Coast** | A wrecked shore under a restless sky. Gales shove you and the horde about, lightrods strike, and tide pools and kelp drag at your heels. | **Hold the lighthouse** through three sieges: keep the horde off the tower until the siege ends. |
 
 | | | |
 |---|---|---|
 | ![Gloam](docs/img/stage_gloam.jpg) | ![Ashfields](docs/img/stage_ashfields.jpg) | ![Rimewood](docs/img/stage_rimewood.jpg) |
 | ![Marsh](docs/img/stage_marsh.jpg) | ![Reliquary](docs/img/stage_reliquary.jpg) | ![Glass Dunes](docs/img/stage_glassdunes.jpg) |
+| ![Wayfarer's March](docs/img/stage_wayfarers.jpg) | ![Stormbreak Coast](docs/img/stage_stormcoast.jpg) | |
+
+The objective block at the bottom of each shot is always on screen. The March shot sits on a biome border, where frost trees and ash scenery blend; the Coast shot is the start of the first lighthouse siege.
 
 ## Enemies and bosses
-Gloomlings, Dusk Moths, Husks, Wraiths, Bloaters (which burst into Broodlings), Ram Beetles (telegraphed charges), Spitters (ranged), Sentinels, plus stage specials: Cinder Imps, Frost Wisps, Mire Lurkers, Glass Scarabs and Candle Acolytes. From three minutes, elites roll **affixes**: swift, vampiric, warded or volatile.
+Gloomlings, Dusk Moths, Husks, Wraiths, Bloaters (which burst into Broodlings), Ram Beetles (telegraphed charges), Spitters (ranged), Sentinels, plus stage specials: Cinder Imps, Frost Wisps, Mire Lurkers, Glass Scarabs, Candle Acolytes and Stormkites; objective creatures such as Cinder Forges and golden Sun-Bearers. From three minutes, elites roll **affixes**: swift, vampiric, warded or volatile.
 
 | Boss | When | What to watch |
 |---|---|---|
@@ -126,9 +137,12 @@ Rings of foes close in, stampedes rush through, **Ember Thieves** sprint away wi
 - **Unlocks** — later Bearers and stages cost cinders **and** an accomplishment (surviving a number of minutes, reaching a level, slaying a boss, winning a run...), so grinding alone never skips the game.
 - **Eternal Embers** — after your first win, an endless, ever-pricier sink for spare cinders with small, capped bonuses, so there is always something to work toward.
 - **Heat** — each win on a stage unlocks the next of 10 Heat levels there: tougher enemies, denser hordes, more elites, weaker Overcharge, and more cinders.
+- **Seals and Keepsakes** — each stage has five Seals (Dawn: win; Swift: objective done by 12:00 in a won run; Ember: win at Heat 3+; Iron: win on Hard or Brutal; Fellowship: win with three different Bearers). Each pays cinders once, and the Dawn Seal unlocks that stage's Keepsake (a small perk you can equip on any run). Earning Dawn Seals also opens the Wayfarer and the late stages.
 - **Feats** — 16 one-time achievements that pay cinders.
 - **Dawn skins** — win with a Bearer to unlock their Dawn variant.
 - **Codex** — Ascensions, feats, records and a bestiary that fills as you meet things.
+
+![Seals in the Codex](docs/img/seals.png)
 
 ![The Hearth](docs/img/hearth.png)
 
@@ -192,9 +206,11 @@ Measured on the Gloam as Kael at Normal difficulty (win rate over 6-10 seeded ru
 | 60% | ~60% | ~60-90% |
 | everything | ~75% | ~90% |
 
+With stage objectives on (bots pursue them), the later stages measured at 30% Hearth progress: Ashfields about 13% for both average and skilled bots (objective done in ~90-100% of runs), Glass Dunes 0% average / 25% skilled, Stormbreak Coast and Wayfarer's March roughly 0-20% average and 15-65% skilled. The Gloam stays at 50-75%. Late stages are meant to be hard without Hearth upgrades and Heat.
+
 Novice bots die around 5-9 minutes with no upgrades. Harder stages, Hard (+1 level of difficulty) and Brutal pull these numbers down in order; Easy lifts them. Typical income per run at no upgrades is about 150 cinders for a novice, 750 for an average run and 1,200-1,900 for a win, so the first Bearer comes in a run or two and the whole catalogue takes dozens of runs, with Eternal Embers beyond. `--stand` runs a motionless bot to prove idling can never win.
 
-Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.1 s step (validated against 0.05 s; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
+Bots steer only through the same input path as a player and use a direction-sampling dodger whose awareness, reaction time, lookahead, drafting and Flare timing scale with skill. Knobs live in [`src/tuning.js`](src/tuning.js). Sims run without particles and at a 0.05 s step (0.1 s makes bots noticeably weaker; do not go to 0.2) so a full 15-minute run takes about a minute. See the script header for all options.
 
 ## Quality gates
 - **CI** (`.github/workflows/ci.yml`) runs on every push and PR: ESLint, Stylelint and html-validate with warnings treated as errors, a production build, and a check that dev-only hooks never ship.

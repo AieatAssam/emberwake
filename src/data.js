@@ -242,6 +242,20 @@ export const CHARACTERS = {
     color: '#ffc060',
     perk: 'hearthheart', perkName: 'Hearthheart', perkDesc: 'Every level-up restores 20% of your health.',
   },
+  wayfarer: {
+    name: 'Wren', title: 'The Wayfarer', sprite: 'wren', weapon: 'prismBeam', startLevel: 2, cost: 5000,
+    bonus: '+10% move speed, +25% pickup radius, -10 health', apply: (s) => { s.moveSpeed *= 1.1; s.magnet *= 1.25; s.maxHp -= 10; },
+    flare: 'lanternroad', flareName: 'Lantern Road', flareDesc: 'Sprint 40% faster for 8s, trailing burning lanterns that scorch whatever follows.',
+    color: '#ffd86a',
+    perk: 'stride', perkName: 'Stride', perkDesc: 'Deal 12% more damage while on the move.',
+  },
+  pactbound: {
+    name: 'Mordrel', title: 'The Pactbound', sprite: 'mordrel', weapon: 'stormCoil', cost: 5500,
+    bonus: '+10% damage', apply: (s) => { s.might += 0.1; },
+    flare: 'debtcalled', flareName: 'Debt Called', flareDesc: 'Call in every Dark Pact: a ring of ruin that grows with each, and mends you for each.',
+    color: '#c04aff',
+    perk: 'debtor', perkName: 'Debtor', perkDesc: 'Swear up to four Dark Pacts, and gain 7% damage for each one sworn.',
+  },
 };
 
 // tex: base frame name (frames 0/1 animate). r = collision radius.
@@ -264,6 +278,9 @@ export const ENEMIES = {
   lurker: { tex: 'lurker', hp: 38, speed: 58, dmg: 8, xp: 3, r: 17, submerge: true, anim: 0 },
   scarab: { tex: 'scarab', hp: 18, speed: 98, dmg: 7, xp: 2, r: 12, anim: 10 },
   acolyte: { tex: 'acolyte', hp: 26, speed: 42, dmg: 7, xp: 3, r: 15, ranged: true, anim: 6 },
+  stormkite: { tex: 'stormkite', hp: 20, speed: 88, dmg: 9, xp: 3, r: 14, wobble: true, anim: 10 },
+  forge: { tex: 'forge', hp: 80, speed: 0, dmg: 0, xp: 6, r: 32, nest: true, knockRes: 1, anim: 8 },
+  sunbearer: { tex: 'sunbearer', hp: 36, speed: 104, dmg: 0, xp: 6, r: 13, flee: true, sunbearer: true, anim: 8 },
   thief: { tex: 'imp', hp: 60, speed: 112, dmg: 0, xp: 8, r: 13, anim: 8, flee: true, loot: true, tint: 0xffd040 },
   hollow: { tex: 'hollow', hp: 1e9, speed: 95, dmg: 9999, xp: 0, r: 30, hollow: true, knockRes: 1 },
   totem: { tex: 'totem', hp: 20, speed: 0, dmg: 0, xp: 0, r: 16, inert: true },
@@ -362,6 +379,29 @@ export const DIFFICULTY = {
   brutal: { name: 'Brutal', hp: 1.9, dmg: 1.75, spawn: 1.4, speed: 1.12, xp: 1.2, cinders: 2.4, desc: 'For the unburnable. +20% XP, +140% cinders.' },
 };
 
+// Seals: lasting marks of mastery earned per stage. Each pays cinders once; a stage's Dawn Seal also
+// unlocks that stage's Keepsake (a small capped perk you can carry into any run).
+export const SEALS = {
+  dawn: { name: 'Dawn Seal', desc: 'Win the stage', cinders: 60, icon: 'seal_dawn' },
+  swift: { name: 'Swift Seal', desc: 'Complete the objective by 12:00 in a won run', cinders: 80, icon: 'seal_swift' },
+  ember: { name: 'Ember Seal', desc: 'Win at Heat 3 or higher', cinders: 120, icon: 'seal_ember' },
+  iron: { name: 'Iron Seal', desc: 'Win on Hard or Brutal', cinders: 120, icon: 'seal_iron' },
+  fellow: { name: 'Fellowship Seal', desc: 'Win with three different Bearers', cinders: 100, icon: 'seal_fellow' },
+};
+export const sealCount = (s) => Object.values(s.seals || {}).reduce((a, x) => a + Object.keys(x).length, 0);
+export const hasSeal = (s, stage, id) => !!(s.seals && s.seals[stage] && s.seals[stage][id]);
+export const dawnSeals = (s) => Object.keys(s.seals || {}).filter((k) => hasSeal(s, k, 'dawn')).length;
+export const KEEPSAKES = {
+  gloam: { name: 'Moss Charm', desc: '+0.3 health/sec', apply: (s) => { s.regen += 0.3; } },
+  ashfields: { name: 'Forge Coal', desc: '+4% damage', apply: (s) => { s.might += 0.04; } },
+  rimewood: { name: 'Rime Bead', desc: '+5% area', apply: (s) => { s.area += 0.05; } },
+  marsh: { name: 'Bog Lantern', desc: '+15% pickup radius', apply: (s) => { s.magnet *= 1.15; } },
+  reliquary: { name: 'Candle Stub', desc: '+1 reroll per run', apply: (s) => { s.rerolls += 1; } },
+  wayfarers: { name: 'Pilgrim Coin', desc: '+4% move speed', apply: (s) => { s.moveSpeed *= 1.04; } },
+  stormcoast: { name: 'Storm Glass', desc: '+4% projectile speed, +3% crit', apply: (s) => { s.projSpeed += 0.04; s.crit += 0.03; } },
+  glassdunes: { name: 'Sun Shard', desc: '+4% luck', apply: (s) => { s.luck += 0.04; } },
+};
+
 // Highest Heat level a stage can reach (one level unlocked per win).
 export const HEAT_MAX = 10;
 
@@ -376,12 +416,16 @@ export const UNLOCK_REQS = {
     bellwright: { text: 'Slay the Brood Matron', check: (s) => !!s.feats.matron },
     hunter: { text: 'Slay 15,000 foes in total', check: (s) => s.totals.kills >= 15000 },
     hearthkeeper: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
+    wayfarer: { text: 'Earn 3 Dawn Seals', check: (s) => dawnSeals(s) >= 3 },
+    pactbound: { text: 'Swear three Dark Pacts in one run', check: (s) => !!s.feats.pacts3 },
   },
   stages: {
     rimewood: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
     marsh: { text: 'Slay the Cinder Colossus', check: (s) => !!s.feats.colossus },
     reliquary: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
     glassdunes: { text: 'Win on two different stages', check: (s) => stageWins(s) >= 2 },
+    wayfarers: { text: 'Earn Dawn Seals on 3 stages', check: (s) => dawnSeals(s) >= 3 },
+    stormcoast: { text: 'Earn the Glass Dunes Dawn Seal', check: (s) => hasSeal(s, 'glassdunes', 'dawn') },
   },
 };
 export const reqOf = (kind, id) => UNLOCK_REQS[kind][id] || null;
@@ -501,35 +545,40 @@ export const FEATS = {
 // Stages: same Director timeline, different ground, enemy mix and risk/reward.
 export const STAGES = {
   gloam: {
-    name: 'The Gloam', desc: 'Moss-choked ruins at the edge of the dark. Where every Bearer begins.',
+    name: 'The Gloam', desc: 'Moss-choked ruins at the edge of the dark. Kindle three waystones, then break the Eclipse. Where every Bearer begins.',
+    objective: { type: 'kindle', n: 3, at: [150, 390, 630], chan: 5, title: 'KINDLE THE WAYSTONES' },
     cost: 0, hpMul: 1, greedMul: 1, speedMul: 1, bias: {},
     ground: { base: '#141a24', blobs: ['rgba(30,44,52,0.5)', 'rgba(26,30,46,0.6)', 'rgba(36,38,40,0.35)', 'rgba(20,40,38,0.45)'], stone: 'rgba(60,62,80,0.35)' },
     tint: 0xb8b8d0, decorTint: 0xffffff, color: '#8ab0ff',
     decor: { grass: 25, rock1: 17, rock0: 13, flower: 13, shroom: 12, bones: 12, pillar: 8 }, solids: { rock1: 15, pillar: 14 },
   },
   ashfields: {
-    name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. +15% enemy health, +50% cinders.',
-    cost: 600, hpMul: 1.08, greedMul: 1.5, speedMul: 1, lateHp: 0.01, bias: { husk: 1, beetle: 1, spitter: 0.4, imp: 1 },
+    name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. Quench four Cinder Forges that keep breeding imps. Pays x1.5 cinders.',
+    objective: { type: 'nests', n: 4, at: [180, 300, 420, 540], title: 'QUENCH THE CINDER FORGES' },
+    cost: 600, hpMul: 0.95, greedMul: 1.5, speedMul: 1, lateHp: 0, bias: { husk: 0.8, beetle: 0.8, spitter: 0.3, imp: 0.3 },
     ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
     tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
     decor: { stump: 20, vent: 14, basalt: 22, rock1: 16, bones: 16, pillar: 6 }, own: ['stump', 'vent', 'basalt'], solids: { basalt: 14, rock1: 15, pillar: 14, stump: 9 }, hazards: { vent: { r: 32, dmg: 9 } },
   },
   rimewood: {
-    name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. +30% enemy health, +6% enemy speed, x2 cinders.',
+    name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. Carry the Heartflame from the Hearthstone to four frozen braziers. Pays x2 cinders.',
+    objective: { type: 'carry', n: 4, at: [120, 330, 540, 750], chan: 2, gutter: 75, title: 'CARRY THE HEARTFLAME' },
     cost: 1500, hpMul: 1.12, greedMul: 2, speedMul: 1.03, lateHp: 0.015, bias: { wraith: 1.2, moth: 0.8, sentinel: 0.5, frostwisp: 1.2 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
     decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'], solids: { pine: 9, icecluster: 12, snowrock: 13, rock1: 15, pillar: 14 },
   },
   marsh: {
-    name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. +45% enemy health, +5% speed, x2.5 cinders.',
+    name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. Drain six rot pools that grow while you ignore them. Pays x2.5 cinders.',
+    objective: { type: 'purge', n: 6, at: 120, chan: 8, title: 'DRAIN THE MIRE' },
     cost: 3000, hpMul: 1.2, greedMul: 2.5, speedMul: 1.03, lateHp: 0.02, bias: { lurker: 1.3, splitter: 0.8, spitter: 0.5, moth: 0.6 },
     ground: { base: '#0e1612', blobs: ['rgba(30,60,44,0.55)', 'rgba(20,34,30,0.6)', 'rgba(60,90,60,0.22)', 'rgba(10,30,30,0.55)'], stone: 'rgba(60,80,64,0.3)' },
     tint: 0xa8c8b0, decorTint: 0xb0e0c0, color: '#8ad8a0',
     decor: { reeds: 24, lilypad: 18, sunklantern: 8, rock1: 14, bones: 14, grass: 14, pillar: 4 }, own: ['reeds', 'lilypad', 'sunklantern'], solids: { rock1: 15, pillar: 14 }, slows: { lilypad: [32, 0.65], reeds: [22, 0.8] },
   },
   reliquary: {
-    name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Acolytes keep their vigil. +60% enemy health, +7% speed, x3 cinders.',
+    name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Walk the Last Acolyte through three chapels; it only moves with you. Pays x3 cinders.',
+    objective: { type: 'escort', n: 3, at: [90, 360, 630], title: 'THE CANDLE PROCESSION' },
     cost: 4500, hpMul: 1.05, greedMul: 3, speedMul: 1.02, lateHp: 0.015, bias: { acolyte: 0.8, wraith: 0.8, spitter: 0.4, sentinel: 0.5, moth: 0.5 },
     ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
     tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
@@ -537,12 +586,37 @@ export const STAGES = {
     solids: { tomb: 20, candelabra: 7, pillar: 14, banner: 6 },
   },
   glassdunes: {
-    name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Drifts drag at your heels. +75% enemy health, +10% speed, x3.5 cinders.',
+    name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Slay golden Sun-Bearers and gather seven sun-shards. Pays x3.5 cinders.',
+    objective: { type: 'marked', n: 7, first: 90, every: 60, title: 'SHARDS OF THE SUN' },
     cost: 7000, hpMul: 1.15, greedMul: 3.5, speedMul: 1.03, lateHp: 0.025, bias: { scarab: 1, beetle: 0.8, imp: 0.7, spitter: 0.4, husk: 0.6 },
     ground: { base: '#241a12', blobs: ['rgba(120,86,50,0.4)', 'rgba(60,40,28,0.55)', 'rgba(170,130,70,0.2)', 'rgba(40,28,22,0.5)'], stone: 'rgba(150,120,80,0.3)' },
     tint: 0xe0c8a8, decorTint: 0xd8c0a0, color: '#ffd070',
     decor: { glasscluster: 14, bonespire: 10, drift: 22, rock1: 10, bones: 12, basalt: 4 }, own: ['glasscluster', 'bonespire', 'drift'],
     solids: { glasscluster: 15, bonespire: 9, rock1: 15, basalt: 14 }, slows: { drift: [36, 0.7] },
+  },
+  wayfarers: {
+    name: "The Wayfarer's March", desc: 'A road with no end where the land itself changes: walk toward frost, ash, dune or marsh. Light four far waymarks, then break the Eclipse. Pays x3 cinders.',
+    objective: { type: 'march', n: 4, dirs: [-Math.PI / 2, 0, Math.PI / 2, Math.PI], dist: 2300, at: [110, 320, 530, 740], chan: 6, title: 'LIGHT THE WAYMARKS' },
+    cost: 6000, hpMul: 1.1, greedMul: 3, speedMul: 1.02, lateHp: 0.02, bias: { moth: 0.4 },
+    ground: { base: '#252a2c', blobs: ['rgba(60,70,60,0.4)', 'rgba(34,38,44,0.6)', 'rgba(90,90,70,0.18)', 'rgba(24,30,32,0.5)'], stone: 'rgba(100,100,100,0.3)' },
+    tint: 0xb8c8b0, decorTint: 0xd0d8c8, color: '#e8d890', homeName: 'THE OLD ROAD',
+    decor: { grass: 26, flower: 14, rock0: 12, shroom: 8, pillar: 5, signpost: 4, milestone: 4 }, own: ['signpost', 'milestone'], solids: { pillar: 14, rock1: 15 },
+    biomes: [
+      { id: 'frost', name: 'THE RIMEBOUND REACH', ang: -Math.PI / 2, tint: 0xa8d0f0, decorTint: 0xa8d8ff, decor: { pine: 18, icecluster: 18, snowrock: 22, grass: 6 }, own: ['pine', 'icecluster', 'snowrock'], solids: { pine: 9, icecluster: 12, snowrock: 13 }, bias: { wraith: 1.1, frostwisp: 1.2 } },
+      { id: 'ash', name: 'THE ASHEN REACH', ang: 0, tint: 0xf09a78, decorTint: 0xffb890, decor: { stump: 14, vent: 12, basalt: 20, bones: 8 }, own: ['stump', 'vent', 'basalt'], solids: { basalt: 14, stump: 9 }, hazards: { vent: { r: 32, dmg: 9 } }, bias: { husk: 1, beetle: 1, imp: 1 } },
+      { id: 'dunes', name: 'THE GLASS REACH', ang: Math.PI / 2, tint: 0xf0d098, decorTint: 0xd8c0a0, decor: { glasscluster: 14, bonespire: 10, drift: 22, bones: 6 }, own: ['glasscluster', 'bonespire', 'drift'], solids: { glasscluster: 15, bonespire: 9 }, slows: { drift: [36, 0.7] }, bias: { scarab: 1, beetle: 0.6 } },
+      { id: 'marsh', name: 'THE DROWNED REACH', ang: Math.PI, tint: 0x88c8a0, decorTint: 0xb0e0c0, decor: { reeds: 24, lilypad: 18, sunklantern: 8, grass: 6 }, own: ['reeds', 'lilypad', 'sunklantern'], solids: {}, slows: { lilypad: [32, 0.65], reeds: [26, 0.8] }, bias: { lurker: 1.2, splitter: 0.7 } },
+    ],
+  },
+  stormcoast: {
+    name: 'The Stormbreak Coast', desc: 'A wrecked shore under a restless sky. Hold the lighthouse through three sieges while gales shove everything about and lightrods strike. Pays x4 cinders.',
+    objective: { type: 'defend', n: 3, at: [100, 330, 560], dur: 45, hp: 100, title: 'HOLD THE LIGHTHOUSE' },
+    cost: 8000, hpMul: 1.2, greedMul: 4, speedMul: 1.03, lateHp: 0.025, bias: { stormkite: 1.2, moth: 0.6, spitter: 0.5, wraith: 0.5, sentinel: 0.5 },
+    ground: { base: '#0f1a22', blobs: ['rgba(30,70,90,0.45)', 'rgba(16,34,46,0.6)', 'rgba(80,110,130,0.2)', 'rgba(12,30,40,0.55)'], stone: 'rgba(90,120,140,0.3)' },
+    tint: 0xa8c8e0, decorTint: 0xb0c8d8, color: '#7ac0ff',
+    decor: { wreck: 10, tidepool: 14, kelp: 16, lightrod: 8, rock1: 12, bones: 10, grass: 8, milestone: 3 }, own: ['wreck', 'tidepool', 'kelp', 'lightrod'],
+    solids: { wreck: 24, rock1: 15 }, slows: { tidepool: [30, 0.7], kelp: [24, 0.78] }, hazards: { lightrod: { r: 34, dmg: 11, color: 0x80c0ff, fx: [0x80c0ff, 0xffffff] } },
+    wind: { every: 26, dur: 6, push: 85 },
   },
 };
 
@@ -565,6 +639,9 @@ export const BESTIARY = {
   herald: { name: 'The Gloam Herald', lore: 'It does not walk; it arrives. Shrouded, it shrugs off blows; strike in the moments after it erupts.' },
   scarab: { name: 'Glass Scarab', lore: 'Dune beetles whose shells caught the last sunlight and kept it. Fast, brittle, and everywhere.' },
   acolyte: { name: 'Candle Acolyte', lore: 'It still keeps vigil in the reliquary. Its candle never burns down; it throws the light at anything warm.' },
+  stormkite: { name: 'Stormkite', lore: 'A gull-sized lightning that learned to hunt. It rides the gale in sudden swoops and sings before it strikes.' },
+  forge: { name: 'Cinder Forge', lore: 'A furnace the Gloam keeps stoked. It breeds imps for as long as anything warm walks near. Quench it.' },
+  sunbearer: { name: 'Sun-Bearer', lore: 'A golden scarab that carries a sliver of the dead sun on its back and runs from the light it once belonged to.' },
   thief: { name: 'Ember Thief', lore: 'A glittering scavenger that steals warmth and runs. Catch it before the dark takes it back: it carries a chest.' },
   hollow: { name: 'The Hollow', lore: 'The Gloam\'s patience, given a shape. It cannot be harmed and it never tires. When it comes, the night is over: run, or be unmade.' },
   tyrant: { name: 'The Eclipse Tyrant', lore: 'The black sun that ate the day. Break its crown and dawn bleeds through.' },
