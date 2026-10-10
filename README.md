@@ -5,7 +5,7 @@
 
 **The sun is dead. You carry the last Ember.** Burn brighter than the Gloam — or be swallowed by it.
 
-Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vampire Survivors*, built with **PixiJS v8** (WebGL, batched `ParticleContainer`s). You steer; your weapons fire on their own. Survive fifteen minutes of ever-denser hordes, draft a build from a pile of weapons, relics and Dark Pacts, fuse your best weapons into Ascended forms, and break the Eclipse Tyrant at the end of the night. Every sprite and sound effect is generated procedurally in code; the music is a mix of recorded CC0 tracks and a procedural score.
+Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vampire Survivors*, built with **PixiJS v8** (WebGL, batched `ParticleContainer`s). You steer; your weapons fire on their own. Survive fifteen minutes of ever-denser hordes, draft a build from a pile of weapons, relics and Dark Pacts, fuse your best weapons into Ascended forms, and break the Eclipse Tyrant at the end of the night. Every sprite and sound effect is generated procedurally in code; the music is a mix of recorded CC0 tracks (every stage has one) and a procedural score.
 
 ▶ **Play:** https://aieatassam.github.io/emberwake/ (desktop, tablet and phone)
 
@@ -68,8 +68,8 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 | **Brannoc**, the Bellwright | Gravewell | +25% max health, +15% area, -10% move speed | **Great Toll** — every foe on screen stunned and struck by three rings of sound | **Tollbearer** — every 15s the bell tolls, hurling nearby foes away |
 | **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +20% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +35% damage to elites and bosses |
 | **Orin**, the Hearthkeeper | Sunring | +30% health, +1.2 regen, +30% area, +15% damage, -5% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
-| **Wren**, the Wayfarer | Prism Beam (starts at level 2) | +10% move speed, +25% pickup radius, -10 health | **Lantern Road** — sprint 40% faster for 8s, trailing burning lanterns | **Stride** — +12% damage while moving |
-| **Mordrel**, the Pactbound | Storm Coil | +10% damage | **Debt Called** — a ring of ruin that grows with each sworn Pact and mends you for each | **Debtor** — four Pact slots, +7% damage per Pact sworn |
+| **Wren**, the Wayfarer | Prism Beam (starts at level 2) | +10% move speed, +25% pickup radius, +10% damage | **Lantern Road** — sprint 40% faster for 8s, trailing burning lanterns | **Stride** — +12% damage while moving |
+| **Mordrel**, the Pactbound | Storm Coil | +20% damage, +20 health | **Debt Called** — a ring of ruin that grows with each sworn Pact and mends you for each | **Debtor** — four Pact slots, +8% damage per Pact sworn |
 
 ![Character select](docs/img/select.png)
 
@@ -207,6 +207,8 @@ Measured on the Gloam as Kael at Normal difficulty (win rate over 6-10 seeded ru
 | everything | ~75% | ~90% |
 
 With stage objectives on (bots pursue them), the later stages measured at 30% Hearth progress: Ashfields about 13% for both average and skilled bots (objective done in ~90-100% of runs), Glass Dunes 0% average / 25% skilled, Stormbreak Coast and Wayfarer's March roughly 0-20% average and 15-65% skilled. The Gloam stays at 50-75%. Late stages are meant to be hard without Hearth upgrades and Heat.
+
+New Bearers on the Gloam (20 runs each, 30% Hearth): Kael ~46% average / ~100% skilled, Wren ~35% / ~75%, Mordrel ~45% / ~90%.
 
 Novice bots die around 5-9 minutes with no upgrades. Harder stages, Hard (+1 level of difficulty) and Brutal pull these numbers down in order; Easy lifts them. Typical income per run at no upgrades is about 150 cinders for a novice, 750 for an average run and 1,200-1,900 for a win, so the first Bearer comes in a run or two and the whole catalogue takes dozens of runs, with Eternal Embers beyond. `--stand` runs a motionless bot to prove idling can never win.
 

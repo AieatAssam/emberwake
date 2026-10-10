@@ -275,7 +275,7 @@ function schedule() {
 // if a file is missing or the browser cannot decode it, the procedural music above keeps playing.
 const TRACKS = {
   gloam: 'gloam.ogg', ashfields: 'ashfields.mp3', rimewood: 'rimewood.mp3', marsh: 'marsh.ogg',
-  reliquary: 'reliquary.ogg', glassdunes: 'glassdunes.ogg', menu: 'menu.mp3', boss: 'boss.ogg',
+  reliquary: 'reliquary.ogg', glassdunes: 'glassdunes.ogg', wayfarers: 'wayfarers.ogg', stormcoast: 'stormcoast.ogg', menu: 'menu.mp3', boss: 'boss.ogg',
 };
 const trackBuf = {}, trackGainFor = {}, trackLoading = {}, trackFailed = {};
 let cur = null, musicActive = false, fadeToken = 0;
