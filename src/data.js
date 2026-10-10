@@ -555,7 +555,7 @@ export const STAGES = {
   ashfields: {
     name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. Quench five Cinder Forges that keep breeding imps. Pays x1.5 cinders.',
     objective: { type: 'nests', n: 5, at: [180, 300, 420, 540, 660], title: 'QUENCH THE CINDER FORGES' },
-    cost: 600, hpMul: 1.08, greedMul: 1.5, speedMul: 1, lateHp: 0.01, bias: { husk: 1, beetle: 1, spitter: 0.4, imp: 1 },
+    cost: 600, hpMul: 1, greedMul: 1.5, speedMul: 1, lateHp: 0, bias: { husk: 0.8, beetle: 0.8, spitter: 0.3, imp: 0.5 },
     ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
     tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
     decor: { stump: 20, vent: 14, basalt: 22, rock1: 16, bones: 16, pillar: 6 }, own: ['stump', 'vent', 'basalt'], solids: { basalt: 14, rock1: 15, pillar: 14, stump: 9 }, hazards: { vent: { r: 32, dmg: 9 } },
