@@ -26,7 +26,7 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 5. **Ascend.** Bring two partner weapons to max level, open a chest, and they fuse into one Ascended weapon, *freeing a slot*.
 6. **Complete the stage objective, then break the Tyrant.** Every stage has one visible goal (kindle waystones, quench forges, carry a flame, drain pools, escort an Acolyte, slay Sun-Bearers, light far waymarks, hold a lighthouse). It sits in a block at the bottom of the screen with a progress bar, and arrows point at it. Until it is done the Eclipse Tyrant is **warded** and cannot be killed: no blind runs.
 7. **Survive the boss timeline.** The Brood Matron at 5:00, the Cinder Colossus at 10:00, the Gloam Herald at 12:30 and the **Eclipse Tyrant at 15:00**. Kill the Tyrant to win, then bank the victory or keep burning in Endless mode... until the **Hollow** comes for you.
-8. **Bank your cinders** at the Hearth for permanent upgrades, new Bearers and new stages, then go again.
+8. **Bank your cinders** at the Hearth for permanent upgrades and new Bearers; new stages open as you complete objectives. Then go again.
 
 | Level-up draft | Opening a chest |
 |---|---|
@@ -45,7 +45,7 @@ Emberwake is a browser **bullet-heaven survival roguelite** in the vein of *Vamp
 - **Signature perks** — every Bearer has a passive perk beyond their stats (longer Kindle, dodge, bell toll, Marked Prey, Hearthheart...).
 - **Random events** — healing springs, meteor showers with telegraphed impacts, Blood Moons, Ember Thieves running off with a chest, stampedes and rings of enemies closing in.
 - **Readable battlefield** — scenery is dimmed and low-contrast; drops glow; elites and bosses carry coloured halos; chests beam.
-- **The Hearth** — spend cinders on permanent upgrades, new Bearers, new stages, and the endless **Eternal Embers**.
+- **The Hearth** — spend cinders on permanent upgrades, new Bearers, and the endless **Eternal Embers**.
 - **Heat** — win a stage to unlock the next Heat level (up to 10): tougher, faster, denser runs that pay more cinders.
 - **Difficulty setting** — Easy / Normal / Hard / Brutal: harder runs pay more cinders and XP, easier runs pay less.
 - **Feats** — 16 achievements that pay cinders, with live unlock banners.
@@ -134,7 +134,9 @@ Rings of foes close in, stampedes rush through, **Ember Thieves** sprint away wi
 ## Progression
 - **Cinders** are the currency. You gather them in runs (plus a survival bonus and one-off **milestone bonuses** the first time you outlast 3, 6, 10 and 15 minutes on each stage) and spend them at **the Hearth**.
 - **Hearth upgrades** give permanent stat bonuses (damage, health, armor, regen, cooldowns, area, speed, pickup radius, XP, cinders, luck, Flare charge, rerolls, banishes, a second projectile, revivals, a starting relic).
-- **Unlocks** — later Bearers and stages cost cinders **and** an accomplishment (surviving a number of minutes, reaching a level, slaying a boss, winning a run...), so grinding alone never skips the game.
+- **Bearers** cost cinders **and** an accomplishment (surviving a number of minutes, reaching a level, slaying a boss, winning a run...), so grinding alone never skips the game.
+- **Stages are earned, never bought.** The Ashfields open as soon as you kindle one Gloam waystone; the Rimewood needs the Gloam objective; the Marsh needs the Ashfields objective; the Reliquary needs a Gloam win plus the Rimewood objective; the Glass Dunes need the Marsh and Reliquary objectives plus two stage wins; the Wayfarer's March needs three Dawn Seals; the Stormbreak Coast needs the Glass Dunes Dawn Seal. Each stage card shows what it wants.
+- **Earned weapons and relics** — Wisp Swarm, Bloom Mines, Starfall, Sanctum Quills, Thorn Mail, Ember Reservoir and Echo Shard stay out of the level-up draft until you meet a goal (kills, survival time, a boss, an objective). The Codex shows each lock and what opens it.
 - **Eternal Embers** — after your first win, an endless, ever-pricier sink for spare cinders with small, capped bonuses, so there is always something to work toward.
 - **Heat** — each win on a stage unlocks the next of 10 Heat levels there: tougher enemies, denser hordes, more elites, weaker Overcharge, and more cinders.
 - **Seals and Keepsakes** — each stage has five Seals (Dawn: win; Swift: objective done by 12:00 in a won run; Ember: win at Heat 3+; Iron: win on Hard or Brutal; Fellowship: win with three different Bearers). Each pays cinders once, and the Dawn Seal unlocks that stage's Keepsake (a small perk you can equip on any run). Earning Dawn Seals also opens the Wayfarer and the late stages.

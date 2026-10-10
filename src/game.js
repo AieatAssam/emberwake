@@ -3,7 +3,7 @@ import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, 
 import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
 import { DIFFICULTY, ETERNAL, KEEPSAKES, hasSeal,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
-  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
+  MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT, itemOpen } from './data.js';
 import { BEHAVIORS } from './weapons.js';
 import { sfx, setIntensity, setBoss, setHollow, fadeMusic } from './audio.js';
 import { buzz } from './haptics.js';
@@ -376,14 +376,14 @@ export class Game {
     const nWeapons = this.weapons.length, nPassives = Object.keys(this.passives).length;
     for (const w of this.weapons) if (!w.fused && w.level < MAX_WEAPON_LEVEL) opts.push({ kind: 'weapon', id: w.id, weight: 1.6 });
     if (nWeapons < MAX_WEAPONS) for (const id in WEAPONS) {
-      if (this.banished.has(id)) continue;
+      if (this.banished.has(id) || !itemOpen(save, id)) continue;
       if (this.weapons.some((w) => w.id === id)) continue;
       // fused-away parents cannot be re-taken
       if (this.weapons.some((w) => w.fused && FUSIONS[w.id].parents.includes(id))) continue;
       opts.push({ kind: 'weapon', id, weight: 1 });
     }
     for (const id in PASSIVES) {
-      if (this.banished.has(id)) continue;
+      if (this.banished.has(id) || !itemOpen(save, id)) continue;
       const l = this.passives[id] || 0;
       if (l >= PASSIVES[id].max) continue;
       if (!l && nPassives >= MAX_PASSIVES) continue;
@@ -2199,7 +2199,7 @@ export class Game {
     if (this.time > 0.5 && show('move', touch ? 'Drag anywhere to move. Your weapons fire on their own.' : 'Move with WASD or the arrow keys. Your weapons fire on their own.')) return;
     if (this.pickups.some((p) => p.alive && p.type === 'gem') && show('gems', 'Gather the gems the dark leaves behind. They level you up.')) return;
     if (this.combo >= 12 && show('kindle', 'Keep killing to build your Kindle streak: more XP and cinders. Stop and it fades.')) return;
-    if (this.flare >= 100 && show('flare', touch ? 'Your Flare is ready! Tap the ✹ button to unleash it.' : 'Your Flare is ready! Press SPACE to unleash it.')) return;
+    if (this.flare >= 100 && show('flare', touch ? `${this.char.flareName} is ready! Tap the ✹ button to unleash it.` : `${this.char.flareName} is ready! Press SPACE to unleash it.`)) return;
     if (this.pickups.some((p) => p.alive && p.type === 'chest')) show('chest', 'A relic chest! Grab it for free upgrades. Golden arrows point to chests off-screen.');
   }
 

@@ -1,6 +1,6 @@
 // HTML overlay UI: menus, HUD, level-up drafts, chest reveals.
 import { iconURL, spriteURL } from './atlas.js';
-import { SEALS, KEEPSAKES, hasSeal, sealCount, DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
+import { SEALS, KEEPSAKES, hasSeal, sealCount, objDone, objProg, UNLOCK_REQS, itemOpen, applyUnlocks, DIFFICULTY, HEAT_MAX, MILESTONES, ETERNAL, eternalCost, reqMet, reqOf, CHARACTERS, WEAPONS, PASSIVES, PACTS, FUSIONS, META, FEATS, STAGES, BESTIARY, ENEMIES, MAX_WEAPON_LEVEL, dailyConfig } from './data.js';
 import { KINDLE_TIERS } from './game.js';
 import { save, persist, resetSave } from './save.js';
 import { sfx, duck, initAudio, setMuted, setMusic, setVolumes } from './audio.js';
@@ -90,8 +90,8 @@ export class UI {
           <button class="btn" data-a="settings">Settings</button>
         </div>
         <div class="stats-line">Best ${fmtTime(s.best.time)} · ${s.totals.runs} runs · ${fmtNum(s.totals.kills)} slain · ${s.totals.wins} victories</div>
-        <div class="howto kbd-only">WASD / Arrows to move · weapons fire on their own · <b>SPACE</b> to unleash your Flare · ESC pause</div>
-        <div class="howto touch-only">Drag anywhere to move · weapons fire on their own · tap <b>✹</b> to unleash your Flare</div>
+        <div class="howto kbd-only">WASD / Arrows to move · weapons fire on their own · <b>SPACE</b> to unleash your Bearer's ultimate (the Flare bar) · ESC pause</div>
+        <div class="howto touch-only">Drag anywhere to move · weapons fire on their own · tap the <b>✹</b> button to unleash your Bearer's ultimate</div>
       </div>`, 'title');
     this.bind({
       play: () => this.showCharSelect(),
@@ -116,6 +116,7 @@ export class UI {
 
   // ================= CHARACTER SELECT =================
   showCharSelect() {
+    if (applyUnlocks(save).length) persist();
     let sel = Object.keys(CHARACTERS).find((k) => save.unlocked[k]) || 'warden';
     const render = () => {
       const cards = Object.entries(CHARACTERS).map(([id, c]) => {
@@ -129,8 +130,11 @@ export class UI {
       }).join('');
       const c = CHARACTERS[sel];
       const un = save.unlocked[sel];
+      // keep the scroll position across re-renders (selecting must not throw you back to the top)
+      const keep = this.screen.querySelector('.panel.select');
+      const pos = keep ? { top: keep.scrollTop, cg: (keep.querySelector('.char-grid') || {}).scrollLeft || 0, sg: (keep.querySelector('.stage-grid') || {}).scrollLeft || 0 } : null;
       this.open(`
-        <div class="panel wide">
+        <div class="panel wide select">
           <h2>Choose your Bearer</h2>
           <div class="char-grid">${cards}</div>
           <div class="char-detail" style="--c:${c.color}">
@@ -146,7 +150,7 @@ export class UI {
             return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}">
               <div class="stage-swatch" style="background:${st.ground.base}"><i style="background:${st.ground.blobs[0]}"></i><i style="background:${st.ground.blobs[2]}"></i></div>
               <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
-              ${open ? '' : `<div class="cost">${st.cost} ✦ ${save.cinders >= st.cost && reqMet('stages', id, save) ? '· click to unlock' : ''}</div>${reqOf('stages', id) ? `<div class="req ${reqMet('stages', id, save) ? 'ok' : ''}">${reqMet('stages', id, save) ? '✓' : '🔒'} ${reqOf('stages', id).text}</div>` : ''}`}</div></div>`;
+              ${open ? `<div class="obj-line">${esc(st.objective.title)}${objDone(save, id) ? ' · ✓ done' : objProg(save, id) ? ` · best ${objProg(save, id)}/${st.objective.n}` : ''}</div>` : `<div class="req">🔒 ${reqOf('stages', id) ? reqOf('stages', id).text : 'Locked'}</div>`}</div></div>`;
           }).join('')}</div>
           ${(() => {
             const st = save.lastStage || 'gloam', mx = save.heatMax[st] || 0, cur = Math.min(save.heatSel[st] || 0, mx);
@@ -168,6 +172,15 @@ export class UI {
           </div>
           <div class="wallet">${save.cinders} ✦ cinders</div>
         </div>`);
+      if (pos) {
+        const pn = this.screen.querySelector('.panel.select');
+        pn.scrollTop = pos.top; pn.querySelector('.char-grid').scrollLeft = pos.cg; pn.querySelector('.stage-grid').scrollLeft = pos.sg;
+      } else {
+        const cur = this.screen.querySelector('.card.char.sel'), st = this.screen.querySelector('.card.stage.sel');
+        if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+        if (st) st.scrollIntoView({ block: 'nearest', inline: 'center' });
+        this.screen.querySelector('.panel.select').scrollTop = 0;
+      }
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
         skin: (el, ev) => { ev.stopPropagation(); const id = el.dataset.id; save.skins[id] = save.skins[id] === 'dawn' ? '' : 'dawn'; persist(); sel = id; render(); },
@@ -175,11 +188,8 @@ export class UI {
         keep: (el) => { save.keepsakeSel = el.dataset.k; persist(); sfx.select(); render(); },
         heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
-          const id = el.dataset.id, st = STAGES[id];
-          if (!save.stages[id]) {
-            if (save.cinders < st.cost || !reqMet('stages', id, save)) { sfx.deny(); return; }
-            save.cinders -= st.cost; save.stages[id] = true; sfx.purchase();
-          }
+          const id = el.dataset.id;
+          if (!save.stages[id]) { sfx.deny(); return; }
           save.lastStage = id; persist(); render();
         },
         back: () => { sfx.back(); this.showTitle(); },
@@ -284,8 +294,9 @@ export class UI {
         <div class="recipe"><img src="${iconURL(f.parents[0])}"> ${WEAPONS[f.parents[0]].name} + <img src="${iconURL(f.parents[1])}"> ${WEAPONS[f.parents[1]].name}</div>
         <div class="mdesc">${known ? f.desc : 'Bring both weapons to max level, then open a chest.'}</div></div></div>`;
     }).join('');
-    const weps = Object.entries(WEAPONS).map(([id, w]) => `<div class="card mini"><img src="${iconURL(id)}"><div><b>${w.name}</b><div class="mdesc">${w.desc}</div></div></div>`).join('');
-    const pas = Object.entries(PASSIVES).map(([id, p]) => `<div class="card mini"><img src="${iconURL(id)}"><div><b>${p.name}</b><div class="mdesc">${p.desc} (max ${p.max})</div></div></div>`).join('');
+    const lockLine = (id) => (itemOpen(save, id) ? '' : `<div class="req">🔒 ${UNLOCK_REQS.items[id].text}</div>`);
+    const weps = Object.entries(WEAPONS).map(([id, w]) => `<div class="card mini ${itemOpen(save, id) ? '' : 'locked-item'}"><img src="${iconURL(id)}"><div><b>${w.name}</b><div class="mdesc">${w.desc}</div>${lockLine(id)}</div></div>`).join('');
+    const pas = Object.entries(PASSIVES).map(([id, p]) => `<div class="card mini ${itemOpen(save, id) ? '' : 'locked-item'}"><img src="${iconURL(id)}"><div><b>${p.name}</b><div class="mdesc">${p.desc} (max ${p.max})</div>${lockLine(id)}</div></div>`).join('');
     this.open(`
       <div class="panel wide scroll">
         <h2>Codex</h2>
@@ -306,12 +317,12 @@ export class UI {
           const seen = save.seen[id], tex = ENEMIES[id].tex + '0';
           return `<div class="card mini beast ${seen ? '' : 'unseen'}"><img src="${spriteURL(tex, 1)}" alt=""><div><b>${seen ? b.name : '???'}</b><div class="mdesc">${seen ? b.lore : 'Not yet encountered.'}</div></div></div>`;
         }).join('')}</div>
-        <h3>Weapons</h3><div class="mini-grid">${weps}</div>
+        <h3>Weapons <small>— some are earned, not found</small></h3><div class="mini-grid">${weps}</div>
         <h3>Relics</h3><div class="mini-grid">${pas}</div>
         <h3>How the Gloam works</h3>
         <ul class="rules">
           <li><b>Kindle</b> — every kill feeds a streak. Higher streaks multiply cinders up to x2.5 (and XP at half strength). Stop killing for ~3s and it gutters out.</li>
-          <li><b>Flare</b> — kills charge your Flare. Press SPACE when full to unleash your Bearer's ultimate.</li>
+          <li><b>Flare</b> — kills charge the bar at the bottom, which carries the name of your Bearer's ultimate (Supernova, Lantern Road, Debt Called...). Press SPACE (or tap ✹) when full to unleash it.</li>
           <li><b>Ascension</b> — two max-level partner weapons fuse at the next chest into one Ascended weapon, freeing a slot.</li>
           <li><b>Dark Pacts</b> — rare blood-red draft cards. Power at a price, for the rest of the run.</li>
           <li><b>Totems</b> — golden obelisks in the dark hold relics: health, magnets, bombs, frost, flare.</li>
@@ -366,6 +377,10 @@ export class UI {
     this.hud.classList.remove('hidden');
     this.lastInv = '';
     $('#flarebtn').style.display = matchMedia('(pointer: coarse)').matches ? 'block' : 'none';
+    const fn = (game.char.flareName || 'Flare').toUpperCase();
+    $('#flare-name').textContent = fn;
+    $('#flarebtn-name').textContent = fn;
+    $('#flarebtn').setAttribute('aria-label', game.char.flareName || 'Flare');
   }
 
   // write-through cache: DOM is touched only when a displayed value actually changes
@@ -749,6 +764,12 @@ export class UI {
     save.best.time = Math.max(save.best.time, g.time);
     save.best.kills = Math.max(save.best.kills, g.kills);
     save.best.level = Math.max(save.best.level, g.level);
+    // stage objectives feed the unlock chain: partial progress counts for the early stages
+    if (!g.daily) {
+      save.objBest[g.stageId] = Math.max(save.objBest[g.stageId] || 0, g.obj.count);
+      if (g.obj.done) save.objDone[g.stageId] = true;
+    }
+    const newUnlocks = applyUnlocks(save);
     persist();
     const rows = g.weapons.slice().sort((a, b) => b.dmgDone - a.dmgDone).map((w) => {
       const name = w.fused ? FUSIONS[w.id].name : WEAPONS[w.id].name;
@@ -761,6 +782,7 @@ export class UI {
       <div class="panel results ${win ? 'win' : ''}">
         <div class="lu-title">${win ? 'DAWN, FOR NOW' : abandoned ? 'THE EMBER DIMS' : 'SWALLOWED BY THE GLOAM'}</div>
         ${newBest ? '<div class="newbest">NEW BEST TIME</div>' : ''}
+        ${newUnlocks.map((u) => `<div class="unlock-banner"><b>${u.kind} unlocked:</b> ${esc(u.name)}</div>`).join('')}
         ${heatUnlocked ? `<div class="newbest">HEAT ${heatUnlocked} UNLOCKED</div>` : ''}
         ${sealsEarned.length ? `<div class="seals-earned">${sealsEarned.map((id) => `<span><img src="${iconURL(SEALS[id].icon)}" alt="">${SEALS[id].name}${id === 'dawn' && KEEPSAKES[g.stageId] ? ` · Keepsake: ${KEEPSAKES[g.stageId].name}` : ''}</span>`).join('')}</div>` : ''}
         ${!win && !abandoned && g.lastHitBy ? `<div class="death-recap">Felled by <b>${esc(srcName(g.lastHitBy))}</b>${g.dmgLog ? ` · most damage from ${Object.entries(g.dmgLog).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${esc(srcName(k))} (${Math.round(v)})`).join(', ')}` : ''}</div>` : ''}

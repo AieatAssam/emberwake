@@ -407,6 +407,9 @@ export const HEAT_MAX = 10;
 
 // Unlocks cost cinders AND an accomplishment, so spending alone never skips the game itself.
 const stageWins = (s) => Object.entries(s.records || {}).filter(([k, v]) => k.startsWith('stage:') && v.wins > 0).length;
+export const objProg = (s, stage) => (s.objBest && s.objBest[stage]) || 0;
+const stageWon = (s, stage) => !!(s.records && s.records['stage:' + stage] && s.records['stage:' + stage].wins > 0);
+export const objDone = (s, stage) => !!(s.objDone && s.objDone[stage]) || stageWon(s, stage);
 export const UNLOCK_REQS = {
   chars: {
     oracle: { text: 'Survive 3:00 in a run', check: (s) => s.best.time >= 180 },
@@ -419,15 +422,28 @@ export const UNLOCK_REQS = {
     wayfarer: { text: 'Earn 3 Dawn Seals', check: (s) => dawnSeals(s) >= 3 },
     pactbound: { text: 'Swear three Dark Pacts in one run', check: (s) => !!s.feats.pacts3 },
   },
+  // Stages are never bought: they open as you complete objectives. Early ones need only a taste, late ones need a win.
   stages: {
-    rimewood: { text: 'Survive 8:00 in a run', check: (s) => s.best.time >= 480 },
-    marsh: { text: 'Slay the Cinder Colossus', check: (s) => !!s.feats.colossus },
-    reliquary: { text: 'Win a run', check: (s) => s.totals.wins >= 1 },
-    glassdunes: { text: 'Win on two different stages', check: (s) => stageWins(s) >= 2 },
+    ashfields: { text: 'Kindle a waystone on the Gloam', check: (s) => objProg(s, 'gloam') >= 1 || objDone(s, 'gloam') },
+    rimewood: { text: 'Complete the Gloam objective', check: (s) => objDone(s, 'gloam') },
+    marsh: { text: 'Complete the Ashfields objective', check: (s) => objDone(s, 'ashfields') },
+    reliquary: { text: 'Win the Gloam and complete the Rimewood objective', check: (s) => hasSeal(s, 'gloam', 'dawn') && objDone(s, 'rimewood') },
+    glassdunes: { text: 'Complete the Marsh and Reliquary objectives and win two stages', check: (s) => objDone(s, 'marsh') && objDone(s, 'reliquary') && stageWins(s) >= 2 },
     wayfarers: { text: 'Earn Dawn Seals on 3 stages', check: (s) => dawnSeals(s) >= 3 },
     stormcoast: { text: 'Earn the Glass Dunes Dawn Seal', check: (s) => hasSeal(s, 'glassdunes', 'dawn') },
   },
+  // Weapons and relics held back from the level-up draft until earned (Bearer starting weapons are unaffected).
+  items: {
+    wispSwarm: { text: 'Slay 1,000 foes in total', check: (s) => s.totals.kills >= 1000 },
+    bloomMines: { text: 'Survive 6:00 in a run', check: (s) => s.best.time >= 360 },
+    starfall: { text: 'Slay the Brood Matron', check: (s) => !!s.feats.matron },
+    sanctum: { text: 'Complete the Reliquary objective', check: (s) => objDone(s, 'reliquary') },
+    thorns: { text: 'Slay 3,000 foes in total', check: (s) => s.totals.kills >= 3000 },
+    reservoir: { text: 'Reach level 25 in a run', check: (s) => s.best.level >= 25 },
+    multicast: { text: 'Complete the Gloam objective', check: (s) => objDone(s, 'gloam') },
+  },
 };
+export const itemOpen = (s, id) => !!(s.cheatAll || !UNLOCK_REQS.items[id] || (s.items && s.items[id]));
 export const reqOf = (kind, id) => UNLOCK_REQS[kind][id] || null;
 export const reqMet = (kind, id, s) => { const r = reqOf(kind, id); return !r || r.check(s); };
 
@@ -547,7 +563,7 @@ export const STAGES = {
   gloam: {
     name: 'The Gloam', desc: 'Moss-choked ruins at the edge of the dark. Kindle three waystones, then break the Eclipse. Where every Bearer begins.',
     objective: { type: 'kindle', n: 3, at: [150, 390, 630], chan: 5, title: 'KINDLE THE WAYSTONES' },
-    cost: 0, hpMul: 1, greedMul: 1, speedMul: 1, bias: {},
+    hpMul: 1, greedMul: 1, speedMul: 1, bias: {},
     ground: { base: '#141a24', blobs: ['rgba(30,44,52,0.5)', 'rgba(26,30,46,0.6)', 'rgba(36,38,40,0.35)', 'rgba(20,40,38,0.45)'], stone: 'rgba(60,62,80,0.35)' },
     tint: 0xb8b8d0, decorTint: 0xffffff, color: '#8ab0ff',
     decor: { grass: 25, rock1: 17, rock0: 13, flower: 13, shroom: 12, bones: 12, pillar: 8 }, solids: { rock1: 15, pillar: 14 },
@@ -555,7 +571,7 @@ export const STAGES = {
   ashfields: {
     name: 'The Ashfields', desc: 'Scorched plains where husks and ram beetles stampede. Quench four Cinder Forges that keep breeding imps. Pays x1.5 cinders.',
     objective: { type: 'nests', n: 4, at: [180, 300, 420, 540], title: 'QUENCH THE CINDER FORGES' },
-    cost: 600, hpMul: 0.95, greedMul: 1.5, speedMul: 1, lateHp: 0, bias: { husk: 0.8, beetle: 0.8, spitter: 0.3, imp: 0.3 },
+    hpMul: 0.95, greedMul: 1.5, speedMul: 1, lateHp: 0, bias: { husk: 0.8, beetle: 0.8, spitter: 0.3, imp: 0.3 },
     ground: { base: '#1e1410', blobs: ['rgba(70,36,20,0.45)', 'rgba(40,24,20,0.6)', 'rgba(90,50,20,0.25)', 'rgba(30,20,18,0.5)'], stone: 'rgba(90,64,50,0.35)' },
     tint: 0xd8b8a0, decorTint: 0xffb890, color: '#ff8a4a',
     decor: { stump: 20, vent: 14, basalt: 22, rock1: 16, bones: 16, pillar: 6 }, own: ['stump', 'vent', 'basalt'], solids: { basalt: 14, rock1: 15, pillar: 14, stump: 9 }, hazards: { vent: { r: 32, dmg: 9 } },
@@ -563,7 +579,7 @@ export const STAGES = {
   rimewood: {
     name: 'The Rimewood', desc: 'A frozen forest where wraiths drift between the trees. Carry the Heartflame from the Hearthstone to four frozen braziers. Pays x2 cinders.',
     objective: { type: 'carry', n: 4, at: [120, 330, 540, 750], chan: 2, gutter: 75, title: 'CARRY THE HEARTFLAME' },
-    cost: 1500, hpMul: 1.12, greedMul: 2, speedMul: 1.03, lateHp: 0.015, bias: { wraith: 1.2, moth: 0.8, sentinel: 0.5, frostwisp: 1.2 },
+    hpMul: 1.12, greedMul: 2, speedMul: 1.03, lateHp: 0.015, bias: { wraith: 1.2, moth: 0.8, sentinel: 0.5, frostwisp: 1.2 },
     ground: { base: '#101a24', blobs: ['rgba(60,90,120,0.4)', 'rgba(30,50,70,0.55)', 'rgba(120,150,180,0.18)', 'rgba(20,40,60,0.5)'], stone: 'rgba(110,130,160,0.35)' },
     tint: 0xc0d8ee, decorTint: 0xa8d8ff, color: '#a8e0ff',
     decor: { pine: 18, icecluster: 18, snowrock: 22, rock1: 14, grass: 14, pillar: 6 }, own: ['pine', 'icecluster', 'snowrock'], solids: { pine: 9, icecluster: 12, snowrock: 13, rock1: 15, pillar: 14 },
@@ -571,7 +587,7 @@ export const STAGES = {
   marsh: {
     name: 'The Drowned Marsh', desc: 'A black bog where lurkers sink and surface at your heels. Drain six rot pools that grow while you ignore them. Pays x2.5 cinders.',
     objective: { type: 'purge', n: 6, at: 120, chan: 8, title: 'DRAIN THE MIRE' },
-    cost: 3000, hpMul: 1.2, greedMul: 2.5, speedMul: 1.03, lateHp: 0.02, bias: { lurker: 1.3, splitter: 0.8, spitter: 0.5, moth: 0.6 },
+    hpMul: 1.2, greedMul: 2.5, speedMul: 1.03, lateHp: 0.02, bias: { lurker: 1.3, splitter: 0.8, spitter: 0.5, moth: 0.6 },
     ground: { base: '#0e1612', blobs: ['rgba(30,60,44,0.55)', 'rgba(20,34,30,0.6)', 'rgba(60,90,60,0.22)', 'rgba(10,30,30,0.55)'], stone: 'rgba(60,80,64,0.3)' },
     tint: 0xa8c8b0, decorTint: 0xb0e0c0, color: '#8ad8a0',
     decor: { reeds: 24, lilypad: 18, sunklantern: 8, rock1: 14, bones: 14, grass: 14, pillar: 4 }, own: ['reeds', 'lilypad', 'sunklantern'], solids: { rock1: 15, pillar: 14 }, slows: { lilypad: [32, 0.65], reeds: [22, 0.8] },
@@ -579,7 +595,7 @@ export const STAGES = {
   reliquary: {
     name: 'The Shattered Reliquary', desc: 'A drowned cathedral of tombs and guttering candles. Walk the Last Acolyte through three chapels; it only moves with you. Pays x3 cinders.',
     objective: { type: 'escort', n: 3, at: [90, 360, 630], title: 'THE CANDLE PROCESSION' },
-    cost: 4500, hpMul: 1.05, greedMul: 3, speedMul: 1.02, lateHp: 0.015, bias: { acolyte: 0.8, wraith: 0.8, spitter: 0.4, sentinel: 0.5, moth: 0.5 },
+    hpMul: 1.05, greedMul: 3, speedMul: 1.02, lateHp: 0.015, bias: { acolyte: 0.8, wraith: 0.8, spitter: 0.4, sentinel: 0.5, moth: 0.5 },
     ground: { base: '#17121e', blobs: ['rgba(70,50,90,0.4)', 'rgba(30,22,44,0.6)', 'rgba(110,80,60,0.18)', 'rgba(20,14,32,0.55)'], stone: 'rgba(120,100,150,0.32)' },
     tint: 0xc8b8d8, decorTint: 0xb8a8c8, color: '#c890ff',
     decor: { tomb: 16, candelabra: 10, banner: 8, cobble: 22, pillar: 10, bones: 12, rock0: 6 }, own: ['tomb', 'candelabra', 'banner', 'cobble'],
@@ -588,7 +604,7 @@ export const STAGES = {
   glassdunes: {
     name: 'The Glass Dunes', desc: 'Sun-fused wastes where scarabs scatter like sparks. Slay golden Sun-Bearers and gather seven sun-shards. Pays x3.5 cinders.',
     objective: { type: 'marked', n: 7, first: 90, every: 60, title: 'SHARDS OF THE SUN' },
-    cost: 7000, hpMul: 1.15, greedMul: 3.5, speedMul: 1.03, lateHp: 0.025, bias: { scarab: 1, beetle: 0.8, imp: 0.7, spitter: 0.4, husk: 0.6 },
+    hpMul: 1.15, greedMul: 3.5, speedMul: 1.03, lateHp: 0.025, bias: { scarab: 1, beetle: 0.8, imp: 0.7, spitter: 0.4, husk: 0.6 },
     ground: { base: '#241a12', blobs: ['rgba(120,86,50,0.4)', 'rgba(60,40,28,0.55)', 'rgba(170,130,70,0.2)', 'rgba(40,28,22,0.5)'], stone: 'rgba(150,120,80,0.3)' },
     tint: 0xe0c8a8, decorTint: 0xd8c0a0, color: '#ffd070',
     decor: { glasscluster: 14, bonespire: 10, drift: 22, rock1: 10, bones: 12, basalt: 4 }, own: ['glasscluster', 'bonespire', 'drift'],
@@ -597,7 +613,7 @@ export const STAGES = {
   wayfarers: {
     name: "The Wayfarer's March", desc: 'A road with no end where the land itself changes: walk toward frost, ash, dune or marsh. Light four far waymarks, then break the Eclipse. Pays x3 cinders.',
     objective: { type: 'march', n: 4, dirs: [-Math.PI / 2, 0, Math.PI / 2, Math.PI], dist: 2300, at: [110, 320, 530, 740], chan: 6, title: 'LIGHT THE WAYMARKS' },
-    cost: 6000, hpMul: 1.1, greedMul: 3, speedMul: 1.02, lateHp: 0.02, bias: { moth: 0.4 },
+    hpMul: 1.1, greedMul: 3, speedMul: 1.02, lateHp: 0.02, bias: { moth: 0.4 },
     ground: { base: '#252a2c', blobs: ['rgba(60,70,60,0.4)', 'rgba(34,38,44,0.6)', 'rgba(90,90,70,0.18)', 'rgba(24,30,32,0.5)'], stone: 'rgba(100,100,100,0.3)' },
     tint: 0xb8c8b0, decorTint: 0xd0d8c8, color: '#e8d890', homeName: 'THE OLD ROAD',
     decor: { grass: 26, flower: 14, rock0: 12, shroom: 8, pillar: 5, signpost: 4, milestone: 4 }, own: ['signpost', 'milestone'], solids: { pillar: 14, rock1: 15 },
@@ -611,7 +627,7 @@ export const STAGES = {
   stormcoast: {
     name: 'The Stormbreak Coast', desc: 'A wrecked shore under a restless sky. Hold the lighthouse through three sieges while gales shove everything about and lightrods strike. Pays x4 cinders.',
     objective: { type: 'defend', n: 3, at: [100, 330, 560], dur: 45, hp: 100, title: 'HOLD THE LIGHTHOUSE' },
-    cost: 8000, hpMul: 1.2, greedMul: 4, speedMul: 1.03, lateHp: 0.025, bias: { stormkite: 1.2, moth: 0.6, spitter: 0.5, wraith: 0.5, sentinel: 0.5 },
+    hpMul: 1.2, greedMul: 4, speedMul: 1.03, lateHp: 0.025, bias: { stormkite: 1.2, moth: 0.6, spitter: 0.5, wraith: 0.5, sentinel: 0.5 },
     ground: { base: '#0f1a22', blobs: ['rgba(30,70,90,0.45)', 'rgba(16,34,46,0.6)', 'rgba(80,110,130,0.2)', 'rgba(12,30,40,0.55)'], stone: 'rgba(90,120,140,0.3)' },
     tint: 0xa8c8e0, decorTint: 0xb0c8d8, color: '#7ac0ff',
     decor: { wreck: 10, tidepool: 14, kelp: 16, lightrod: 8, rock1: 12, bones: 10, grass: 8, milestone: 3 }, own: ['wreck', 'tidepool', 'kelp', 'lightrod'],
@@ -663,4 +679,20 @@ export function dailyConfig(key = dailyKey()) {
   const pacts = [pick(pactIds)];
   if (r() < 0.5) { const p2 = pick(pactIds.filter((p) => p !== pacts[0])); pacts.push(p2); }
   return { key, charId, stageId, weapon, pacts };
+}
+
+// Opens everything whose requirement is now met; returns what newly opened (for banners).
+export function applyUnlocks(s) {
+  const out = [];
+  s.items = s.items || {};
+  for (const id in UNLOCK_REQS.stages) {
+    if (!s.stages[id] && UNLOCK_REQS.stages[id].check(s)) { s.stages[id] = true; out.push({ kind: 'Stage', name: STAGES[id].name }); }
+  }
+  for (const id in UNLOCK_REQS.items) {
+    if (!s.items[id] && UNLOCK_REQS.items[id].check(s)) {
+      s.items[id] = true;
+      out.push({ kind: WEAPONS[id] ? 'Weapon' : 'Relic', name: (WEAPONS[id] || PASSIVES[id]).name });
+    }
+  }
+  return out;
 }
