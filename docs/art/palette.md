@@ -2,7 +2,7 @@
 
 This is the locked palette. The constants are [`src/palette.js`](../../src/palette.js). The rules that use them are [style-guide.md](style-guide.md). It was checked, before it landed, against a throwaway copy (the repo source plus a colour-remap shim) served by a local Vite dev server. `npm run contrast` remeasures the atlas in the repo.
 
-**72 swatches** in 23 ramps. Sides: shared materials and neutrals, ground, player, hostile, reward, objective, scenery, UI and FX.
+**73 swatches** in 23 ramps, plus CANDLE on the scenery side. Sides: shared materials and neutrals, ground, player, hostile, reward, objective, scenery, UI and FX.
 Contrast is WCAG 2.x. "Effective ground" means the ground tile mean multiplied by the stage tint, as in the drift report. ΔE is CIE76 (Lab, D65).
 
 ## Swatch table
@@ -82,7 +82,8 @@ The contrast column gives the min–max for the flat swatch against the 8 effect
 | 69 | `#f3e9dc` | TEXT | Text | UI / light | UI text | ui | 14.21–15.87 |
 | 70 | `#8a2ad0` | PACT | Pact Violet | UI / base | Dark Pact cards/slots (moved off red) | ui | 2.7–3.01 |
 | 71 | `#ff0020` | HURT | Hurt | FX / base | player hurt vignette only | fx | 4.28–4.78 |
-| 72 | `#c080ff` | VOID | Void | FX / base | vortex, gravewell, herald shroud fx | fx | 6.31–7.05 |
+| 72 | `#c080ff` | VOID | Void | FX / base | vortex, gravewell, warded halo | fx | 6.31–7.05 |
+| 73 | `#f0dc46` | CANDLE | Candle | Scenery warm light | scenery flames (candelabra, sunken lantern). ΔE 22.8 from the nearest Player Ember, ΔE 64.2 from the nearest Hostile Fire | scenery | scenery only |
 
 ## How the 5 drift fixes are built in
 
@@ -168,18 +169,18 @@ The mapping that produced v1 (not shipped with the game) had one row for each of
 These are the calls made while locking v1. The repo now draws from the swatches. The ground texture noise is still the original pattern: bases use the ground swatches, and stage multiply tints stay as lighting. `npm run contrast` remeasures the atlas.
 
 - **Quantising 987 colours to 72 is a big change.** 58% of colours move by more than ΔE 10. Gradients still blend between swatches, so sprites keep their shading, but subtle per-sprite hues are gone. For example, the 13 near-identical golds collapse into EMBER_L or R_GOLD, and the bearer cloths become FROST, MOON, CRIMSON, SLATE or MOSS. If 72 is too tight, add 1–2 cloth swatches per bearer as a "bearer accent" side.
-- **Herald is now lilac-grey** (`#9488b8`). It reads much better, but it loses the "black shroud" fantasy. The void face is still INK.
+- **Herald's body is SHROUD_D** (`#5a5080`), with an INK void. That body is under 3:1 on these grounds, so the RIM composite (alpha 0.5) is what carries the 3:1 read. `npm run contrast` exempts `herald0` from the body floor and checks the rim.
 - **Ground texture noise was not redrawn.** Gloam, Rimewood and Stormbreak bases are Night Ground `#141a24` (they were within ΔE 1.6–3.4). The blob and stone colours inside the texture stay as they were, so a re-rendered tile is not the same hex as the old analytical shift. Stage multiply tints are unchanged.
 - **Halo colours follow the side rules.** Plain elite halo is RIM `#e6dcff`, vampiric is ROSE_L `#ff9ad0`, warded is VOID `#c080ff`. The closest pair is ΔE 31.8.
-- **Scenery candles and torches lose their warmth.** They can't use Player Ember, so they go to Hostile Fire Core or Sand, and then the prop rule dims them. Wayfarer's candles and the Reliquary candelabra read cooler.
-- **Glowing props were flattened.** Normalising luminance also dims the glowing props (shroom, sunken lantern, vent glow) into the 1.4–2.0 band. If a glow is meant to signal a hazard, like vents, it has to come from the separate hazard FX layer.
+- **Scenery warm light is CANDLE** `#f0dc46` (swatch 73). It is at least ΔE 20 from Player Ember and from Hostile Fire, so a candelabra is not the player's flame and not a vent.
+- **Hazards skip the prop dim.** Vent and lightrod stay bright and must read ≥ 3:1. Vent's glow is Hostile Fire. Lightrod's bulb is Frost Highlight, because that hazard's damage colour is frost. Glow props keep the dim, then a wash at alpha ≤ 0.55 (excluded from the core mean) puts the glow back without leaving the 1.4–2.0 band.
 - **MUTED was merged into SLATE_H** (ΔE 10.4) to stay at 72 swatches.
-- **The outline width rules are not re-rendered.** The current widths were kept. Only the colours, the rim and the prop rule were applied.
+- **Outline widths follow the size table** (1.5 / 2.5 / 4.0). Bosses, the Hollow, the Tyrant, Matron's legs and the horde strokes were redrawn to that table.
 
 ## Files
 
 - [style-guide.md](style-guide.md): the art rules
-- [`src/palette.js`](../../src/palette.js): the 72 swatches, ramps, halo colours, the prop rule and the contrast floors
+- [`src/palette.js`](../../src/palette.js): the 73 swatches, ramps, halo colours, the prop rule and the contrast floors
 - this document: how v1 was chosen, including the contrast numbers from the throwaway check
 
 The generation scripts, the mapping CSV and the remap shim stayed out of the repo. They were the inputs to this lock, not something the game loads.

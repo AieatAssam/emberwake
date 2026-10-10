@@ -1,7 +1,7 @@
 # Emberwake Art Style Guide, v1
 
 **Status:** this is the source of truth. Every future art audit compares against this document.
-**Version:** v1, 2026-10-10. It goes with **palette v1 (72 swatches)**.
+**Version:** v1, 2026-10-10. It goes with **palette v1 (73 swatches)**.
 **Based on:**
 - the repo survey of `AieatAssam/emberwake` @ `758ad49`
 - `ew-reports/drift-2026-10-10.md`
@@ -33,7 +33,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 
 **[Current]**
 - **Medium:** everything is procedural Canvas2D vector art, drawn at boot into one atlas (`buildAtlas`, `src/atlas.js`). There are no bitmap files. Characters are chibi (§5).
-- **Atlas:** 2048×1280 logical px at **SS = 2**, so the backing sheet is 4096×2560 (`atlas.js:8`). 227 frames, plus 43 white hit-flash copies.
+- **Atlas:** 2048×2048 logical px at **SS = 2**, so the backing sheet is 4096×4096 (`atlas.js`). The extra rows hold the 4-frame bosses.
 - **Filtering:** smooth (linear) filtering, no mipmaps (`atlas.js:1973`). Pixi is set up with `antialias: false` (`main.js`).
 - **Camera zoom:** `clamp(min(w,h)/760, 0.6, 1.25)` (`game.js:487`).
 - **Device pixel ratio (DPR):** capped at 2, or 1.5 on touch screens (`main.js:19`), with `autoDensity`.
@@ -89,7 +89,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 
 **Reference:** [palette.md](palette.md), and the constants in [`src/palette.js`](../../src/palette.js). Drawing code and CSS variables name those swatches.
 
-**v1 is locked at 72 swatches.** Any colour that isn't a swatch is a finding. Alpha may vary. A gradient may only blend between swatches of the same ramp, or into INK or WHITE.
+**v1 is locked at 73 swatches.** Any colour that isn't a swatch is a finding. Alpha may vary. A gradient may only blend between swatches of the same ramp, or into INK or WHITE. Swatch 73 is CANDLE `#f0dc46`, scenery warm light. It stays at least ΔE 20 from both the Player Ember ramp and Hostile Fire.
 
 **Which sides may use which ramps [Rule]**
 
@@ -98,8 +98,8 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | Player | Player Ember, Bearer Flesh/Cloth, shared (Ink, Stone, Frost, Wood), scenery materials, Reward, FX | any hostile ramp (Hostile Fire, Hostile Signal, Gloom, Shroud, Hulk, Rot Rose, Bog, Spirit, Rim) |
 | Hostile | hostile ramps, shared, FX (VOID) | Player Ember, Bearer Flesh/Cloth, Reward, Objective |
 | Reward | Reward ramp, shared, scenery materials, Objective | hostile ramps, Player Ember, Bearer ramps |
-| Objective | Objective, Player Ember (it is the player's flame being kindled), shared, scenery | hostile ramps |
-| Scenery | Moss, Wood, Sand, Stone, Frost, Hostile Fire (hazards such as vents and burning stumps) | Player Ember, Reward, Objective, Hostile Signal, Rim |
+| Objective | Objective, Player Ember (it is the player's flame being kindled), shared, scenery. The rot pool may use the Bog ramp, because Bog is what makes the pool read as rot | other hostile ramps |
+| Scenery | Moss, Wood, Sand, Stone, Frost, Candle, Hostile Fire (hazards such as vents and burning stumps) | Player Ember, Reward, Objective, Hostile Signal, Rim |
 | UI | everything except RIM; PACT, PANEL and TEXT are UI-only | RIM |
 | FX | everything except RIM, PACT, PANEL, TEXT; HURT is FX-only | |
 
@@ -121,14 +121,15 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 
 | class | band | v1 result |
 |---|---|---|
-| Enemy body (normal) | ≥ 3.0 | 0 of 176 cells fail (35 before) |
-| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0 | 0 of 176 fail (64 before) |
-| Pickup / reward | ≥ 4.5 | 0 fail |
-| Objective | ≥ 4.5 | 0 fail (rot pool 2.19 → 5.43) |
-| Bearer | ≥ 4.0 | lowest is 4.20 (Sable) with v1; it was 4.11 (Grahm) |
-| Prop, at alpha 0.8 over the ground | 1.4 – 2.0 | 1.41–1.97 (21 of 53 above 2:1 before) |
-| Enemy rim composite | ≥ 3.0 | 4.24–4.36 |
-| Enemy eyes / irises | ≥ 4.5 | 4.68–17.5 today |
+| Enemy body (normal) | ≥ 3.0 | min 3.58 (beetle0 on Rimewood). Herald's SHROUD_D body is 2.45 and is exempt: the rim carries it |
+| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0 | min 3.29 (matron0 on Rimewood). Herald elite is exempt with the body |
+| Pickup / reward | ≥ 4.5 | min 4.70 (waystone0 on Rimewood) |
+| Objective | ≥ 4.5 | rot pool uses the Bog ramp so it reads as rot and stays in band |
+| Bearer | ≥ 4.0 | min 4.09 (hunter on Rimewood) |
+| Prop, at alpha 0.8 over the ground | 1.4 – 2.0 | 1.44 (stump, Rimewood) – 1.66 (snowrock, Reliquary) |
+| Hazards (not dimmed) | ≥ 3.0 | vent 3.42, lightrod 7.55 |
+| Enemy rim composite | ≥ 3.0 | 4.26 on Rimewood |
+| Enemy eyes / irises | ≥ 4.5 | held from v1 |
 
 **Effective grounds (v1)**
 
@@ -193,7 +194,7 @@ All have luminance between 0.005 and 0.011.
 
 **Props [Current]**
 - Low, soft silhouettes: rocks, grass, pillars, plus 3–4 stage-own props per stage.
-- **[Rule]** the single prop dim rule (§9), and no glowing focal points.
+- **[Rule]** the single prop dim rule. Damaging hazards (vent, lightrod) are exempt: they are not dimmed, they carry a glow layer at alpha ≤ 0.55, and their core must read ≥ 3:1. A glow prop (sunken lantern, shroom, ice cluster, pine snow) may take the same alpha ≤ 0.55 accent after the dim, so the glow is visible and the measured core stays inside 1.4–2.0. Per-prop luminance targets may sit between 0.047 and 0.06 so props are not one flat value.
 
 ---
 
@@ -202,12 +203,8 @@ All have luminance between 0.005 and 0.011.
 **Colour [Rule]**
 - Every silhouette is outlined in INK `#0b0614` only.
 - No tinted or translucent outlines.
-- Projectiles that need an edge use INK at 1.5. Pure-glow FX have no outline.
-- Gaps today:
-  - Wraith `rgba(10,30,40,.9)` and Frost Wisp `rgba(15,40,70,.9)` use tinted outlines.
-  - Tyrant's outline is light.
-  - Projectiles use their own dark tints (blade, glaive, mine, icicle, feather, meteor).
-  - Damage digits are stroked in `#000`.
+- Projectiles that need an edge use INK. Pure-glow FX have no outline.
+- Character silhouettes, including the Hollow shroud and the Tyrant corona, are INK. Interior marks (the Hollow's tears) may stay a ramp colour.
 
 **Width by frame size, logical px (×SS on the atlas) [Rule]**
 
@@ -218,7 +215,8 @@ All have luminance between 0.005 and 0.011.
 | ≥ 90px (bosses) | 4.0 |
 
 - Interior detail lines: 1.2–1.6.
-- Gaps today: Matron legs 6.0, Colossus 5.0, moth 2.0. Bearers use 3–9 different widths each (Orin uses 9).
+- Boss strokes are 4.0, including Matron's legs. Horde strokes are 2.5 (moth, wraith, frost wisp included). Broodling and the enemy orb are 1.5.
+- Bearer silhouettes use 2.5. Shared `boots()` is 2.5. Detail on the Hunter (the widest bearer) is 1.4. Other bearers still carry a few leftover widths.
 
 **Rim [Rule], applies to hostile sprites only**
 - RIM `#e6dcff` at **alpha 0.5**, 1 logical px wide, drawn **outside** the INK outline.
@@ -266,9 +264,10 @@ All have luminance between 0.005 and 0.011.
 | class | frames | timing |
 |---|---|---|
 | Bearers | 3: idle, `_s1`, `_s2` | walk phase `bob += dt·14` while moving (3 when idle); `_s1` when sin(bob) > 0.35, `_s2` when < −0.35; hop 3px (`game.js:2145-2148`) |
-| Enemies and bosses | 2: `name0` / `name1` | frame index = `(anim·rate) & 1`; rate = `d.anim` swaps/s, default 4 (moth 10, broodling 12, scarab 10, stormkite 10, imp / forge / sunbearer / thief 8, acolyte 6, lurker 0 = state-driven); ±5% squash at `anim·1.6`; facing by flipping scaleX (`game.js:1630-1638`) |
+| Enemies | 2: `name0` / `name1` | frame index = `(anim·rate) % frameCount`; rate = `d.anim` swaps/s, default 4 |
+| Bosses | 4: Matron, Colossus, Herald, Tyrant | same clock. Frame 0 and frame 1 differ by at least 10% of the opaque silhouette |
 | Hollow | 2 | 3 swaps/s, 4px bob at 3 rad/s |
-| Totem | 1 | — |
+| Totem | 2: a core pulse | inert enemies step `(anim·2) % frameCount` |
 | Hit flash | white `_w` copy, life 0.16s pop | `game.js:718` |
 | Projectiles | flame, spirit, zap: 2; the rest: 1, rotated or scaled in code | rate not surveyed |
 | Objectives | 2 state frames (unlit/lit): waystone, brazier, pilgrim | — |
@@ -277,8 +276,9 @@ All have luminance between 0.005 and 0.011.
 **[Proposal]** targets:
 - Bearers: keep 3.
 - Horde and brutes: keep 2, plus the squash.
-- **Bosses: 4 frames.** Today their second frame is only a small rotation or offset, e.g. Tyrant `rotate(f·0.15)`.
+- Bosses are 4 frames, and frame 0 against frame 1 changes at least 10% of the opaque silhouette.
 - The frame-swap rate stays in `d.anim`: 4–12 swaps/s.
+- Bearers stay flat chibi colour. Enemies are shaded: a light stop on the upper-left, a dark stop toward the feet.
 
 ---
 

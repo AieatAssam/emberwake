@@ -1,4 +1,4 @@
-// Emberwake locked palette, v1 (72 swatches). Art source of truth: docs/art/style-guide.md
+// Emberwake locked palette, v1 (73 swatches). Art source of truth: docs/art/style-guide.md
 // and docs/art/palette.md. Drawing code and CSS variables name these swatches; they do not
 // inline hex. Numeric PAL values are Pixi tints (0xRRGGBB). HEX strings are Canvas2D fills.
 
@@ -88,6 +88,7 @@ export const SCENERY = Object.freeze({
   MOSS_L: 0x5a8a6a,
   WOOD_D: 0x2a1c16,
   SAND: 0xc8a878,
+  CANDLE: 0xf0dc46, // scenery warm light; ΔE ≥ 20 from Player Ember and Hostile Fire
 });
 
 export const UI = Object.freeze({
@@ -138,7 +139,7 @@ export const AFFIX_TINT = Object.freeze({
   volatile: PAL.HFIRE,
 });
 
-// Widths are recorded for the style guide. This pass does not change outline widths.
+// Silhouette width by frame size: 1.5 under 30px, 2.5 from 30–89, 4.0 at 90+. Detail stays 1.2–1.6.
 export const OUTLINE = Object.freeze({
   color: PAL.INK, silhouette: 2.5, small: 1.5, boss: 4.0, detailMin: 1.2, detailMax: 1.6,
 });

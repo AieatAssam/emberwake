@@ -46,6 +46,9 @@ for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
   if (d < anyMin) { anyMin = d; anyPair = hexOf(all[i]) + ' ' + hexOf(all[j]); }
 }
 checks.push(['any two swatches', { m: anyMin, pair: anyPair }, 2.5]);
+const hot = [PAL.HFIRE_D, PAL.HFIRE_B, PAL.HFIRE, PAL.HFIRE_H];
+checks.push(['candle vs ember', minPair([PAL.CANDLE], ember), 20]);
+checks.push(['candle vs hostile fire', minPair([PAL.CANDLE], hot), 20]);
 console.log('ΔE');
 for (const [name, { m, pair }, min] of checks) {
   const ok = m + 1e-6 >= min;
@@ -121,6 +124,9 @@ console.log('  enemy elite min', s.enemyElite.v, s.enemyElite.name, 'on', s.enem
 console.log('  pickup      min', s.pickup.v, s.pickup.name, 'on', s.pickup.at);
 console.log('  bearer      min', s.bearer.v, s.bearer.name, 'on', s.bearer.at);
 console.log('  props', report.propMin, report.propMinAt, '…', report.propMax, report.propMaxAt);
+console.log('  herald rim', report.rimMin, 'on', report.rimAt, 'body', report.enemies.herald0);
+console.log('  poses', report.poses);
+console.log('  hazards', report.props.vent && report.props.vent.hazard, report.props.lightrod && report.props.lightrod.hazard);
 if (report.fails.length) {
   console.log('FAIL');
   for (const f of report.fails.slice(0, 40)) console.log(' ', f);

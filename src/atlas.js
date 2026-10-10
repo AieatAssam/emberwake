@@ -5,7 +5,7 @@ import { Texture, Rectangle, CanvasSource } from 'pixi.js';
 
 // Logical atlas size; the backing canvas is supersampled SS× for crisp sprites on
 // HiDPI screens and camera zoom. Pixi maps it back via the source's resolution.
-const SIZE = 2048, SIZE_H = 1280;
+const SIZE = 2048, SIZE_H = 2048;
 export const SS = 2;
 export const atlasCanvas = document.createElement('canvas');
 atlasCanvas.width = SIZE * SS;
@@ -83,6 +83,11 @@ function lin(c, x0, y0, x1, y1, stops) {
 }
 function glowDot(c, x, y, r, col) {
   c.fillStyle = radial(c, x, y, r, [[0, HEX.WHITE], [0.3, col], [1, rgba(HEX.INK, 0)]]);
+  c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+}
+// Soft disc at alpha ≤ 0.55. Drawn after prop dim so it shows, and excluded from the core mean.
+function wash(c, x, y, r, col, a = 0.5) {
+  c.fillStyle = radial(c, x, y, r, [[0, rgba(col, a)], [1, rgba(col, 0)]]);
   c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
 }
 function shadow(c, x, y, rx, ry = rx * 0.35, alpha = SHADOW.alpha) {
@@ -209,10 +214,10 @@ function drawProjectiles() {
   });
   make('blade', 40, 40, (c) => {
     c.save(); c.translate(20, 20);
-    glowDot(c, 0, 0, 20, rgba(HEX.FROST, 0.35));
-    c.beginPath(); c.arc(0, 0, 15, -2.2, 0.8); c.arc(5, -3, 10, 0.6, -2.0, true); c.closePath();
-    c.fillStyle = lin(c, -15, -15, 15, 15, [[0, HEX.FROST_H], [1, HEX.FROST]]); c.fill();
-    c.lineWidth = 1.5; c.strokeStyle = HEX.INK; c.stroke();
+    glowDot(c, 0, 0, 18, rgba(HEX.FROST, 0.35));
+    c.beginPath(); c.arc(0, 0, 16, -2.4, 1.05); c.arc(1, -1, 7, 0.85, -2.15, true); c.closePath();
+    c.fillStyle = lin(c, -14, -14, 14, 14, [[0, HEX.FROST_H], [1, HEX.FROST]]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = HEX.INK; c.stroke();
     c.restore();
   });
   // Wisp spirit: teal teardrop with tiny eyes, pointing right (+x), two flutter frames
@@ -257,9 +262,13 @@ function drawProjectiles() {
     c.restore();
   });
   make('meteor', 48, 48, (c) => {
-    glowDot(c, 24, 24, 24, rgba(HEX.EMBER, 0.8));
-    poly(c, [[14, 18], [24, 10], [35, 15], [38, 27], [30, 37], [17, 35], [11, 27]], HEX.WOOD, HEX.INK, 2);
-    circle(c, 26, 22, 4, HEX.SKIN); circle(c, 19, 29, 3, HEX.EMBER);
+    glowDot(c, 28, 20, 16, rgba(HEX.EMBER, 0.7));
+    c.fillStyle = rgba(HEX.EMBER, 0.55);
+    c.beginPath(); c.moveTo(6, 42); c.quadraticCurveTo(16, 30, 26, 20); c.quadraticCurveTo(14, 32, 4, 44); c.fill();
+    poly(c, [[16, 16], [26, 8], [36, 14], [38, 26], [30, 36], [18, 34], [12, 24]], HEX.WOOD, HEX.INK, 2.5);
+    c.strokeStyle = HEX.EMBER_L; c.lineWidth = 1.4; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(20, 14); c.lineTo(24, 22); c.lineTo(30, 18); c.moveTo(18, 26); c.lineTo(26, 28); c.stroke();
+    circle(c, 28, 18, 2.6, HEX.EMBER_H); circle(c, 20, 26, 2, HEX.EMBER);
   });
   make('mine', 32, 32, (c) => {
     c.save(); c.translate(16, 16);
@@ -280,8 +289,9 @@ function drawProjectiles() {
     c.restore();
   });
   make('orb', 20, 20, (c) => {
-    glowDot(c, 10, 10, 10, rgba(HEX.VOID, 0.9));
-    circle(c, 10, 10, 4, HEX.RIM);
+    circle(c, 10, 10, 8, HEX.HFIRE, OUT, 1.5);
+    circle(c, 10, 10, 3.6, HEX.HEYE);
+    circle(c, 7.2, 7.2, 1.3, HEX.WHITE);
   });
   make('icicle', 28, 12, (c) => {
     poly(c, [[0, 6], [8, 1], [28, 6], [8, 11]], HEX.FROST_H, HEX.INK, 1.5);
@@ -516,7 +526,7 @@ function blush(c, x, y) { ellipse(c, x, y, 3.2, 2, rgba(HEX.CRIMSON, 0.55)); }
 function boots(c, cx, col, boot) {
   const l = STEP * 3;
   for (const [dx, lift] of [[-6, Math.max(0, l)], [2, Math.max(0, -l)]]) {
-    c.fillStyle = col; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.fillStyle = col; c.strokeStyle = OUT; c.lineWidth = 2.5;
     c.beginPath(); c.roundRect(cx + dx + STEP, 49 - lift, 6, 8, 2); c.fill(); c.stroke();
     c.fillStyle = boot; c.beginPath(); c.roundRect(cx + dx - 1 + STEP, 55 - lift, 8, 4, 2); c.fill(); c.stroke();
   }
@@ -687,50 +697,42 @@ function drawCharacters() {
   // Sable — Gloam Hunter: slim, hooded teal cloak with a fur collar, rakish scarf, sharp amber eyes, crossbow + quiver
   makeChar('hunter', (c) => {
     shadow(c, 32, 59, 15, 5);
-    // quiver behind the shoulder
     c.save(); c.translate(46, 32); c.rotate(0.35);
-    c.fillStyle = HEX.WOOD; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.fillStyle = HEX.WOOD; c.strokeStyle = OUT; c.lineWidth = 2.5;
     c.beginPath(); c.roundRect(-4.5, -4, 9, 20, 3); c.fill(); c.stroke();
     c.fillStyle = HEX.SAND; c.fillRect(-4, 5, 8, 2);
-    for (const [dx, col] of [[-2.5, HEX.EMBER_D], [0, HEX.R_LIGHT], [2.5, HEX.EMBER_D]]) poly(c, [[dx, -4], [dx + 2, -9], [dx - 2, -9]], col, OUT, 1.2);
+    for (const [dx, col] of [[-2.5, HEX.EMBER_D], [0, HEX.R_LIGHT], [2.5, HEX.EMBER_D]]) poly(c, [[dx, -4], [dx + 2, -9], [dx - 2, -9]], col, OUT, 1.4);
     c.restore();
-    // scarf tail
-    c.fillStyle = HEX.EMBER_D; c.strokeStyle = OUT; c.lineWidth = 2;
+    c.fillStyle = HEX.EMBER_D; c.strokeStyle = OUT; c.lineWidth = 2.5;
     c.beginPath(); c.moveTo(24, 35); c.quadraticCurveTo(10, 36 + STEP * 2, 3, 43 - STEP * 3); c.lineTo(9, 49 - STEP * 2); c.quadraticCurveTo(15, 42, 27, 41); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = HEX.SKIN; c.lineWidth = 1.2; c.beginPath(); c.moveTo(8, 42 - STEP); c.lineTo(11, 45 - STEP); c.stroke();
+    c.strokeStyle = HEX.SKIN; c.lineWidth = 1.4; c.beginPath(); c.moveTo(8, 42 - STEP); c.lineTo(11, 45 - STEP); c.stroke();
     boots(c, 32, HEX.MOSS_D, HEX.MOSS_D);
-    // slim cloak
     poly(c, [[21, 52], [24, 33], [40, 33], [43, 52]], HEX.MOSS, OUT, 2.5);
-    poly(c, [[27, 52], [28, 36], [36, 36], [37, 52]], HEX.OBJ_D);
+    poly(c, [[24, 33], [29, 42], [35, 42], [40, 33]], HEX.MOSS_L);
+    poly(c, [[27, 52], [28, 36], [36, 36], [37, 52]], HEX.MOSS_L);
     c.strokeStyle = HEX.MOSS_D; c.lineWidth = 1.4; c.beginPath(); c.moveTo(25, 48); c.lineTo(25, 40); c.moveTo(39, 48); c.lineTo(39, 40); c.stroke();
-    c.fillStyle = HEX.WOOD; c.fillRect(22, 44, 20, 3); circle(c, 32, 45.5, 2, HEX.EMBER_L, OUT, 1);
-    // hood
+    c.fillStyle = HEX.WOOD; c.fillRect(22, 44, 20, 3); circle(c, 32, 45.5, 2, HEX.EMBER_L, OUT, 1.4);
     c.beginPath(); c.moveTo(17, 30); c.bezierCurveTo(14, 8, 26, 2, 32, 2); c.bezierCurveTo(38, 2, 50, 8, 47, 30); c.quadraticCurveTo(32, 36, 17, 30);
-    c.fillStyle = lin(c, 0, 2, 0, 32, [[0, HEX.OBJ_D], [1, HEX.MOSS]]); c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
-    poly(c, [[32, 2], [36, 0], [38, 6]], HEX.OBJ_D, OUT, 1.5);
-    // face in hood shadow
+    c.fillStyle = lin(c, 0, 2, 0, 32, [[0, HEX.MOSS_L], [1, HEX.MOSS]]); c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+    poly(c, [[32, 2], [36, 0], [38, 6]], HEX.MOSS_D, OUT, 1.4);
     ellipse(c, 32, 22, 11, 9.5, HEX.MOSS_D);
     ellipse(c, 32, 25, 8.5, 6.5, HEX.SKIN);
     ellipse(c, 32, 17, 11, 4, rgba(HEX.MOSS_D, 0.85));
     bigEye(c, 27.8, 22, HEX.EMBER, 3.1, 3.4); bigEye(c, 36.2, 22, HEX.EMBER, 3.1, 3.4);
-    c.strokeStyle = OUT; c.lineWidth = 2; c.lineCap = 'round';
+    c.strokeStyle = OUT; c.lineWidth = 1.4; c.lineCap = 'round';
     c.beginPath(); c.moveTo(23.5, 17.5); c.lineTo(30, 19.5); c.moveTo(40.5, 17.5); c.lineTo(34, 19.5); c.stroke();
     c.beginPath(); c.moveTo(29.5, 29); c.quadraticCurveTo(33, 30.2, 36, 28); c.stroke();
-    glowDot(c, 27.8, 22, 6, rgba(HEX.EMBER, 0.3)); glowDot(c, 36.2, 22, 6, rgba(HEX.EMBER, 0.3));
-    // fur collar + scarf wrap
-    c.fillStyle = HEX.BONE; c.strokeStyle = OUT; c.lineWidth = 1.8;
+    c.fillStyle = HEX.BONE; c.strokeStyle = OUT; c.lineWidth = 1.4;
     for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(21 + i * 4.4, 33.5 + (i % 2) * 1.2, 4, 0, TAU); c.fill(); c.stroke(); }
     c.fillStyle = HEX.EMBER_D; c.beginPath(); c.roundRect(23, 32, 12, 4.5, 2); c.fill(); c.stroke();
-    // crossbow held at the front
-    c.save(); c.translate(48, 44); c.rotate(-0.25 + STEP * 0.06);
-    c.fillStyle = HEX.WOOD; c.strokeStyle = OUT; c.lineWidth = 1.8;
-    c.beginPath(); c.roundRect(-3, -9, 5, 20, 2); c.fill(); c.stroke();
-    c.strokeStyle = OUT; c.lineWidth = 3.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(-10, -4); c.quadraticCurveTo(-1, -12, 9, -5); c.stroke();
-    c.strokeStyle = HEX.SAND; c.lineWidth = 1.8; c.beginPath(); c.moveTo(-10, -4); c.quadraticCurveTo(-1, -12, 9, -5); c.stroke();
-    c.strokeStyle = HEX.R_LIGHT; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-10, -4); c.lineTo(-0.5, 2); c.lineTo(9, -5); c.stroke();
-    poly(c, [[-0.5, -10], [1, -14], [2.5, -10]], HEX.FROST_H, OUT, 1);
+    c.save(); c.translate(44, 40); c.scale(1.3, 1.3); c.rotate(-0.25 + STEP * 0.06);
+    c.fillStyle = HEX.WOOD; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(-3, -9, 5, 18, 2); c.fill(); c.stroke();
+    c.lineCap = 'round'; c.beginPath(); c.moveTo(-11, -3); c.quadraticCurveTo(-1, -12, 10, -4); c.stroke();
+    c.strokeStyle = HEX.SAND; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-11, -3); c.lineTo(0, 2); c.lineTo(10, -4); c.stroke();
+    poly(c, [[0, -9], [1.4, -13], [2.8, -9]], HEX.FROST_H, OUT, 1.4);
     c.restore();
-    circle(c, 46, 47, 3, HEX.SKIN, OUT, 1.6);
+    circle(c, 46, 47, 3, HEX.SKIN, OUT, 1.4);
   });
   // Orin — Hearthkeeper: broad, stocky, thick gold-brown coat, kindly bearded face, pole lantern and an iron-and-ember shield
   makeChar('hearthkeeper', (c) => {
@@ -782,19 +784,20 @@ function drawCharacters() {
 
 // ---------- enemies ----------
 function drawEnemies() {
-  // Gloomling — oily shadow blob with glowing eyes
+  // Gloomling — ragged hem, mouth, upper-left sheen. Frame 1 squashes.
   for (const f of [0, 1]) make('gloomling' + f, 40, 40, (c) => {
-    shadow(c, 20, 35, 14, 4);
-    const sq = f ? 1.08 : 1, st = f ? 0.92 : 1;
-    c.save(); c.translate(20, 34); c.scale(sq, st);
-    c.beginPath(); c.moveTo(-14, 0);
-    c.bezierCurveTo(-16, -18, -8, -26, 0, -26); c.bezierCurveTo(8, -26, 16, -18, 14, 0);
-    c.quadraticCurveTo(10, -3, 7, 0); c.quadraticCurveTo(3, -4, 0, 0); c.quadraticCurveTo(-3, -4, -7, 0); c.quadraticCurveTo(-10, -3, -14, 0);
-    c.fillStyle = lin(c, 0, -26, 0, 0, [[0, HEX.GLOOM], [1, HEX.GLOOM_D]]); c.fill();
-    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
-    ellipse(c, -4, -19, 4, 2.5, rgba(HEX.WHITE, 0.18));
+    shadow(c, 20, 36, 14, 4);
+    c.save(); c.translate(20, 34); c.scale(f ? 1.14 : 1, f ? 0.84 : 1);
+    c.beginPath(); c.moveTo(-15, -4);
+    c.bezierCurveTo(-18, -16, -8, -28, 1, -27); c.bezierCurveTo(12, -26, 17, -14, 14, -2);
+    c.lineTo(11, f ? 3 : -1); c.lineTo(6, f ? -3 : 4); c.lineTo(1, f ? 2 : -2);
+    c.lineTo(-4, f ? 5 : 2); c.lineTo(-9, f ? -2 : 5); c.lineTo(-15, -4);
+    c.fillStyle = lin(c, -10, -28, 8, 2, [[0, HEX.GLOOM_L], [0.4, HEX.GLOOM], [1, HEX.GLOOM_D]]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.lineJoin = 'round'; c.stroke();
+    ellipse(c, -7, -18, 5, 2.4, rgba(HEX.GLOOM_L, 0.9));
+    c.strokeStyle = OUT; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-5, -8); c.quadraticCurveTo(1, -3, 7, -9); c.stroke();
     c.restore();
-    eye(c, 15, 22 + f, 2.3, HEX.SPIRIT_L); eye(c, 25, 22 + f, 2.3, HEX.SPIRIT_L);
+    eye(c, 14, 18 + f * 2, 2.1, HEX.SPIRIT_L); eye(c, 24, 19 + f * 2, 2.1, HEX.SPIRIT_L);
   });
   // Dusk Moth — fast, fluttering
   for (const f of [0, 1]) make('moth' + f, 40, 40, (c) => {
@@ -804,32 +807,32 @@ function drawEnemies() {
     for (const s of [-1, 1]) {
       c.save(); c.scale(s, wy);
       c.beginPath(); c.moveTo(0, -2); c.quadraticCurveTo(18, -20, 19, -4); c.quadraticCurveTo(16, 6, 0, 3);
-      c.fillStyle = HEX.ROSE; c.fill(); c.lineWidth = 2; c.strokeStyle = OUT; c.stroke();
+      c.fillStyle = HEX.ROSE; c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
       circle(c, 11, -6, 3, HEX.ROSE_L);
       c.beginPath(); c.moveTo(0, 3); c.quadraticCurveTo(13, 6, 12, 15); c.quadraticCurveTo(5, 12, 0, 5);
       c.fillStyle = HEX.ROSE; c.fill(); c.stroke();
       c.restore();
     }
-    ellipse(c, 0, 0, 4, 9, HEX.ROSE_D, OUT, 2);
+    ellipse(c, 0, 0, 4, 9, HEX.ROSE_D, OUT, 2.5);
     eye(c, -2, -5, 1.4, HEX.SAND); eye(c, 2, -5, 1.4, HEX.SAND);
     c.restore();
   });
-  // Husk — lumbering stone hulk with ember cracks
+  // Husk — hunched shoulders, dragging arms, a real stride
   for (const f of [0, 1]) make('husk' + f, 60, 60, (c) => {
-    shadow(c, 30, 54, 22, 6);
-    const lift = f ? -2 : 0;
-    c.fillStyle = HEX.HULK_D; c.strokeStyle = OUT; c.lineWidth = 2.5;
-    c.beginPath(); c.roundRect(15, 44 + lift, 10, 11, 3); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(35, 44 - lift, 10, 11, 3); c.fill(); c.stroke();
-    poly(c, [[10, 44], [8, 22], [18, 10], [42, 10], [52, 22], [50, 44]], HEX.HULK, OUT, 3);
-    poly(c, [[14, 40], [13, 24], [20, 15], [40, 15], [46, 24], [46, 40]], HEX.HULK_L);
-    c.strokeStyle = HEX.HFIRE; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(20, 30); c.lineTo(26, 36); c.lineTo(24, 42); c.moveTo(38, 22); c.lineTo(34, 30); c.lineTo(40, 36); c.stroke();
-    c.fillStyle = HEX.HULK; c.strokeStyle = OUT; c.lineWidth = 2.5;
-    c.beginPath(); c.roundRect(3, 22 - lift, 10, 20, 4); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(47, 22 + lift, 10, 20, 4); c.fill(); c.stroke();
-    c.fillStyle = HEX.INK; c.fillRect(21, 19, 18, 6);
-    eye(c, 26, 22, 2, HEX.HFIRE); eye(c, 34, 22, 2, HEX.HFIRE);
+    shadow(c, 30, 55, 22, 6);
+    const stride = f ? 6 : 0;
+    c.fillStyle = HEX.HULK; c.strokeStyle = OUT; c.lineWidth = 2.5; c.lineJoin = 'round';
+    c.beginPath(); c.roundRect(1, 34 + (f ? 8 : 0), 8, 22, 3); c.fill(); c.stroke();
+    c.beginPath(); c.roundRect(50, 30 - (f ? 4 : 0), 8, 24, 3); c.fill(); c.stroke();
+    c.fillStyle = HEX.HULK_D;
+    c.beginPath(); c.roundRect(16 + stride, 44, 9, 12, 3); c.fill(); c.stroke();
+    c.beginPath(); c.roundRect(34 - stride, 46, 9, 10, 3); c.fill(); c.stroke();
+    poly(c, [[14, 48], [8, 32], [16, 16], [30, 8], [46, 18], [54, 34], [48, 48]], HEX.HULK, OUT, 2.5);
+    poly(c, [[18, 42], [16, 28], [24, 18], [36, 16], [44, 28], [42, 42]], HEX.HULK_L);
+    c.strokeStyle = HEX.HFIRE; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(22, 28); c.lineTo(28, 34); c.lineTo(26, 40); c.moveTo(40, 24); c.lineTo(36, 32); c.stroke();
+    c.fillStyle = HEX.INK; c.fillRect(24, 18, 14, 5);
+    eye(c, 28, 20, 1.7, HEX.HFIRE); eye(c, 36, 21, 1.7, HEX.HFIRE);
   });
   // Wraith — hooded spirit trailing a ragged tail
   for (const f of [0, 1]) make('wraith' + f, 48, 52, (c) => {
@@ -840,30 +843,40 @@ function drawEnemies() {
     c.lineTo(12, 38); c.lineTo(6 + w, 34); c.lineTo(2, 48); c.lineTo(-3 + w, 36); c.lineTo(-9, 44); c.lineTo(-12, 34);
     c.closePath();
     c.fillStyle = lin(c, 0, 3, 0, 48, [[0, rgba(HEX.SPIRIT, 0.95)], [1, rgba(HEX.SPIRIT_D, 0.25)]]); c.fill();
-    c.lineWidth = 2; c.strokeStyle = HEX.INK; c.stroke();
+    c.lineWidth = 2.5; c.strokeStyle = HEX.INK; c.stroke();
     ellipse(c, 0, 16, 9, 8, HEX.INK);
     eye(c, -4, 16, 1.8, HEX.SPIRIT_L); eye(c, 4, 16, 1.8, HEX.SPIRIT_L);
     c.restore();
   });
-  // Bloater (splitter) — pustule sac that bursts into broodlings
-  make('splitter0', 48, 48, (c) => {
-    shadow(c, 24, 43, 16, 4);
-    circle(c, 24, 25, 17, lin(c, 0, 8, 0, 42, [[0, HEX.BOG_L], [1, HEX.BOG_D]]), OUT, 2.5);
-    circle(c, 15, 18, 5, HEX.BOG_L, OUT, 1.5); circle(c, 32, 31, 4, HEX.BOG_L, OUT, 1.5); circle(c, 30, 15, 3, HEX.BOG_L, OUT, 1.5);
-    eye(c, 20, 26, 2.4, HEX.HEYE); eye(c, 28, 24, 1.8, HEX.HEYE);
-  });
-  make('splitter1', 48, 48, (c) => {
-    shadow(c, 24, 43, 17, 4);
-    ellipse(c, 24, 26, 18, 16, lin(c, 0, 8, 0, 42, [[0, HEX.BOG_L], [1, HEX.BOG_D]]), OUT, 2.5);
-    circle(c, 15, 19, 5.5, HEX.BOG_L, OUT, 1.5); circle(c, 32, 32, 4.5, HEX.BOG_L, OUT, 1.5); circle(c, 30, 16, 3.2, HEX.BOG_L, OUT, 1.5);
-    eye(c, 20, 27, 2.4, HEX.HEYE); eye(c, 28, 25, 1.8, HEX.HEYE);
-  });
+  // Bloater — three lobes, a mouth slit, an inflate frame
+  const bloater = (c, inf) => {
+    shadow(c, 24, 44, inf ? 20 : 14, 4);
+    c.save(); c.translate(24, 26); c.scale(inf ? 1.28 : 0.9, inf ? 0.72 : 1.08);
+    c.beginPath();
+    c.moveTo(0, -16);
+    c.bezierCurveTo(14, -18, 18, -8, 16, 0);
+    c.bezierCurveTo(22, 6, 14, 16, 4, 14);
+    c.bezierCurveTo(-6, 20, -16, 12, -14, 2);
+    c.bezierCurveTo(-20, -6, -10, -14, -4, -12);
+    c.closePath();
+    c.fillStyle = lin(c, -16, -16, 16, 16, [[0, HEX.BOG_L], [1, HEX.BOG_D]]); c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = OUT; c.lineJoin = 'round'; c.stroke();
+    c.strokeStyle = OUT; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-6, 4); c.lineTo(8, 6); c.stroke();
+    circle(c, -8, -8, 3.2, HEX.BOG_L); circle(c, 10, -4, 2.6, HEX.BOG_L);
+    c.restore();
+    eye(c, 18, inf ? 28 : 22, 2, HEX.HEYE); eye(c, 28, inf ? 26 : 20, 1.5, HEX.HEYE);
+  };
+  make('splitter0', 48, 48, (c) => bloater(c, 0));
+  make('splitter1', 48, 48, (c) => bloater(c, 5));
   for (const f of [0, 1]) make('broodling' + f, 24, 24, (c) => {
-    shadow(c, 12, 21, 8, 2.5);
-    c.strokeStyle = OUT; c.lineWidth = 1.5;
-    for (const s of [-1, 1]) { c.beginPath(); c.moveTo(12, 14); c.lineTo(12 + s * 10, 12 + (f ? 6 : 2)); c.stroke(); }
-    circle(c, 12, 13, 7, HEX.BOG, OUT, 2);
-    eye(c, 10, 12, 1.4, HEX.HEYE); eye(c, 14, 12, 1.4, HEX.HEYE);
+    shadow(c, 12, 21, 7, 2.5);
+    c.strokeStyle = OUT; c.lineWidth = 1.5; c.lineCap = 'round';
+    [[-9, 3], [-7, 8], [7, 8], [9, 3]].forEach(([dx, dy], i) => {
+      const k = (i + f) % 2 ? 2 : -2;
+      c.beginPath(); c.moveTo(12, 13); c.lineTo(12 + dx, 11 + dy + k); c.stroke();
+    });
+    circle(c, 12, 12, 5.5, HEX.BOG, OUT, 1.5);
+    eye(c, 10, 11, 1.2, HEX.HEYE); eye(c, 14, 11, 1.2, HEX.HEYE);
   });
   // Ram Beetle (charger)
   for (const f of [0, 1]) make('beetle' + f, 52, 48, (c) => {
@@ -880,12 +893,16 @@ function drawEnemies() {
   });
   // Spitter — bloated toad that lobs venom orbs
   for (const f of [0, 1]) make('spitter' + f, 46, 44, (c) => {
-    shadow(c, 23, 39, 17, 4);
-    ellipse(c, 23, 27, 17, 13 - f, lin(c, 0, 14, 0, 40, [[0, HEX.SPIRIT], [1, HEX.SPIRIT_D]]), OUT, 2.5);
-    ellipse(c, 23, 31, 10, 6, HEX.SPIRIT_L);
-    ellipse(c, 23, 30 + f, 6, 2 + f * 3, HEX.ROSE_D);
-    circle(c, 14, 16, 5.5, HEX.SPIRIT, OUT, 2); circle(c, 32, 16, 5.5, HEX.SPIRIT, OUT, 2);
-    eye(c, 14, 16, 2.4, HEX.HFIRE); eye(c, 32, 16, 2.4, HEX.HFIRE);
+    shadow(c, 23, 40, 17, 4);
+    c.fillStyle = HEX.SPIRIT_D; c.strokeStyle = OUT; c.lineWidth = 1.5;
+    c.beginPath(); c.ellipse(9, 36, 6, 3.2, -0.5, 0, TAU); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(37, 36, 6, 3.2, 0.5, 0, TAU); c.fill(); c.stroke();
+    ellipse(c, 23, 25, 15, 11, lin(c, 0, 12, 0, 36, [[0, HEX.SPIRIT], [1, HEX.SPIRIT_D]]), OUT, 2.5);
+    ellipse(c, 23, 28, 8, 4, HEX.SPIRIT_L);
+    if (f) ellipse(c, 23, 31, 7, 4, HEX.ROSE_D, OUT, 1.4);
+    else { c.strokeStyle = OUT; c.lineWidth = 1.5; c.beginPath(); c.moveTo(16, 30); c.lineTo(30, 30); c.stroke(); }
+    circle(c, 11, 13, 4.5, HEX.SPIRIT, OUT, 1.5); circle(c, 35, 13, 4.5, HEX.SPIRIT, OUT, 1.5);
+    eye(c, 11, 13, 2, HEX.HFIRE); eye(c, 35, 13, 2, HEX.HFIRE);
   });
   // Sentinel — floating spiked eye (late-game elite fodder)
   for (const f of [0, 1]) make('sentinel' + f, 64, 64, (c) => {
@@ -897,91 +914,107 @@ function drawEnemies() {
     circle(c, 32, 28, 8, HEX.HEYE); circle(c, 32, 28, 4, HEX.INK); circle(c, 29, 25, 2, HEX.WHITE);
   });
   // ---- Bosses ----
-  // Brood Matron
-  for (const f of [0, 1]) make('matron' + f, 150, 140, (c) => {
+  // Brood Matron — 4-frame leg cycle, mandibles, two narrowed eyes
+  for (let f = 0; f < 4; f++) make('matron' + f, 150, 140, (c) => {
     shadow(c, 75, 128, 58, 12);
-    c.strokeStyle = OUT; c.lineWidth = 6; c.lineCap = 'round';
+    c.lineCap = 'round'; c.lineJoin = 'round';
     for (let i = 0; i < 4; i++) for (const s of [-1, 1]) {
-      const a = 0.3 + i * 0.4 + (f && i % 2 ? 0.12 : 0);
-      c.beginPath(); c.moveTo(75 + s * 25, 80);
-      c.quadraticCurveTo(75 + s * (50 + i * 6), 40 + i * 14, 75 + s * (60 + Math.cos(a) * 12), 110 + i * 5);
+      const swing = Math.sin(((f + i) / 4) * TAU) * 22;
+      c.strokeStyle = OUT; c.lineWidth = 4;
+      c.beginPath(); c.moveTo(75 + s * 20, 78);
+      c.quadraticCurveTo(75 + s * (46 + i * 5), 48 + i * 8, 75 + s * (62 + swing), 112 + (i % 2) * 6);
       c.stroke();
+      c.strokeStyle = HEX.GLOOM_L; c.lineWidth = 1.5; c.stroke();
     }
-    c.strokeStyle = HEX.ROSE_D; c.lineWidth = 3;
-    for (let i = 0; i < 4; i++) for (const s of [-1, 1]) {
-      const a = 0.3 + i * 0.4 + (f && i % 2 ? 0.12 : 0);
-      c.beginPath(); c.moveTo(75 + s * 25, 80);
-      c.quadraticCurveTo(75 + s * (50 + i * 6), 40 + i * 14, 75 + s * (60 + Math.cos(a) * 12), 110 + i * 5);
-      c.stroke();
+    ellipse(c, 75, 96, 42, 28, lin(c, 0, 68, 0, 124, [[0, HEX.GLOOM], [1, HEX.GLOOM_D]]), OUT, 4);
+    for (let i = 0; i < 5; i++) circle(c, 52 + i * 11, 102 + (i % 2) * 6, 3.4, HEX.GLOOM_L, OUT, 1.4);
+    circle(c, 75, 48, 24, lin(c, 50, 24, 100, 72, [[0, HEX.GLOOM_L], [1, HEX.GLOOM_D]]), OUT, 4);
+    c.strokeStyle = OUT; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(60, 66); c.quadraticCurveTo(52, 88, 70, 94);
+    c.moveTo(90, 66); c.quadraticCurveTo(98, 88, 80, 94); c.stroke();
+    c.strokeStyle = HEX.ROSE_D; c.lineWidth = 1.5; c.stroke();
+    c.fillStyle = HEX.INK;
+    c.beginPath(); c.ellipse(64, 46, 7, 3, -0.15, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(86, 46, 7, 3, 0.15, 0, TAU); c.fill();
+    c.fillStyle = HEX.HEYE;
+    c.beginPath(); c.ellipse(64, 46, 4, 1.4, -0.15, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(86, 46, 4, 1.4, 0.15, 0, TAU); c.fill();
+  });
+  // Cinder Colossus — hunched mass, plated seams, molten fists, 4-frame slam
+  for (let f = 0; f < 4; f++) make('colossus' + f, 190, 190, (c) => {
+    shadow(c, 100, 178, 68, 14);
+    const stride = [0, 10, 4, -8][f];
+    c.fillStyle = HEX.HULK_D; c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';
+    c.beginPath(); c.roundRect(58 + stride, 144, 26, 34, 6); c.fill(); c.stroke();
+    c.beginPath(); c.roundRect(112 - stride, 148, 24, 30, 6); c.fill(); c.stroke();
+    poly(c, [[55, 150], [38, 96], [58, 52], [96, 34], [138, 58], [162, 100], [142, 154]], HEX.HULK, OUT, 4);
+    poly(c, [[64, 132], [52, 90], [74, 58], [118, 56], [140, 92], [128, 134]], HEX.HULK_L);
+    c.strokeStyle = HEX.HULK_D; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(70, 64); c.lineTo(128, 72); c.moveTo(58, 100); c.lineTo(136, 94); c.moveTo(66, 128); c.lineTo(126, 122); c.stroke();
+    c.strokeStyle = HEX.HFIRE; c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(78, 80); c.lineTo(96, 96); c.lineTo(88, 118); c.moveTo(120, 78); c.lineTo(108, 100); c.stroke();
+    c.fillStyle = HEX.HULK;
+    c.beginPath(); c.roundRect(82, 22, 40, 28, 8); c.fill(); c.strokeStyle = OUT; c.lineWidth = 4; c.stroke();
+    c.fillStyle = HEX.INK; c.fillRect(90, 32, 24, 7);
+    eye(c, 98, 35, 2.6, HEX.HFIRE); eye(c, 112, 35, 2.6, HEX.HFIRE);
+    const fists = [
+      [[12, 48, 36, 46], [150, 72, 32, 44]],
+      [[16, 86, 38, 42], [146, 124, 36, 48]],
+      [[8, 64, 34, 48], [152, 96, 30, 44]],
+      [[6, 112, 38, 40], [148, 58, 34, 46]],
+    ][f];
+    for (const [x, y, w, h] of fists) {
+      c.fillStyle = HEX.HFIRE; c.strokeStyle = OUT; c.lineWidth = 4;
+      c.beginPath(); c.roundRect(x, y, w, h, 10); c.fill(); c.stroke();
+      circle(c, x + w * 0.35, y + h * 0.32, 5, HEX.HFIRE_H);
     }
-    ellipse(c, 75, 92, 40, 30, lin(c, 0, 62, 0, 122, [[0, HEX.GLOOM], [1, HEX.GLOOM_D]]), OUT, 4);
-    for (let i = 0; i < 6; i++) circle(c, 55 + i * 8, 100 + (i % 2) * 8, 4, HEX.VOID, OUT, 1.5);
-    circle(c, 75, 52, 26, lin(c, 0, 26, 0, 78, [[0, HEX.GLOOM_L], [1, HEX.GLOOM_D]]), OUT, 4);
-    const eyes = [[63, 46, 4], [87, 46, 4], [75, 40, 3], [68, 58, 3], [82, 58, 3], [75, 52, 5]];
-    for (const [x, y, r] of eyes) eye(c, x, y, r, HEX.HGLARE);
   });
-  // Cinder Colossus
-  for (const f of [0, 1]) make('colossus' + f, 190, 190, (c) => {
-    shadow(c, 95, 176, 70, 14);
-    const l = f ? 5 : 0;
-    c.fillStyle = HEX.HULK_D; c.strokeStyle = OUT; c.lineWidth = 5;
-    c.beginPath(); c.roundRect(58, 140 - l, 28, 38, 8); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(104, 140 + l - 5, 28, 38, 8); c.fill(); c.stroke();
-    poly(c, [[40, 140], [30, 70], [60, 36], [130, 36], [160, 70], [150, 140]], HEX.HULK, OUT, 5);
-    poly(c, [[52, 132], [46, 76], [68, 48], [122, 48], [144, 76], [138, 132]], HEX.HULK_L);
-    glowDot(c, 95, 96, 34, rgba(HEX.HFIRE, 0.95));
-    poly(c, star(95, 96, 18, 9, 6, f * 0.3), HEX.SAND);
-    c.strokeStyle = HEX.HFIRE; c.lineWidth = 3.5;
-    c.beginPath(); c.moveTo(60, 70); c.lineTo(76, 88); c.moveTo(130, 72); c.lineTo(114, 88); c.moveTo(80, 130); c.lineTo(95, 116); c.lineTo(110, 132); c.stroke();
-    c.fillStyle = HEX.HULK; c.strokeStyle = OUT; c.lineWidth = 5;
-    c.beginPath(); c.roundRect(8, 66 + l, 30, 70, 12); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(152, 66 - l, 30, 70, 12); c.fill(); c.stroke();
-    c.beginPath(); c.roundRect(70, 8, 50, 40, 12); c.fill(); c.stroke();
-    c.fillStyle = HEX.INK; c.fillRect(78, 22, 34, 10);
-    eye(c, 86, 27, 4, HEX.HFIRE); eye(c, 104, 27, 4, HEX.HFIRE);
+  // Gloam Herald — dark shroud, ink void, banner that changes side. The rim carries the 3:1 read.
+  for (let f = 0; f < 4; f++) make('herald' + f, 90, 120, (c) => {
+    shadow(c, 44, 114, 24, 6);
+    const wide = f === 2 ? 10 : 0;
+    const bx = f % 2 ? 14 : 76;
+    const dir = f % 2 ? -1 : 1;
+    c.strokeStyle = HEX.SLATE_D; c.lineWidth = 3; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(bx, 112); c.lineTo(bx, 8); c.stroke();
+    c.beginPath();
+    c.moveTo(bx, 12);
+    c.lineTo(bx + dir * (18 + (f === 1 ? 6 : 0)), 18);
+    c.lineTo(bx + dir * 12, 34);
+    c.lineTo(bx + dir * 20, 42);
+    c.lineTo(bx, 48);
+    c.closePath();
+    c.fillStyle = HEX.INK; c.fill();
+    c.strokeStyle = HEX.HEYE; c.lineWidth = 1.5; c.stroke();
+    c.beginPath(); c.moveTo(45, 18);
+    c.bezierCurveTo(66 + wide, 28, 68 + wide, 72, 58 + wide * 0.3, 104);
+    c.lineTo(50, 96); c.lineTo(44, 112); c.lineTo(36, 98); c.lineTo(28 - wide * 0.4, 110); c.lineTo(22 - wide, 96);
+    c.bezierCurveTo(20 - wide, 70, 24 - wide, 28, 45, 18);
+    c.fillStyle = HEX.SHROUD_D; c.fill();
+    c.lineWidth = 4; c.strokeStyle = OUT; c.lineJoin = 'round'; c.stroke();
+    c.beginPath(); c.moveTo(45, 2); c.bezierCurveTo(64, 8, 62, 36, 45, 40); c.bezierCurveTo(28, 36, 26, 8, 45, 2);
+    c.fillStyle = HEX.SHROUD_D; c.fill(); c.stroke();
+    ellipse(c, 45, 24, 8, 10, HEX.INK);
+    if (f !== 2) { eye(c, 41, 23, 1.3, HEX.RIM); eye(c, 49, 23, 1.3, HEX.RIM); }
   });
-  // Gloam Herald — gaunt shadow in a tattered cloak, crown of three pale eye-lights, black banner
-  for (const f of [0, 1]) make('herald' + f, 90, 120, (c) => {
-    shadow(c, 45, 112, 26, 6);
-    // banner pole + tattered black banner
-    c.strokeStyle = HEX.SLATE_D; c.lineWidth = 3; c.beginPath(); c.moveTo(70, 112); c.lineTo(70, 10); c.stroke();
-    c.beginPath(); c.moveTo(70, 14); c.lineTo(88 - f * 3, 18); c.lineTo(84 - f * 2, 34); c.lineTo(88, 40 + f * 2); c.lineTo(72, 44); c.closePath();
-    c.fillStyle = HEX.INK; c.fill(); c.strokeStyle = HEX.SLATE; c.lineWidth = 1.5; c.stroke();
-    circle(c, 79, 28, 3, null, HEX.GLOOM_L, 1.2);
-    // cloak body: tall tapered shape with ragged hem
-    c.beginPath(); c.moveTo(45, 22);
-    c.bezierCurveTo(62, 30, 64, 70, 62, 104);
-    c.lineTo(56, 98); c.lineTo(52, 108); c.lineTo(46, 99); c.lineTo(40, 110); c.lineTo(35, 99); c.lineTo(29, 106); c.lineTo(28, 96);
-    c.bezierCurveTo(26, 70, 28, 30, 45, 22);
-    c.fillStyle = lin(c, 0, 22, 0, 108, [[0, HEX.SHROUD], [1, HEX.SHROUD_D]]); c.fill();
-    c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
-    // arm holding pole
-    c.strokeStyle = HEX.SHROUD; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(55, 44); c.lineTo(68, 50 + f); c.stroke();
-    // hood with void face
-    c.beginPath(); c.moveTo(45, 6); c.bezierCurveTo(60, 12, 58, 34, 45, 38); c.bezierCurveTo(32, 34, 30, 12, 45, 6);
-    c.fillStyle = HEX.SHROUD; c.fill(); c.strokeStyle = OUT; c.lineWidth = 2.5; c.stroke();
-    ellipse(c, 45, 25, 8, 9, HEX.INK);
-    // crown of three pale eye-lights
-    for (const [x, y] of [[37, 9], [45, 4], [53, 9]]) glowDot(c, x, y, 6, rgba(HEX.RIM, 0.85));
-    eye(c, 41, 25, 1.6, HEX.RIM); eye(c, 49, 25, 1.6, HEX.RIM);
-  });
-  // Eclipse Tyrant — a black sun wearing a crown of corona
-  for (const f of [0, 1]) make('tyrant' + f, 220, 220, (c) => {
+  // Eclipse Tyrant — black sun, ink disc, ink crown, hostile corona. No smile.
+  for (let f = 0; f < 4; f++) make('tyrant' + f, 220, 220, (c) => {
     shadow(c, 110, 200, 46 * SHADOW.floatWidth, 14 * SHADOW.floatWidth, SHADOW.floatAlpha);
-    c.save(); c.translate(110, 105);
-    c.fillStyle = radial(c, 0, 0, 108, [[0, rgba(HEX.BONE, 0)], [0.55, rgba(HEX.SAND, 0.0)], [0.62, rgba(HEX.SAND, 0.9)], [0.8, rgba(HEX.HFIRE, 0.35)], [1, rgba(HEX.HEYE_D, 0)]]);
-    c.beginPath(); c.arc(0, 0, 108, 0, TAU); c.fill();
-    c.rotate(f * 0.15);
-    poly(c, star(0, 0, 100, 64, 14), rgba(HEX.HFIRE, 0.55));
-    c.rotate(-f * 0.3);
-    poly(c, star(0, 0, 86, 62, 10, 0.3), rgba(HEX.SAND, 0.6));
-    c.rotate(f * 0.15);
-    circle(c, 0, 0, 62, radial(c, -12, -12, 70, [[0, HEX.ROSE_D], [1, HEX.INK]]), HEX.INK, 4);
-    // crown
-    poly(c, [[-36, -50], [-30, -84], [-14, -62], [0, -96], [14, -62], [30, -84], [36, -50]], HEX.INK, HEX.INK, 3);
-    for (const x of [-30, 0, 30]) circle(c, x, x ? -84 : -96, 4, HEX.HEYE);
-    eye(c, -22, -6, 7, HEX.HEYE); eye(c, 22, -6, 7, HEX.HEYE);
-    c.strokeStyle = HEX.HEYE; c.lineWidth = 3; c.beginPath(); c.arc(0, 18, 20, 0.2, Math.PI - 0.2); c.stroke();
+    c.save(); c.translate(110, 104);
+    const rays = [108, 78, 116, 88][f];
+    const inner = [72, 80, 64, 76][f];
+    c.rotate(f * 0.08);
+    poly(c, star(0, 0, rays, inner, 16), HEX.HFIRE, OUT, 4);
+    poly(c, star(0, 0, inner * 0.7, inner * 0.48, 16, 0.1), HEX.BONE);
+    circle(c, 0, 0, 56, HEX.INK, OUT, 4);
+    poly(c, [[-32, -42], [-26, -74], [-12, -52], [0, -86], [12, -52], [26, -74], [32, -42]], HEX.INK, OUT, 4);
+    for (const x of [-26, 0, 26]) circle(c, x, x ? -74 : -86, 3.2, HEX.HEYE);
+    c.fillStyle = HEX.HEYE;
+    c.beginPath(); c.ellipse(-16, -2, 8, 2.8, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(16, -2, 8, 2.8, 0, 0, TAU); c.fill();
+    c.fillStyle = HEX.INK;
+    c.beginPath(); c.ellipse(-16, -2, 2.6, 2, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(16, -2, 2.6, 2, 0, 0, TAU); c.fill();
     c.restore();
   });
   // Cinder Imp — squat ember-bodied imp with a flame tuft (Ashfields)
@@ -1018,7 +1051,7 @@ function drawEnemies() {
     c.bezierCurveTo(10, -10, 12, 4, 6, 11); c.quadraticCurveTo(0, 15, -6, 11);
     c.bezierCurveTo(-12, 4, -10, -10, 0, -20 + f * 2);
     c.fillStyle = lin(c, 0, -20, 0, 14, [[0, rgba(HEX.FROST_H, 0.95)], [0.5, rgba(HEX.FROST, 0.9)], [1, rgba(HEX.FROST_D, 0.85)]]); c.fill();
-    c.lineWidth = 2; c.strokeStyle = HEX.INK; c.stroke();
+    c.lineWidth = 2.5; c.strokeStyle = HEX.INK; c.stroke();
     ellipse(c, 0, 2, 6, 7, rgba(HEX.SLATE_D, 0.85));
     eye(c, -2.5, 1, 1.5, HEX.FROST_H); eye(c, 2.5, 1, 1.5, HEX.FROST_H);
     for (let i = 0; i < 3; i++) {
@@ -1042,12 +1075,12 @@ function drawEnemies() {
     else { eye(c, 19, top + 9, 1.6, HEX.HGLARE); eye(c, 29, top + 9, 1.6, HEX.HGLARE); }
   });
   // Gloom Totem — breakable crystal obelisk that holds loot
-  make('totem', 40, 60, (c) => {
+  for (const f of [0, 1]) make('totem' + f, 40, 60, (c) => {
     shadow(c, 20, 54, 15, 4);
-    glowDot(c, 20, 28, 20, rgba(HEX.SAND, 0.45));
+    wash(c, 20, 26, f ? 18 : 12, HEX.VOID, f ? 0.55 : 0.35);
     poly(c, [[20, 2], [32, 20], [27, 52], [13, 52], [8, 20]], HEX.SHROUD_D, OUT, 2.5);
-    poly(c, [[20, 8], [27, 21], [20, 44], [13, 21]], HEX.SAND);
-    poly(c, [[20, 8], [27, 21], [20, 26]], HEX.BONE);
+    poly(c, [[20, 10], [27, 22], [20, 44], [13, 22]], f ? HEX.GLOOM_L : HEX.VOID);
+    circle(c, 15, 16, 1.5, HEX.HGLARE);
   });
   // The Hollow — a drifting shroud around a pale, weeping mask; nothing behind the eyes
   for (const f of [0, 1]) make('hollow' + f, 110, 120, (c) => {
@@ -1058,7 +1091,7 @@ function drawEnemies() {
     for (let i = 0; i < 6; i++) { const x = 90 - i * 14.5; c.lineTo(x - 7, 100 + ((i + f) % 2) * 12); c.lineTo(x - 14.5, 96 + ((i + f) % 2) * -4); }
     c.bezierCurveTo(14, 60, 22, 14, 55, 10);
     c.fillStyle = lin(c, 0, 10, 0, 110, [[0, HEX.ROSE_D], [1, HEX.INK]]); c.fill();
-    c.lineWidth = 2.5; c.strokeStyle = HEX.GLOOM; c.stroke();
+    c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
     // bone-white mask
     c.beginPath(); c.moveTo(55, 18); c.bezierCurveTo(78, 20, 80, 44, 72, 64); c.quadraticCurveTo(55, 80, 38, 64); c.bezierCurveTo(30, 44, 32, 20, 55, 18);
     c.fillStyle = HEX.FROST_H; c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
@@ -1139,20 +1172,21 @@ function drawEnemies() {
   // White flash variants
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
-    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'colossus0', 'colossus1', 'tyrant0', 'tyrant1', 'totem', 'herald0', 'herald1',
+    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'matron2', 'matron3', 'colossus0', 'colossus1', 'colossus2', 'colossus3',
+    'tyrant0', 'tyrant1', 'tyrant2', 'tyrant3', 'totem0', 'totem1', 'herald0', 'herald1', 'herald2', 'herald3',
     'imp0', 'imp1', 'frostwisp0', 'frostwisp1', 'lurker0', 'lurker1', 'scarab0', 'scarab1', 'acolyte0', 'acolyte1',
     'forge0', 'forge1', 'sunbearer0', 'sunbearer1', 'stormkite0', 'stormkite1']) makeWhite(n);
 }
 
 // ---------- decor ----------
 // Background props sit back: desaturate + darken the finished sprite so pickups and enemies pop.
-function dimFrame(name) {
-  normFrame(name);
+function dimFrame(name, target) {
+  normFrame(name, target);
 }
 // One prop rule: solid pixels (skipping the ink outline) land on the same luminance, lightly desaturated.
 // A single multiply misses that target once highlights clip or darkened pixels fall inside the ink
 // exclusion, so the gain is adjusted until the measured core mean actually sits on the target.
-function normFrame(name) {
+function normFrame(name, target = PROP_RULE.targetLuminance) {
   const src = frames[name];
   const img = actx.getImageData(src.x * SS, src.y * SS, src.w * SS, src.h * SS);
   const d = img.data;
@@ -1183,7 +1217,6 @@ function normFrame(name) {
       d[i + 2] = en(Math.min(1, (b + (y - b) * ds) * k + lift));
     }
   };
-  const target = PROP_RULE.targetLuminance;
   const y0 = coreY();
   if (!y0) return;
   let k = target / y0;
@@ -1235,8 +1268,28 @@ function rimFrame(name) {
   }
   actx.putImageData(img, f.x * SS, f.y * SS);
 }
+function accent(name, draw) {
+  const r = frames[name];
+  if (!r) return;
+  const x = r.x * SS, y = r.y * SS, w = r.w * SS, h = r.h * SS;
+  const before = new Uint8ClampedArray(actx.getImageData(x, y, w, h).data);
+  actx.save();
+  actx.translate(x, y);
+  actx.scale(SS, SS);
+  actx.beginPath(); actx.rect(0, 0, r.w, r.h); actx.clip();
+  draw(actx);
+  actx.restore();
+  const img = actx.getImageData(x, y, w, h);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (before[i + 3] >= 150) {
+      d[i] = before[i]; d[i + 1] = before[i + 1]; d[i + 2] = before[i + 2]; d[i + 3] = before[i + 3];
+    } else if (d[i + 3] > 140) d[i + 3] = 140;
+  }
+  actx.putImageData(img, x, y);
+}
 function drawDecor() {
-  const dm = (name, w, h, draw) => { make(name, w, h, draw); dimFrame(name); };
+  const dm = (name, w, h, draw, target) => { make(name, w, h, draw); dimFrame(name, target); };
   // ---- Ashfields props ----
   dm('stump', 40, 44, (c) => {
     shadow(c, 20, 39, 16, 4);
@@ -1248,11 +1301,11 @@ function drawDecor() {
     c.beginPath(); c.moveTo(11, 28); c.lineTo(14, 25); c.moveTo(27, 32); c.lineTo(29, 27); c.stroke();
     poly(c, [[28, 20], [36, 8], [31, 19]], HEX.WOOD_D, OUT, 1.5);
   });
-  dm('vent', 40, 26, (c) => {
-    glowDot(c, 20, 13, 16, rgba(HEX.HFIRE, 0.6));
-    ellipse(c, 20, 14, 15, 7, HEX.WOOD_D, OUT, 2);
-    ellipse(c, 20, 14, 9, 4, radial(c, 20, 14, 9, [[0, HEX.HFIRE_H], [0.4, HEX.HFIRE], [1, HEX.HFIRE_D]]));
-    for (const [x, y] of [[9, 9], [31, 10], [14, 20]]) circle(c, x, y, 1.6, HEX.HFIRE_H);
+  make('vent', 40, 26, (c) => {
+    ellipse(c, 20, 14, 16, 8, HEX.HFIRE_D, OUT, 2);
+    ellipse(c, 20, 14, 11, 5.5, radial(c, 17, 12, 12, [[0, HEX.HFIRE_H], [0.45, HEX.HFIRE], [1, HEX.HFIRE_B]]));
+    wash(c, 20, 13, 18, HEX.HFIRE, 0.55);
+    for (const [x, y] of [[8, 8], [32, 9], [14, 20]]) circle(c, x, y, 1.5, HEX.HFIRE_H);
   });
   dm('basalt', 34, 30, (c) => {
     shadow(c, 17, 26, 15, 4);
@@ -1266,8 +1319,15 @@ function drawDecor() {
     c.fillStyle = HEX.WOOD_D; c.fillRect(19, 52, 6, 12);
     for (let i = 0; i < 3; i++) {
       const y = 14 + i * 14, w = 10 + i * 6;
-      poly(c, [[22, y - 12], [22 + w, y + 10], [22 - w, y + 10]], HEX.MOSS_D, OUT, 2);
-      poly(c, [[22, y - 12], [22 + w * 0.55, y + 2], [22 - w * 0.6, y + 3]], HEX.FROST_H);
+      poly(c, [[22, y - 12], [22 + w, y + 10], [22 - w, y + 10]], HEX.MOSS, OUT, 2);
+      poly(c, [[22, y - 10], [22 - w * 0.35, y + 4], [22 - w * 0.15, y]], HEX.MOSS_L);
+    }
+  }, 0.055);
+  accent('pine', (c) => {
+    for (let i = 0; i < 3; i++) {
+      const y = 14 + i * 14, w = 10 + i * 6;
+      c.fillStyle = rgba(HEX.FROST_L, 0.5);
+      c.beginPath(); c.moveTo(22, y - 12); c.lineTo(22 + w * 0.45, y + 1); c.lineTo(22 - w * 0.5, y + 2); c.closePath(); c.fill();
     }
   });
   dm('icecluster', 36, 34, (c) => {
@@ -1278,12 +1338,18 @@ function drawDecor() {
       poly(c, [[x, 30 - h], [x + w, 30 - h * 0.35], [x, 30 - h * 0.3]], HEX.FROST_H);
     }
   });
+  accent('icecluster', (c) => {
+    for (const [x, h, w] of [[11, 18, 4], [19, 26, 5], [26, 14, 4]]) {
+      c.fillStyle = rgba(HEX.FROST_H, 0.55);
+      c.beginPath(); c.moveTo(x, 30 - h); c.lineTo(x + w * 0.7, 30 - h * 0.4); c.lineTo(x, 30 - h * 0.35); c.closePath(); c.fill();
+    }
+  });
   dm('snowrock', 36, 28, (c) => {
     shadow(c, 18, 24, 16, 4);
     poly(c, [[4, 22], [8, 10], [18, 4], [30, 9], [33, 22]], HEX.SLATE, OUT, 2);
     c.beginPath(); c.moveTo(7, 12); c.quadraticCurveTo(18, 1, 31, 10); c.quadraticCurveTo(20, 9, 7, 12);
     c.fillStyle = HEX.FROST_H; c.fill();
-  });
+  }, 0.055);
   // ---- Drowned Marsh props ----
   dm('reeds', 30, 40, (c) => {
     c.lineCap = 'round';
@@ -1312,6 +1378,7 @@ function drawDecor() {
     c.beginPath(); c.moveTo(-5, -10); c.lineTo(0, -15); c.lineTo(5, -10); c.stroke();
     c.restore();
   });
+  accent('sunklantern', (c) => { wash(c, 14, 8, 9, HEX.CANDLE, 0.5); });
   dm('rock0', 36, 28, (c) => {
     shadow(c, 18, 24, 16, 4);
     poly(c, [[4, 22], [8, 10], [18, 4], [30, 9], [33, 22]], HEX.SLATE, OUT, 2);
@@ -1334,12 +1401,17 @@ function drawDecor() {
     c.beginPath(); c.arc(12, 11, 8, Math.PI, 0); c.fillStyle = HEX.SPIRIT; c.fill(); c.strokeStyle = OUT; c.lineWidth = 1.5; c.stroke();
     circle(c, 9, 8, 1.4, HEX.FROST_H); circle(c, 15, 7, 1.1, HEX.FROST_H);
   });
+  accent('shroom', (c) => {
+    wash(c, 12, 8, 8, HEX.MOSS_L, 0.5);
+    circle(c, 8, 7, 1.6, rgba(HEX.MOSS_L, 0.5));
+    circle(c, 15, 6, 1.3, rgba(HEX.MOSS_L, 0.5));
+  });
   dm('bones', 32, 20, (c) => {
-    c.strokeStyle = HEX.BONE; c.lineWidth = 3; c.lineCap = 'round';
+    c.strokeStyle = HEX.BONE; c.lineWidth = 2.5; c.lineCap = 'round';
     c.beginPath(); c.moveTo(4, 15); c.lineTo(22, 6); c.moveTo(10, 4); c.lineTo(26, 16); c.stroke();
     circle(c, 25, 11, 5, HEX.BONE, OUT, 1.5);
     circle(c, 23.5, 10, 1.2, OUT); circle(c, 26.5, 10, 1.2, OUT);
-  });
+  }, 0.052);
   dm('pillar', 40, 72, (c) => {
     shadow(c, 20, 66, 18, 5);
     c.fillStyle = HEX.SLATE; c.strokeStyle = OUT; c.lineWidth = 2.5;
@@ -1360,7 +1432,7 @@ function drawDecor() {
 }
 // Props for the Gothic reliquary and Glass desert stages: muted, low contrast, clearly background.
 function drawStageDecor() {
-  const mk = (name, w, h, draw) => { make(name, w, h, draw); dimFrame(name, 0.12, 0.88); };
+  const mk = (name, w, h, draw, target) => { make(name, w, h, draw); dimFrame(name, target); };
   // ---- Ruined Reliquary ----
   mk('tomb', 56, 44, (c) => {
     shadow(c, 28, 39, 25, 5);
@@ -1378,17 +1450,18 @@ function drawStageDecor() {
   });
   mk('candelabra', 28, 64, (c) => {
     shadow(c, 14, 60, 11, 3);
-    glowDot(c, 14, 14, 14, rgba(HEX.EMBER, 0.45));
     c.strokeStyle = OUT; c.lineWidth = 5; c.lineCap = 'round';
     const arms = () => { c.beginPath(); c.moveTo(14, 58); c.lineTo(14, 22); c.moveTo(14, 26); c.quadraticCurveTo(4, 26, 4, 15); c.moveTo(14, 26); c.quadraticCurveTo(24, 26, 24, 15); c.moveTo(14, 22); c.lineTo(14, 13); c.stroke(); };
     arms(); c.strokeStyle = HEX.SLATE; c.lineWidth = 2.6; arms();
     poly(c, [[7, 60], [10, 52], [18, 52], [21, 60]], HEX.SLATE, OUT, 2);
     for (const [x, y] of [[4, 15], [14, 13], [24, 15]]) {
       c.fillStyle = HEX.BONE; c.strokeStyle = OUT; c.lineWidth = 1.4; c.beginPath(); c.roundRect(x - 2.2, y - 2, 4.4, 8, 1); c.fill(); c.stroke();
-      glowDot(c, x, y - 5, 5, rgba(HEX.EMBER_L, 0.9));
       c.beginPath(); c.moveTo(x, y - 2); c.quadraticCurveTo(x - 3, y - 6, x + 0.4, y - 10); c.quadraticCurveTo(x + 3, y - 6, x, y - 2);
-      c.fillStyle = HEX.EMBER_L; c.fill();
+      c.fillStyle = HEX.CANDLE; c.fill();
     }
+  });
+  accent('candelabra', (c) => {
+    for (const [x, y] of [[4, 10], [14, 8], [24, 10]]) wash(c, x, y, 7, HEX.CANDLE, 0.5);
   });
   mk('banner', 36, 70, (c) => {
     shadow(c, 18, 66, 12, 3);
@@ -1397,13 +1470,13 @@ function drawStageDecor() {
     c.strokeStyle = OUT; c.lineWidth = 4.4; c.beginPath(); c.moveTo(6, 10); c.lineTo(32, 8); c.stroke();
     c.strokeStyle = HEX.WOOD; c.lineWidth = 2.2; c.beginPath(); c.moveTo(6, 10); c.lineTo(32, 8); c.stroke();
     c.beginPath(); c.moveTo(12, 11); c.lineTo(30, 10); c.lineTo(29, 30); c.lineTo(27, 44); c.lineTo(23, 38); c.lineTo(20, 52); c.lineTo(17, 40); c.lineTo(13, 46); c.closePath();
-    c.fillStyle = lin(c, 0, 10, 0, 52, [[0, HEX.HEYE_D], [1, HEX.WOOD_D]]); c.fill();
+    c.fillStyle = HEX.SLATE_D; c.fill();
     c.lineWidth = 2; c.strokeStyle = OUT; c.stroke();
-    c.strokeStyle = HEX.SAND; c.lineWidth = 1.4; c.beginPath(); c.moveTo(21, 14); c.lineTo(21, 30); c.moveTo(16, 19); c.lineTo(26, 19); c.stroke();
+    c.strokeStyle = HEX.BONE; c.lineWidth = 1.4; c.beginPath(); c.moveTo(21, 14); c.lineTo(21, 30); c.moveTo(16, 19); c.lineTo(26, 19); c.stroke();
     c.strokeStyle = HEX.WOOD_L; c.beginPath(); c.moveTo(14, 13); c.lineTo(29, 12); c.stroke();
   });
   mk('cobble', 48, 24, (c) => {
-    c.fillStyle = rgba(HEX.G_RELIQ, 0.35); c.beginPath(); c.ellipse(24, 13, 22, 9, 0, 0, TAU); c.fill();
+    c.fillStyle = rgba(HEX.SLATE_D, 0.55); c.beginPath(); c.ellipse(24, 13, 22, 9, 0, 0, TAU); c.fill();
     for (const [x, y, w, h, a] of [[12, 9, 11, 7, -0.1], [27, 8, 10, 6, 0.1], [20, 15, 12, 7, 0.05], [35, 15, 9, 6, -0.12], [8, 17, 8, 5, 0.1]]) {
       c.save(); c.translate(x, y); c.rotate(a);
       c.fillStyle = HEX.SLATE; c.strokeStyle = rgba(HEX.INK, 0.7); c.lineWidth = 1.4;
@@ -1417,17 +1490,15 @@ function drawStageDecor() {
   // ---- Glass Desert ----
   mk('glasscluster', 44, 52, (c) => {
     shadow(c, 22, 47, 18, 4);
-    glowDot(c, 22, 28, 22, rgba(HEX.OBJ, 0.3));
     const shard = (x, h, w, lean, a, b) => {
       const top = [x + lean, 46 - h];
-      poly(c, [top, [x + w, 46 - h * 0.6], [x + w * 0.5, 46], [x - w * 0.6, 46], [x - w, 46 - h * 0.55]], lin(c, x - w, 46 - h, x + w, 46, [[0, a], [1, b]]), rgba(HEX.G_ROAD, 0.9), 1.6);
-      poly(c, [top, [x + w, 46 - h * 0.6], [x + w * 0.1, 46 - h * 0.5]], rgba(HEX.WHITE, 0.35));
-      c.strokeStyle = rgba(HEX.WHITE, 0.35); c.lineWidth = 1; c.beginPath(); c.moveTo(x - w * 0.3, 44); c.lineTo(top[0], top[1] + 4); c.stroke();
+      poly(c, [top, [x + w, 46 - h * 0.6], [x + w * 0.5, 46], [x - w * 0.6, 46], [x - w, 46 - h * 0.55]], lin(c, x - w, 46 - h, x + w, 46, [[0, a], [1, b]]), HEX.SLATE_D, 1.5);
+      poly(c, [top, [x + w * 0.4, 46 - h * 0.55], [x - w * 0.15, 46 - h * 0.45]], rgba(HEX.FROST_H, 0.45));
     };
-    shard(11, 26, 6, -2, rgba(HEX.OBJ, 0.9), rgba(HEX.FROST_D, 0.9));
-    shard(32, 22, 6, 2, rgba(HEX.EMBER_L, 0.9), rgba(HEX.R_BRONZE, 0.9));
-    shard(22, 46, 8, 1, rgba(HEX.SPIRIT_L, 0.92), rgba(HEX.FROST, 0.92));
-    shard(27, 18, 4, 3, rgba(HEX.EMBER_L, 0.9), rgba(HEX.R_BRONZE, 0.9));
+    shard(11, 26, 6, -2, HEX.SAND, HEX.FROST_D);
+    shard(32, 22, 6, 2, HEX.FROST_L, HEX.SAND);
+    shard(22, 46, 8, 1, HEX.FROST, HEX.FROST_D);
+    shard(27, 18, 4, 3, HEX.SAND, HEX.FROST);
   });
   mk('bonespire', 36, 68, (c) => {
     shadow(c, 18, 63, 14, 4);
@@ -1501,16 +1572,14 @@ function drawObjectives() {
   });
   // Hearthstone — flat ring-shaped stone hearth, empty bowl
   make('hearthstone', 56, 48, (c) => {
-    shadow(c, 28, 40, 26, 6);
-    glowDot(c, 28, 26, 28, rgba(HEX.EMBER, 0.28));
-    ellipse(c, 28, 30, 25, 13, HEX.SLATE, OUT, 2.8);
-    ellipse(c, 28, 27, 25, 12, lin(c, 0, 15, 0, 39, [[0, HEX.SLATE_H], [1, HEX.SLATE_L]]), OUT, 2.5);
-    c.strokeStyle = rgba(HEX.FROST_H, 0.7); c.lineWidth = 1.4; c.beginPath(); c.ellipse(28, 27, 23.5, 10.8, 0, Math.PI * 1.05, Math.PI * 1.75); c.stroke();
-    ellipse(c, 28, 28, 15, 7.2, HEX.INK, OUT, 2.2);
-    ellipse(c, 28, 30, 11, 4.4, HEX.INK);
-    c.strokeStyle = HEX.EMBER; c.lineWidth = 1.2; c.beginPath(); c.ellipse(28, 28, 18.5, 9, 0, 0, TAU); c.setLineDash([3, 4]); c.stroke(); c.setLineDash([]);
-    for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU; circle(c, 28 + Math.cos(a) * 21.5, 27 + Math.sin(a) * 10.2, 1.3, HEX.EMBER_L); }
-    circle(c, 28, 29, 1.2, rgba(HEX.EMBER, 0.6));
+    shadow(c, 28, 44, 24, 4);
+    c.fillStyle = HEX.SLATE_L; c.strokeStyle = OUT; c.lineWidth = 2.5;
+    c.beginPath(); c.roundRect(8, 34, 40, 8, 2); c.fill(); c.stroke();
+    ellipse(c, 28, 24, 22, 10, HEX.SLATE_L, OUT, 2.5);
+    ellipse(c, 28, 22, 18, 7.5, lin(c, 10, 14, 46, 30, [[0, HEX.SLATE_H], [1, HEX.SLATE_L]]), OUT, 2);
+    ellipse(c, 28, 23, 14, 6, HEX.EMBER, OUT, 1.5);
+    ellipse(c, 28, 23, 9, 3.6, HEX.EMBER_L);
+    circle(c, 24, 21, 3.2, HEX.EMBER_H);
   });
   // Frozen brazier — iron bowl, ice-blue flame (frame 1 slightly different glow)
   for (const f of [0, 1]) make('brazier' + f, 36, 48, (c) => {
@@ -1661,17 +1730,16 @@ function drawObjectives() {
   });
   // Rot pool — subtle murky green rim decal
   make('rotpool', 64, 32, (c) => {
-    c.fillStyle = radial(c, 32, 17, 32, [[0, rgba(HEX.OBJ_D, 0.35)], [1, rgba(HEX.OBJ_D, 0)]]); c.beginPath(); c.ellipse(32, 17, 32, 15, 0, 0, TAU); c.fill();
-    ellipse(c, 32, 17, 28, 12, rgba(HEX.OBJ_D, 0.7), rgba(HEX.INK, 0.75), 2);
-    ellipse(c, 32, 17, 22, 8.5, rgba(HEX.OBJ_D, 0.65));
-    ellipse(c, 28, 16, 12, 4, rgba(HEX.OBJ, 0.28));
-    c.strokeStyle = rgba(HEX.OBJ, 0.35); c.lineWidth = 1; c.beginPath(); c.ellipse(32, 17, 26, 10.5, 0, Math.PI * 1.1, Math.PI * 1.8); c.stroke();
-    for (const [x, y, r] of [[22, 15, 2.2], [40, 19, 1.8], [33, 13, 1.4], [47, 14, 1.2]]) circle(c, x, y, r, rgba(HEX.OBJ, 0.45), rgba(HEX.INK, 0.5), 0.8);
+    ellipse(c, 32, 17, 28, 12, HEX.BOG, OUT, 1.5);
+    ellipse(c, 32, 18, 9, 3.5, HEX.BOG_D);
+    ellipse(c, 24, 15, 7, 2, HEX.BOG_L);
+    for (const [x, y, r] of [[18, 14, 1.8], [40, 16, 1.5], [34, 12, 1.2]]) circle(c, x, y, r, HEX.BOG_L);
+    c.strokeStyle = rgba(HEX.OBJ, 0.85); c.lineWidth = 1.2; c.beginPath(); c.ellipse(32, 17, 24, 9, 0, 0, TAU); c.stroke();
   });
 }
 
 function drawNewScenery() {
-  const dm = (name, w, h, draw) => { make(name, w, h, draw); dimFrame(name, 0.12, 0.86); };
+  const dm = (name, w, h, draw, target) => { make(name, w, h, draw); dimFrame(name, target); };
   // ---- Stormbreak Coast ----
   dm('cliffrock', 40, 34, (c) => {
     shadow(c, 20, 30, 17, 4);
@@ -1706,16 +1774,14 @@ function drawNewScenery() {
     for (const [x, y] of [[6, 18], [22, 20], [12, 8]]) circle(c, x, y, 2, HEX.MOSS_L, OUT, 1);
     ellipse(c, 14, 34, 10, 2.4, HEX.SLATE_D, OUT, 1.4);
   });
-  dm('lightrod', 20, 60, (c) => {
+  make('lightrod', 20, 60, (c) => {
     shadow(c, 10, 56, 8, 2.5);
-    c.strokeStyle = OUT; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(10, 56); c.lineTo(10, 8); c.stroke();
+    c.strokeStyle = OUT; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(10, 48); c.lineTo(10, 16); c.stroke();
     c.strokeStyle = HEX.WOOD; c.lineWidth = 2.4; c.stroke();
-    c.strokeStyle = HEX.WOOD_L; c.lineWidth = 1; c.beginPath(); c.moveTo(9.2, 54); c.lineTo(9.2, 12); c.stroke();
-    c.strokeStyle = OUT; c.lineWidth = 3.6; c.beginPath(); c.moveTo(4, 24); c.lineTo(16, 20); c.moveTo(5, 34); c.lineTo(15, 31); c.stroke();
-    c.strokeStyle = HEX.WOOD; c.lineWidth = 1.6; c.stroke();
-    poly(c, [[10, 0], [12.4, 9], [7.6, 9]], HEX.SLATE_H, OUT, 1.4);
-    poly(c, [[5, 56], [8, 50], [12, 50], [15, 56]], HEX.SLATE_D, OUT, 1.8);
-    glowDot(c, 10, 2, 7, rgba(HEX.FROST, 0.7));
+    poly(c, [[4, 56], [7, 50], [13, 50], [16, 56]], HEX.SLATE_D, OUT, 1.5);
+    circle(c, 10, 12, 8, HEX.FROST_H, OUT, 1.5);
+    circle(c, 10, 12, 4, HEX.FROST);
+    wash(c, 10, 12, 12, HEX.FROST_H, 0.55);
   });
   // ---- Wayfarer's March ----
   dm('milestone', 24, 40, (c) => {
@@ -1910,7 +1976,7 @@ function drawIcons() {
   I('vitality', HEX.WOOD, (c) => { blit(c, 'heart', 24, 25, 1.3); });
   I('regen', HEX.BOG_D, (c) => { c.fillStyle = HEX.R_GREEN; c.fillRect(20, 10, 8, 28); c.fillRect(10, 20, 28, 8); });
   I('swift', HEX.WOOD_D, (c) => { poly(c, [[12, 34], [16, 14], [26, 14], [26, 28], [36, 30], [36, 36], [12, 36]], HEX.WOOD_L, OUT, 2); c.strokeStyle = HEX.WHITE; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 20); c.lineTo(12, 20); c.moveTo(2, 28); c.lineTo(10, 28); c.stroke(); });
-  I('magnet', HEX.SHROUD_D, (c) => { blit(c, 'magnet', 24, 24, 1.3); });
+  I('magnet', HEX.SLATE_D, (c) => { blit(c, 'magnet', 24, 24, 1.3); });
   I('luck', HEX.BOG_D, (c) => { for (let i = 0; i < 4; i++) { const a = (i / 4) * TAU + 0.78; circle(c, 24 + Math.cos(a) * 7, 24 + Math.sin(a) * 7, 7, HEX.R_GREEN, OUT, 2); } circle(c, 24, 24, 3, HEX.BOG_D); });
   I('crit', HEX.HFIRE_D, (c) => { circle(c, 24, 24, 15, null, HEX.HFIRE, 3); circle(c, 24, 24, 7, null, HEX.HFIRE, 3); circle(c, 24, 24, 2.5, HEX.WHITE); });
   I('duration', HEX.WOOD, (c) => { poly(c, [[14, 8], [34, 8], [24, 24], [34, 40], [14, 40], [24, 24]], HEX.SKIN, OUT, 2.5); });
@@ -1919,7 +1985,7 @@ function drawIcons() {
   I('greed', HEX.WOOD, (c) => { blit(c, 'cinder', 18, 28, 1.4); blit(c, 'cinder', 30, 20, 1.4); });
   I('reservoir', HEX.ROSE_D, (c) => { c.fillStyle = HEX.SLATE; c.strokeStyle = OUT; c.lineWidth = 2.5; c.beginPath(); c.roundRect(14, 10, 20, 30, 6); c.fill(); c.stroke(); c.fillStyle = lin(c, 0, 22, 0, 38, [[0, HEX.ROSE_L], [1, HEX.R_PINK]]); c.beginPath(); c.roundRect(16, 22, 16, 16, 4); c.fill(); glowDot(c, 24, 28, 9, rgba(HEX.ROSE_L, 0.8)); c.fillStyle = HEX.SHROUD; c.fillRect(18, 6, 12, 5); });
   I('thorns', HEX.MOSS_D, (c) => { poly(c, [[24, 6], [38, 12], [36, 28], [24, 42], [12, 28], [10, 12]], HEX.MOSS, OUT, 2.5); for (const [x, y, a] of [[10, 12, -2.4], [38, 12, -0.7], [12, 28, 2.6], [36, 28, 0.5], [24, 42, 1.57], [24, 6, -1.57]]) poly(c, [[x + Math.cos(a) * 7, y + Math.sin(a) * 7], [x + Math.cos(a + 1.6) * 2.5, y + Math.sin(a + 1.6) * 2.5], [x + Math.cos(a - 1.6) * 2.5, y + Math.sin(a - 1.6) * 2.5]], HEX.BONE, OUT, 1.2); circle(c, 24, 24, 5, HEX.MOSS_L, OUT, 1.5); });
-  I('pact', HEX.HEYE_D, (c) => { glowDot(c, 24, 24, 20, rgba(HEX.PACT, 0.8)); poly(c, star(24, 24, 16, 6, 5, -Math.PI / 2), HEX.INK, HEX.PACT, 2); });
+  I('pact', HEX.PANEL, (c) => { poly(c, star(24, 24, 15, 6.5, 5, -Math.PI / 2), HEX.VOID, HEX.WHITE, 2); circle(c, 24, 24, 3.5, HEX.WHITE); });
   I('overcharge', HEX.WOOD, (c) => { glowDot(c, 24, 24, 20, rgba(HEX.R_GOLD, 0.9)); poly(c, [[26, 6], [14, 26], [23, 26], [20, 42], [34, 20], [25, 20]], HEX.EMBER_H, OUT, 2); });
   I('heal', HEX.HEYE_D, (c) => { blit(c, 'heart', 24, 25, 1.3); });
   I('cinderBag', HEX.WOOD, (c) => { blit(c, 'cinder', 24, 24, 2); });

@@ -572,9 +572,14 @@ export class Game {
     if (this.enemies.length >= MAX_ENEMIES && !o.force) return null;
     const d = ENEMIES[type];
     if (!d._t) {
-      const t0 = T[d.tex + '0'] || T[d.tex], t1 = T[d.tex + '1'] || t0;
-      const w0 = T[d.tex + '0_w'] || T[d.tex + '_w'], w1 = T[d.tex + '1_w'] || w0;
-      d._t = [t0, t1]; d._w = [w0, w1];
+      const tex = [], wh = [];
+      for (let i = 0; i < 8; i++) {
+        const t = T[d.tex + i] || (i === 0 ? T[d.tex] : null);
+        if (!t) break;
+        tex.push(t);
+        wh.push(T[d.tex + i + '_w'] || T[d.tex + '_w'] || t);
+      }
+      d._t = tex; d._w = wh;
     }
     const elite = !!o.elite;
     let hp = d.hp;
@@ -1525,7 +1530,8 @@ export class Game {
       if (e.inert) {
         e.anim += dt;
         p.y = e.y + Math.sin(e.anim * 2) * 2;
-        if (e.flash > 0) { e.flash -= dt; p.texture = e.d._w[0]; } else p.texture = e.d._t[0];
+        const fr = (e.anim * 2 | 0) % e.d._t.length;
+        if (e.flash > 0) { e.flash -= dt; p.texture = e.d._w[fr]; } else p.texture = e.d._t[fr];
         continue;
       }
       e.t += dt;
@@ -1628,7 +1634,7 @@ export class Game {
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
-      const fr = (e.anim | 0) & 1;
+      const fr = (e.anim | 0) % e.d._t.length;
       p.texture = e.flash > 0 ? e.d._w[fr] : e.d._t[fr];
       if (e.flash > 0) e.flash -= dt;
       p.x = e.x; p.y = e.y;
@@ -1672,7 +1678,7 @@ export class Game {
     e.x += dx * sp * dt; e.y += dy * sp * dt;
     e.anim += dt * 3;
     const p = e.p;
-    p.texture = e.d._t[(e.anim | 0) & 1];
+    p.texture = e.d._t[(e.anim | 0) % e.d._t.length];
     p.x = e.x; p.y = e.y + Math.sin(e.t * 3) * 4;
     p.scaleX = e.scale * (dx < 0 ? -1 : 1); p.scaleY = e.scale;
     p.alpha = 0.9;
