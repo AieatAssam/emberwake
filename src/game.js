@@ -762,7 +762,7 @@ export class Game {
     if (e.d.deathBurst && !e.noBurst) {
       this._shotSrc = 'imp-ember';
       const off = Math.random() * TAU;
-      for (let k = 0; k < 6; k++) { const a = off + (k / 6) * TAU; this.enemyShot(x, y, Math.cos(a) * 95, Math.sin(a) * 95, e.dmg * 0.6, T.bolt, 0.8); }
+      for (let k = 0; k < 6; k++) { const a = off + (k / 6) * TAU; this.enemyShot(x, y, Math.cos(a) * 95, Math.sin(a) * 95, e.dmg * 0.4, T.bolt, 0.8); }
       this._shotSrc = null;
     }
     if (e.d.split) {
