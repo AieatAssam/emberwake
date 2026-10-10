@@ -137,8 +137,9 @@ function nests(g, cfg) {
       if (Math.hypot(e.x - P.x, e.y - P.y) < 900 && !g.boss) {
         e.nestT -= dt;
         if (e.nestT <= 0) {
-          e.nestT = 4;
-          for (let i = 0; i < 3; i++) g.spawnEnemy('imp', e.x + rand(-50, 50), e.y + rand(-50, 50), { force: true });
+          e.nestT = 5;
+          let imps = 0; for (const x of g.enemies) if (x.alive && x.type === 'imp') imps++;
+          for (let i = 0; i < 2 && imps < 12; i++) g.spawnEnemy('imp', e.x + rand(-50, 50), e.y + rand(-50, 50), { force: true });
           g.burst(e.x, e.y, 10, [0xff7a30, 0xffd060], 160, 0.7);
         }
       }
