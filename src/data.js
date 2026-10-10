@@ -244,17 +244,17 @@ export const CHARACTERS = {
   },
   wayfarer: {
     name: 'Wren', title: 'The Wayfarer', sprite: 'wren', weapon: 'prismBeam', startLevel: 2, cost: 5000,
-    bonus: '+10% move speed, +25% pickup radius, -10 health', apply: (s) => { s.moveSpeed *= 1.1; s.magnet *= 1.25; s.maxHp -= 10; },
+    bonus: '+10% move speed, +25% pickup radius, +10% damage', apply: (s) => { s.moveSpeed *= 1.1; s.magnet *= 1.25; s.might += 0.1; },
     flare: 'lanternroad', flareName: 'Lantern Road', flareDesc: 'Sprint 40% faster for 8s, trailing burning lanterns that scorch whatever follows.',
     color: '#ffd86a',
     perk: 'stride', perkName: 'Stride', perkDesc: 'Deal 12% more damage while on the move.',
   },
   pactbound: {
     name: 'Mordrel', title: 'The Pactbound', sprite: 'mordrel', weapon: 'stormCoil', cost: 5500,
-    bonus: '+10% damage', apply: (s) => { s.might += 0.1; },
+    bonus: '+20% damage, +20 health', apply: (s) => { s.might += 0.2; s.maxHp += 20; },
     flare: 'debtcalled', flareName: 'Debt Called', flareDesc: 'Call in every Dark Pact: a ring of ruin that grows with each, and mends you for each.',
     color: '#c04aff',
-    perk: 'debtor', perkName: 'Debtor', perkDesc: 'Swear up to four Dark Pacts, and gain 7% damage for each one sworn.',
+    perk: 'debtor', perkName: 'Debtor', perkDesc: 'Swear up to four Dark Pacts, and gain 8% damage for each one sworn.',
   },
 };
 

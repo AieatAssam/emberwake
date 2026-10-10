@@ -275,7 +275,7 @@ export class Game {
     this.char.apply(s);
     for (const k in this.passives) PASSIVES[k].apply(s, this.passives[k]);
     for (const p of this.pacts) PACTS[p].apply(s);
-    if (this.perk === 'debtor') s.might += 0.07 * this.pacts.length;
+    if (this.perk === 'debtor') s.might += 0.08 * this.pacts.length;
     s.greed *= this.stage.greedMul; // stage hp/speed ramp in per spawn (see spawnEnemy)
     s.greed *= this.diff.cinders; s.growth *= this.diff.xp;
     if (this.heat) s.greed *= 1 + 0.3 * this.heat; // heat's enemy buffs ramp in per spawn (see spawnEnemy/director)

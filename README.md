@@ -68,8 +68,8 @@ Each Bearer starts with a different weapon, bonus, Flare and perk. Later Bearers
 | **Brannoc**, the Bellwright | Gravewell | +25% max health, +15% area, -10% move speed | **Great Toll** — every foe on screen stunned and struck by three rings of sound | **Tollbearer** — every 15s the bell tolls, hurling nearby foes away |
 | **Sable**, the Gloam Hunter | Rime Lance | +15% crit chance, +35% crit damage, +20% damage | **Deadeye** — every strike crits and projectiles fly faster | **Marked Prey** — +35% damage to elites and bosses |
 | **Orin**, the Hearthkeeper | Sunring | +30% health, +1.2 regen, +30% area, +15% damage, -5% move speed | **Hearthfire** — plant a roaring hearth that burns foes and mends you | **Hearthheart** — every level-up restores 20% health |
-| **Wren**, the Wayfarer | Prism Beam (starts at level 2) | +10% move speed, +25% pickup radius, -10 health | **Lantern Road** — sprint 40% faster for 8s, trailing burning lanterns | **Stride** — +12% damage while moving |
-| **Mordrel**, the Pactbound | Storm Coil | +10% damage | **Debt Called** — a ring of ruin that grows with each sworn Pact and mends you for each | **Debtor** — four Pact slots, +7% damage per Pact sworn |
+| **Wren**, the Wayfarer | Prism Beam (starts at level 2) | +10% move speed, +25% pickup radius, +10% damage | **Lantern Road** — sprint 40% faster for 8s, trailing burning lanterns | **Stride** — +12% damage while moving |
+| **Mordrel**, the Pactbound | Storm Coil | +20% damage, +20 health | **Debt Called** — a ring of ruin that grows with each sworn Pact and mends you for each | **Debtor** — four Pact slots, +8% damage per Pact sworn |
 
 ![Character select](docs/img/select.png)
 
