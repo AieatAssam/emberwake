@@ -101,7 +101,7 @@ Each stage has its own ground, scenery, music, enemy mix and cinder multiplier. 
 | Stage | Flavour | Objective |
 |---|---|---|
 | **The Gloam** | Moss-choked ruins at the edge of the dark. Where every Bearer begins. | **Kindle three waystones**: stand in each ring for five seconds while a ring of foes closes in. |
-| **The Ashfields** | Scorched plains where husks and ram beetles stampede; basalt, stumps and erupting vents. | **Quench five Cinder Forges** that keep breeding imps while you are near. |
+| **The Ashfields** | Scorched plains where husks and ram beetles stampede; basalt, stumps and erupting vents. | **Quench four Cinder Forges** that keep breeding imps while you are near. |
 | **The Rimewood** | A frozen forest where wraiths and frost wisps drift between the trees. | **Carry the Heartflame** from the Hearthstone to four braziers. The flame gutters out if you stray, and the cold bites while you hold it. |
 | **The Drowned Marsh** | A black bog where lurkers sink and surface at your heels; mud and reeds slow you. | **Drain six rot pools** that grow while ignored; channel each one while lurkers rise. |
 | **The Shattered Reliquary** | A drowned cathedral of tombs and guttering candles; Candle Acolytes keep their vigil. | **Escort the Last Acolyte** through three chapels; it only walks while you stay close. |

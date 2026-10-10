@@ -123,7 +123,7 @@ function nests(g, cfg) {
   o.update = (dt) => {
     const P = g.player;
     while (spawned < o.n && g.time >= cfg.at[spawned] && !g.boss) {
-      const s = spot(P, 800, 1150);
+      const s = spot(P, 600, 900);
       const e = g.spawnEnemy('forge', s.x, s.y, { force: true });
       if (!e) break;
       e.nestT = 2;
