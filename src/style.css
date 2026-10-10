@@ -473,3 +473,14 @@ body.touch #toasts { top: 28%; }
 }
 
 @media (height <= 500px) { .panel.select > .row { bottom: -12px; margin: 6px -16px -12px; padding: 8px 16px; } }
+
+@media (width <= 640px) {
+  .panel.select h2 { font-size: 20px; letter-spacing: 2px; margin-bottom: 8px; }
+  .panel.select > .row { flex-wrap: nowrap; gap: 6px; background: linear-gradient(transparent, var(--panel) 28%); }
+  .panel.select > .row .btn { padding: 10px 12px; font-size: 14px; letter-spacing: 1px; min-width: 0; }
+  .panel.select .wallet { margin-top: 14px; }
+}
+
+@media (width <= 640px) {
+  #goal { top: 76px; white-space: normal; width: 90vw; text-align: center; font-size: 11px; letter-spacing: 1px; line-height: 1.3; }
+}
