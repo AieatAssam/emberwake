@@ -22,8 +22,14 @@ const mul = (rgb, tint) => [
 const over = (fg, bg, a) => fg.map((v, i) => v * a + bg[i] * (1 - a));
 
 const ENEMIES = ['gloomling0', 'moth0', 'husk0', 'wraith0', 'splitter0', 'broodling0', 'beetle0', 'spitter0', 'sentinel0', 'imp0', 'frostwisp0', 'lurker0', 'scarab0', 'acolyte0', 'stormkite0', 'forge0', 'totem0', 'matron0', 'colossus0', 'herald0', 'tyrant0', 'hollow0'];
-const RIM_READ = new Set(['herald0']);
 const HAZARDS = new Set(['vent', 'lightrod']);
+const BOSSES = ['herald0', 'tyrant0', 'colossus0', 'matron0'];
+const ALONGSIDE = {
+  matron0: ['wraith0', 'splitter0', 'spitter0', 'husk0', 'broodling0'],
+  colossus0: ['gloomling0', 'wraith0', 'sentinel0', 'spitter0'],
+  herald0: ['moth0', 'wraith0', 'sentinel0', 'spitter0'],
+  tyrant0: ['gloomling0', 'moth0', 'husk0', 'wraith0', 'splitter0', 'beetle0', 'spitter0', 'sentinel0'],
+};
 const POSES = ['gloomling', 'husk', 'splitter', 'matron', 'colossus', 'herald', 'tyrant'];
 const PICKUPS = ['gem0', 'gem1', 'gem2', 'gem3', 'gem4', 'heart', 'magnet', 'bomb', 'freeze', 'cinder', 'flareorb', 'chest', 'chest_silver', 'chest_gold', 'chest_ascend', 'waystone0', 'waystone1', 'hearthstone', 'brazier0', 'heartflame', 'chapel', 'pilgrim0', 'sunshard', 'lighthouse', 'rotpool', 'sunbearer0'];
 const BEARERS = ['warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', 'wren', 'mordrel'];
@@ -94,9 +100,10 @@ for (const name of ENEMIES) {
   if (!c) { fails.push(name + ' missing'); continue; }
   const body = worstOf(c.rgb), elite = worstOf(eliteOf(c.rgb));
   enemies[name] = { body: +body.min.toFixed(2), bodyAt: body.at, elite: +elite.min.toFixed(2), eliteAt: elite.at, y: +c.y.toFixed(4) };
-  if (RIM_READ.has(name)) continue;
-  if (body.min < 3) fails.push(name + ' body ' + body.min.toFixed(2) + ' on ' + body.at);
-  if (elite.min < 3) fails.push(name + ' elite ' + elite.min.toFixed(2) + ' on ' + elite.at);
+  const bodyFloor = name === 'herald0' ? 3.5 : name === 'totem0' ? 4 : 3;
+  const eliteFloor = name === 'herald0' ? 3.2 : name === 'totem0' ? 3.5 : 3;
+  if (body.min < bodyFloor) fails.push(name + ' body ' + body.min.toFixed(2) + ' on ' + body.at);
+  if (elite.min < eliteFloor) fails.push(name + ' elite ' + elite.min.toFixed(2) + ' on ' + elite.at);
 }
 const RIM = [0xe6, 0xdc, 0xff];
 let rimMin = 99, rimAt = '';
@@ -141,6 +148,7 @@ for (const name of BEARERS) {
   const m = worstOf(c.rgb);
   bearers[name] = { contrast: +m.min.toFixed(2), at: m.at, y: +c.y.toFixed(4) };
   if (m.min < 4) fails.push(name + ' bearer ' + m.min.toFixed(2) + ' on ' + m.at);
+  if (name === 'hunter' && m.min < 4.5) fails.push('hunter ' + m.min.toFixed(2) + ' on ' + m.at);
 }
 const props = {};
 const union = [...new Set(Object.values(STAGE_PROPS).flat())];
@@ -162,8 +170,8 @@ for (const name of union) {
 }
 const worst = (rows, key) => rows.reduce((a, b) => (a[key] < b[key] ? a : b));
 const summary = {
-  enemyBody: worst(Object.entries(enemies).filter(([name]) => !RIM_READ.has(name)).map(([name, v]) => ({ name, ...v, v: v.body })), 'v'),
-  enemyElite: worst(Object.entries(enemies).filter(([name]) => !RIM_READ.has(name)).map(([name, v]) => ({ name, ...v, v: v.elite })), 'v'),
+  enemyBody: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.body })), 'v'),
+  enemyElite: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.elite })), 'v'),
   pickup: worst(Object.entries(pickups).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
   bearer: worst(Object.entries(bearers).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
 };
@@ -175,7 +183,281 @@ for (const [name, by] of Object.entries(props)) {
     if (r > propMax) { propMax = r; propMaxAt = name + ' ' + id; }
   }
 }
-const out = { fails, summary, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props };
+// Craft metrics at 1x (one sample per logical pixel). Flat: 3×3 channel span ≤ 2.
+// Detail: share of non-ink pixels whose 3×3 luminance span is ≥ 4. A flat fill only scores its edge.
+function grab(name) {
+  const f = frames[name];
+  if (!f) return null;
+  const img = ctx.getImageData(f.x * SS, f.y * SS, f.w * SS, f.h * SS);
+  const W = f.w, H = f.h, SW = W * SS, src = img.data;
+  const d = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const s = (y * SS * SW + x * SS) * 4, o = (y * W + x) * 4;
+    d[o] = src[s]; d[o + 1] = src[s + 1]; d[o + 2] = src[s + 2]; d[o + 3] = src[s + 3];
+  }
+  return { d, W, H };
+}
+const isInk = (d, o) => d[o] === 11 && d[o + 1] === 6 && d[o + 2] === 20;
+const lum = (d, o) => 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2];
+function craft(name) {
+  const g = grab(name);
+  if (!g) return null;
+  const { d, W, H } = g;
+  const key = (o) => d[o] + ',' + d[o + 1] + ',' + d[o + 2];
+  const hist = new Map();
+  let solid = 0, nonInk = 0, inkN = 0, flatN = 0, detailN = 0;
+  const spanAt = (x, y) => {
+    let r0 = 255, r1 = 0, g0 = 255, g1 = 0, b0 = 255, b1 = 0, l0 = 255, l1 = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      let r, gv, b, L;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H || d[(yy * W + xx) * 4 + 3] < 150) { r = gv = b = L = 0; }
+      else {
+        const o = (yy * W + xx) * 4;
+        r = d[o]; gv = d[o + 1]; b = d[o + 2]; L = lum(d, o);
+      }
+      r0 = Math.min(r0, r); r1 = Math.max(r1, r);
+      g0 = Math.min(g0, gv); g1 = Math.max(g1, gv);
+      b0 = Math.min(b0, b); b1 = Math.max(b1, b);
+      l0 = Math.min(l0, L); l1 = Math.max(l1, L);
+    }
+    return { flat: r1 - r0 <= 2 && g1 - g0 <= 2 && b1 - b0 <= 2, detail: l1 - l0 >= 4 };
+  };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = (y * W + x) * 4;
+    if (d[o + 3] < 150) continue;
+    solid++;
+    if (isInk(d, o)) { inkN++; continue; }
+    nonInk++;
+    hist.set(key(o), (hist.get(key(o)) || 0) + 1);
+    const s = spanAt(x, y);
+    if (s.flat) flatN++;
+    if (s.detail) detailN++;
+  }
+  const counts = [...hist.values()].sort((a, b) => b - a);
+  let cover = 0, n80 = 0;
+  for (const n of counts) { cover += n; n80++; if (cover >= nonInk * 0.8) break; }
+  const top3 = solid ? counts.slice(0, 3).reduce((a, b) => a + b, 0) / solid : 1;
+  let edge = 0, edgeInk = 0, interiorInk = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = (y * W + x) * 4;
+    if (d[o + 3] < 150) continue;
+    let boundary = false, deep = true;
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H || d[(yy * W + xx) * 4 + 3] < 150) {
+        if (Math.abs(dx) + Math.abs(dy) === 1) boundary = true;
+        deep = false;
+      }
+    }
+    const near = Math.abs(d[o] - 11) + Math.abs(d[o + 1] - 6) + Math.abs(d[o + 2] - 20) < 40;
+    if (boundary) { edge++; if (near) edgeInk++; }
+    else if (deep && isInk(d, o)) interiorInk++;
+  }
+  return {
+    n80: nonInk ? n80 : 0,
+    flat: nonInk ? flatN / nonInk : 1,
+    detail: nonInk ? detailN / nonInk : 0,
+    ink: solid ? inkN / solid : 1,
+    void: solid ? interiorInk / solid : 1,
+    top3,
+    edge: edge ? edgeInk / edge : 0,
+    maxHex: solid && counts.length ? counts[0] / solid : 1,
+  };
+}
+function borderAlpha(name) {
+  const f = frames[name];
+  if (!f) return 255;
+  const img = ctx.getImageData(f.x * SS, f.y * SS, f.w * SS, f.h * SS);
+  const W = f.w * SS, H = f.h * SS, d = img.data;
+  let max = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (x >= SS && y >= SS && x < W - SS && y < H - SS) continue;
+    max = Math.max(max, d[(y * W + x) * 4 + 3]);
+  }
+  return max;
+}
+function bboxWidth(name) {
+  const g = grab(name);
+  if (!g) return 0;
+  let min = g.W, max = 0;
+  for (let y = 0; y < g.H; y++) for (let x = 0; x < g.W; x++) {
+    if (g.d[(y * g.W + x) * 4 + 3] < 150) continue;
+    if (x < min) min = x;
+    if (x > max) max = x;
+  }
+  return max - min + 1;
+}
+function sil(name) {
+  const g = grab(name);
+  if (!g) return null;
+  let x0 = g.W, y0 = g.H, x1 = 0, y1 = 0, any = false;
+  for (let y = 0; y < g.H; y++) for (let x = 0; x < g.W; x++) {
+    if (g.d[(y * g.W + x) * 4 + 3] < 150) continue;
+    any = true;
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+  }
+  const out = new Uint8Array(48 * 48);
+  if (!any) return out;
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+  const s = 46 / Math.max(bw, bh);
+  const ox = Math.floor((48 - bw * s) / 2), oy = Math.floor((48 - bh * s) / 2);
+  for (let y = 0; y < bh * s; y++) for (let x = 0; x < bw * s; x++) {
+    const sx = x0 + Math.min(bw - 1, Math.floor(x / s));
+    const sy = y0 + Math.min(bh - 1, Math.floor(y / s));
+    if (g.d[(sy * g.W + sx) * 4 + 3] >= 150) out[(oy + y) * 48 + ox + x] = 1;
+  }
+  return out;
+}
+function iou(a, b) {
+  let i = 0, u = 0;
+  for (let k = 0; k < a.length; k++) { if (a[k] || b[k]) u++; if (a[k] && b[k]) i++; }
+  return u ? i / u : 0;
+}
+function poseOf(aName, bName) {
+  const a = opaque(aName), b = opaque(bName);
+  if (!a || !b || a.length !== b.length) return 0;
+  let x = 0, u = 0;
+  for (let i = 0; i < a.length; i++) { if (a[i] || b[i]) u++; if (a[i] !== b[i]) x++; }
+  return u ? x / u : 0;
+}
+function tyrantBody() {
+  const g = grab('tyrant0');
+  if (!g) return 0;
+  const cx = g.W / 2, cy = g.H / 2;
+  let lr = 0, lg = 0, lb = 0, n = 0;
+  for (let y = 0; y < g.H; y++) for (let x = 0; x < g.W; x++) {
+    if ((x - cx) ** 2 + (y - cy) ** 2 > 34 * 34) continue;
+    const o = (y * g.W + x) * 4;
+    if (g.d[o + 3] < 150 || isInk(g.d, o)) continue;
+    lr += lin(g.d[o]); lg += lin(g.d[o + 1]); lb += lin(g.d[o + 2]);
+    n++;
+  }
+  if (!n) return 0;
+  return worstOf([enc(lr / n), enc(lg / n), enc(lb / n)]).min;
+}
+function sheen(name) {
+  const g = grab(name);
+  if (!g) return null;
+  let x0 = g.W, y0 = g.H, x1 = 0, y1 = 0, n = 0;
+  const vals = [];
+  for (let y = 0; y < g.H; y++) for (let x = 0; x < g.W; x++) {
+    const o = (y * g.W + x) * 4;
+    if (g.d[o + 3] < 150) continue;
+    const L = lum(g.d, o);
+    vals.push(L);
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+    n++;
+  }
+  if (n < 8) return null;
+  vals.sort((a, b) => a - b);
+  const cut = vals[Math.floor(vals.length * 0.82)];
+  let sx = 0, sy = 0, sn = 0;
+  for (let y = 0; y < g.H; y++) for (let x = 0; x < g.W; x++) {
+    const o = (y * g.W + x) * 4;
+    if (g.d[o + 3] < 150 || lum(g.d, o) < cut) continue;
+    sx += x; sy += y; sn++;
+  }
+  if (!sn) return null;
+  const bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+  return { dx: (sx / sn - (x0 + x1) / 2) / bw, dy: (sy / sn - (y0 + y1) / 2) / bh };
+}
+const LIT = ['warden', 'oracle', 'tinker', 'reaver', 'dancer', 'bellwright', 'hunter', 'hearthkeeper', 'wren', 'mordrel', 'gloomling0', 'moth0', 'husk0', 'wraith0', 'splitter0', 'broodling0', 'beetle0', 'spitter0', 'sentinel0', 'imp0', 'frostwisp0', 'lurker0', 'scarab0', 'acolyte0', 'stormkite0', 'forge0', 'totem0', 'matron0', 'colossus0', 'herald0', 'tyrant0', 'hollow0', 'gem0', 'gem1', 'gem2', 'gem3', 'gem4', 'heart', 'magnet', 'bomb', 'freeze', 'cinder', 'flareorb', 'chest', 'chest_silver', 'chest_gold', 'chest_ascend', 'waystone0', 'hearthstone', 'heartflame', 'sunshard', 'blade', 'orb', 'meteor', 'glasscluster', 'cobble', 'glaive'];
+const craftOf = {};
+for (const name of [...ENEMIES, 'banner', 'vent', 'lightrod', 'rotpool', 'meteor', 'totem1']) {
+  const c = craft(name);
+  if (c) craftOf[name] = {
+    n80: c.n80, flat: +c.flat.toFixed(3), detail: +c.detail.toFixed(3),
+    ink: +c.ink.toFixed(3), void: +c.void.toFixed(3), top3: +c.top3.toFixed(3),
+    edge: +c.edge.toFixed(3), maxHex: +c.maxHex.toFixed(3),
+  };
+}
+const med = (xs) => { const a = [...xs].sort((p, q) => p - q); const i = (a.length - 1) / 2; return (a[Math.floor(i)] + a[Math.ceil(i)]) / 2; };
+const bossCraft = {};
+for (const name of BOSSES) bossCraft[name] = craftOf[name];
+const bossDetail = med(BOSSES.map((n) => craftOf[n].detail));
+const bossFlat = med(BOSSES.map((n) => craftOf[n].flat));
+const bossN80 = med(BOSSES.map((n) => craftOf[n].n80));
+if (bossDetail < 0.45) fails.push('boss detail median ' + bossDetail.toFixed(3));
+if (bossFlat > 0.35) fails.push('boss flat median ' + bossFlat.toFixed(3));
+if (bossN80 < 60) fails.push('boss n80 median ' + bossN80.toFixed(1));
+const grads = window.__grads || {};
+for (const name of BOSSES) {
+  const gcount = grads[name] || 0;
+  if (gcount < 1) fails.push(name + ' gradients ' + gcount);
+  const c = craftOf[name];
+  if (c.detail < 0.4 && (name === 'colossus0' || name === 'tyrant0')) fails.push(name + ' detail ' + c.detail);
+  if (c.flat > 0.35) fails.push(name + ' flat ' + c.flat);
+  if ((name === 'herald0' ? c.n80 < 40 : c.n80 < 60)) fails.push(name + ' n80 ' + c.n80);
+  const along = ALONGSIDE[name].map((n) => craftOf[n].detail);
+  const bar = med(along) * 0.6;
+  if (c.detail < bar) fails.push(name + ' detail ' + c.detail.toFixed(3) + ' < alongside ' + bar.toFixed(3));
+}
+if ((grads.tyrant0 || 0) < 2) fails.push('tyrant gradients ' + (grads.tyrant0 || 0));
+const h = craftOf.herald0, ty = craftOf.tyrant0, co = craftOf.colossus0, ma = craftOf.matron0;
+if (h.void > 0.2) fails.push('herald void ' + h.void);
+if (h.flat > 0.35) fails.push('herald flat ' + h.flat);
+if (ty.ink > 0.3) fails.push('tyrant ink ' + ty.ink);
+if (ty.flat > 0.35) fails.push('tyrant flat ' + ty.flat);
+const tyBody = tyrantBody();
+if (tyBody < 3) fails.push('tyrant body ' + tyBody.toFixed(2));
+if (co.maxHex > 0.12) fails.push('colossus hex ' + co.maxHex);
+if (co.flat > 0.35) fails.push('colossus flat ' + co.flat);
+if (ma.n80 < 150) fails.push('matron n80 ' + ma.n80);
+if (ma.edge < 0.9) fails.push('matron edge ' + ma.edge);
+if (craftOf.hollow0.detail < 0.28) fails.push('hollow detail ' + craftOf.hollow0.detail);
+if (craftOf.hollow0.flat > 0.55) fails.push('hollow flat ' + craftOf.hollow0.flat);
+if (craftOf.totem0.n80 < 20) fails.push('totem n80 ' + craftOf.totem0.n80);
+if ((craftOf.vent.edge < 0.8)) fails.push('vent edge ' + craftOf.vent.edge);
+if ((craftOf.lightrod.edge < 0.8)) fails.push('lightrod edge ' + craftOf.lightrod.edge);
+if (craftOf.rotpool.top3 > 0.45) fails.push('rotpool top3 ' + craftOf.rotpool.top3);
+if (craftOf.meteor.top3 > 0.4) fails.push('meteor top3 ' + craftOf.meteor.top3);
+if (craftOf.banner && craftOf.banner.n80 < 20) fails.push('banner n80 ' + craftOf.banner.n80);
+const totemDiff = poseOf('totem0', 'totem1');
+if (totemDiff < 0.05) fails.push('totem pose ' + totemDiff.toFixed(3));
+const robeW0 = bboxWidth('herald0'), robeW2 = bboxWidth('herald2');
+if (robeW0 && Math.abs(robeW2 - robeW0) / robeW0 > 0.04) fails.push('herald robe width ' + robeW0 + '→' + robeW2);
+for (const name of ['vent', 'candelabra', 'tyrant0', 'tyrant1', 'tyrant2', 'tyrant3']) {
+  const b = borderAlpha(name);
+  if (b >= 8) fails.push(name + ' border ' + b);
+}
+if (frames.broodling0 && (frames.broodling0.w !== 28 || frames.broodling0.h !== 28)) fails.push('broodling frame ' + frames.broodling0.w);
+const sils = {};
+for (const name of ENEMIES) sils[name] = sil(name);
+let maxIou = 0, maxPair = '', hotPairs = 0;
+const pairList = [];
+for (let i = 0; i < ENEMIES.length; i++) for (let j = i + 1; j < ENEMIES.length; j++) {
+  const v = iou(sils[ENEMIES[i]], sils[ENEMIES[j]]);
+  if (v > maxIou) { maxIou = v; maxPair = ENEMIES[i] + '-' + ENEMIES[j]; }
+  if (v >= 0.8) hotPairs++;
+  if (v >= 0.7) pairList.push(ENEMIES[i] + '-' + ENEMIES[j] + ' ' + v.toFixed(3));
+}
+if (hotPairs) fails.push('iou pairs ≥0.80: ' + hotPairs);
+if (maxIou > 0.78) fails.push('max iou ' + maxIou.toFixed(3) + ' ' + maxPair);
+const gb = iou(sils.gloomling0, sils.splitter0), ml = iou(sils.matron0, sils.lurker0), hc = iou(sils.colossus0, sils.husk0);
+if (gb >= 0.75) fails.push('gloomling-bloater ' + gb.toFixed(3));
+if (ml >= 0.7) fails.push('matron-lurker ' + ml.toFixed(3));
+if (hc >= 0.75) fails.push('colossus-husk ' + hc.toFixed(3));
+let litN = 0;
+const sheens = {};
+for (const name of LIT) {
+  const s = sheen(name);
+  if (!s) continue;
+  sheens[name] = { dx: +s.dx.toFixed(2), dy: +s.dy.toFixed(2) };
+  if (s.dx < 0 && s.dy < 0) litN++;
+}
+if (litN < 30) fails.push('upper-left ' + litN + '/' + LIT.length);
+const glass = sheens.glasscluster, cob = sheens.cobble, orbS = sheens.orb;
+if (!glass || glass.dx > -0.05) fails.push('glass dx ' + (glass && glass.dx));
+if (!cob || cob.dx > -0.05 || cob.dy > -0.05) fails.push('cobble ' + (cob && cob.dx) + ',' + (cob && cob.dy));
+if (!orbS || orbS.dx > -0.1) fails.push('orb dx ' + (orbS && orbS.dx));
+const craftSummary = {
+  bossDetail: +bossDetail.toFixed(3), bossFlat: +bossFlat.toFixed(3), bossN80: +bossN80.toFixed(1),
+  tyrantBody: +tyBody.toFixed(2), totemDiff: +totemDiff.toFixed(3),
+  maxIou: +maxIou.toFixed(3), maxPair, hotPairs, gloomBloater: +gb.toFixed(3), matronLurker: +ml.toFixed(3),
+  upperLeft: litN, lit: LIT.length, pairs: pairList,
+};
+const out = { fails, summary, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens };
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>
 </body>

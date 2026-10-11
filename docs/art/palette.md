@@ -1,4 +1,4 @@
-# Emberwake locked palette, 2026-10-10
+# Emberwake locked palette, v1.1 (2026-10-10)
 
 This is the locked palette. The constants are [`src/palette.js`](../../src/palette.js). The rules that use them are [style-guide.md](style-guide.md). It was checked, before it landed, against a throwaway copy (the repo source plus a colour-remap shim) served by a local Vite dev server. `npm run contrast` remeasures the atlas in the repo.
 
@@ -11,7 +11,7 @@ The contrast column gives the min–max for the flat swatch against the 8 effect
 
 | # | hex | id | name | ramp / step | role | side | contrast |
 |---|---|---|---|---|---|---|---|
-| 1 | `#0b0614` | INK | Ink | Ink & neutrals / shadow | outline for every sprite, canvas bg, pupils | shared | 1.05–1.17 |
+| 1 | `#0b0614` | INK | Ink | Ink & neutrals / shadow | outlines and voids only, canvas bg, pupils | shared | 1.05–1.17 |
 | 2 | `#2a2836` | SLATE_D | Slate Shadow | Stone / shadow | stone/metal shadow side | shared | 1.18–1.32 |
 | 3 | `#4a4660` | SLATE | Slate | Stone / base | stone, iron, cloth base | shared | 1.9–2.12 |
 | 4 | `#7a7490` | SLATE_L | Slate Light | Stone / light | stone/metal lit side | shared | 3.84–4.29 |
@@ -169,11 +169,12 @@ The mapping that produced v1 (not shipped with the game) had one row for each of
 These are the calls made while locking v1. The repo now draws from the swatches. The ground texture noise is still the original pattern: bases use the ground swatches, and stage multiply tints stay as lighting. `npm run contrast` remeasures the atlas.
 
 - **Quantising 987 colours to 72 is a big change.** 58% of colours move by more than ΔE 10. Gradients still blend between swatches, so sprites keep their shading, but subtle per-sprite hues are gone. For example, the 13 near-identical golds collapse into EMBER_L or R_GOLD, and the bearer cloths become FROST, MOON, CRIMSON, SLATE or MOSS. If 72 is too tight, add 1–2 cloth swatches per bearer as a "bearer accent" side.
-- **Herald's body is SHROUD_D** (`#5a5080`), with an INK void. That body is under 3:1 on these grounds, so the RIM composite (alpha 0.5) is what carries the 3:1 read. `npm run contrast` exempts `herald0` from the body floor and checks the rim.
+- **Herald's robe is a Shroud gradient, not an INK fill.** The hood void is a small INK ellipse. v1.1 drops the rim exemption: the body itself is 4.35:1 and the elite tint is 3.92:1 on Rimewood (floors 3.5 and 3.2). The rim composite is still checked, and it is not what carries the read.
 - **Ground texture noise was not redrawn.** Gloam, Rimewood and Stormbreak bases are Night Ground `#141a24` (they were within ΔE 1.6–3.4). The blob and stone colours inside the texture stay as they were, so a re-rendered tile is not the same hex as the old analytical shift. Stage multiply tints are unchanged.
 - **Halo colours follow the side rules.** Plain elite halo is RIM `#e6dcff`, vampiric is ROSE_L `#ff9ad0`, warded is VOID `#c080ff`. The closest pair is ΔE 31.8.
 - **Scenery warm light is CANDLE** `#f0dc46` (swatch 73). It is at least ΔE 20 from Player Ember and from Hostile Fire, so a candelabra is not the player's flame and not a vent.
-- **Hazards skip the prop dim.** Vent and lightrod stay bright and must read ≥ 3:1. Vent's glow is Hostile Fire. Lightrod's bulb is Frost Highlight, because that hazard's damage colour is frost. Glow props keep the dim, then a wash at alpha ≤ 0.55 (excluded from the core mean) puts the glow back without leaving the 1.4–2.0 band.
+- **Hazards skip the prop dim.** Vent and lightrod stay bright, may glow, and must read ≥ 3:1 (v1.1: vent 3.99, lightrod 4.41). Both glows are Hostile Fire. The lightrod tip is HFIRE_H, not Frost Highlight. Glow props keep the dim, then a wash at alpha ≤ 0.55 (excluded from the core mean) puts the glow back without leaving the 1.4–2.0 band.
+- **The rot pool is an objective.** It uses Moss and Objective only. Bog is hostile and is not a rot-pool swatch. v1.1 top-3 colour share is 0.115, and the pickup floor still clears 4.5:1.
 - **MUTED was merged into SLATE_H** (ΔE 10.4) to stay at 72 swatches.
 - **Outline widths follow the size table** (1.5 / 2.5 / 4.0). Bosses, the Hollow, the Tyrant, Matron's legs and the horde strokes were redrawn to that table.
 

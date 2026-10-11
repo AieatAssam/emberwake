@@ -1,7 +1,7 @@
-# Emberwake Art Style Guide, v1
+# Emberwake Art Style Guide, v1.1
 
 **Status:** this is the source of truth. Every future art audit compares against this document.
-**Version:** v1, 2026-10-10. It goes with **palette v1 (73 swatches)**.
+**Version:** v1.1, 2026-10-10. It goes with **palette v1.1 (73 swatches)**. v1.1 keeps the same swatches and adds the hazard band, the CANDLE row already in the palette, and the boss craft floors.
 **Based on:**
 - the repo survey of `AieatAssam/emberwake` @ `758ad49`
 - `ew-reports/drift-2026-10-10.md`
@@ -89,7 +89,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 
 **Reference:** [palette.md](palette.md), and the constants in [`src/palette.js`](../../src/palette.js). Drawing code and CSS variables name those swatches.
 
-**v1 is locked at 73 swatches.** Any colour that isn't a swatch is a finding. Alpha may vary. A gradient may only blend between swatches of the same ramp, or into INK or WHITE. Swatch 73 is CANDLE `#f0dc46`, scenery warm light. It stays at least ΔE 20 from both the Player Ember ramp and Hostile Fire.
+**v1.1 is locked at 73 swatches.** Any colour that isn't a swatch is a finding. Alpha may vary. A gradient may only blend between swatches of the same ramp, or into INK or WHITE. Swatch 73 is CANDLE `#f0dc46`, scenery warm light. It stays at least ΔE 20 from both the Player Ember ramp and Hostile Fire.
 
 **Which sides may use which ramps [Rule]**
 
@@ -98,7 +98,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | Player | Player Ember, Bearer Flesh/Cloth, shared (Ink, Stone, Frost, Wood), scenery materials, Reward, FX | any hostile ramp (Hostile Fire, Hostile Signal, Gloom, Shroud, Hulk, Rot Rose, Bog, Spirit, Rim) |
 | Hostile | hostile ramps, shared, FX (VOID) | Player Ember, Bearer Flesh/Cloth, Reward, Objective |
 | Reward | Reward ramp, shared, scenery materials, Objective | hostile ramps, Player Ember, Bearer ramps |
-| Objective | Objective, Player Ember (it is the player's flame being kindled), shared, scenery. The rot pool may use the Bog ramp, because Bog is what makes the pool read as rot | other hostile ramps |
+| Objective | Objective, Player Ember (it is the player's flame being kindled), shared, scenery. The rot pool uses Moss and Objective, not Bog | other hostile ramps |
 | Scenery | Moss, Wood, Sand, Stone, Frost, Candle, Hostile Fire (hazards such as vents and burning stumps) | Player Ember, Reward, Objective, Hostile Signal, Rim |
 | UI | everything except RIM; PACT, PANEL and TEXT are UI-only | RIM |
 | FX | everything except RIM, PACT, PANEL, TEXT; HURT is FX-only | |
@@ -119,30 +119,32 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 - Effective ground = ground tile mean × stage tint.
 - Measured on the rendered core mean: pixels with alpha ≥ 150, ignoring outline pixels within 40 RGB steps of INK.
 
-| class | band | v1 result |
+| class | band | v1.1 result |
 |---|---|---|
-| Enemy body (normal) | ≥ 3.0 | min 3.58 (beetle0 on Rimewood). Herald's SHROUD_D body is 2.45 and is exempt: the rim carries it |
-| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0 | min 3.29 (matron0 on Rimewood). Herald elite is exempt with the body |
-| Pickup / reward | ≥ 4.5 | min 4.70 (waystone0 on Rimewood) |
-| Objective | ≥ 4.5 | rot pool uses the Bog ramp so it reads as rot and stays in band |
-| Bearer | ≥ 4.0 | min 4.09 (hunter on Rimewood) |
-| Prop, at alpha 0.8 over the ground | 1.4 – 2.0 | 1.44 (stump, Rimewood) – 1.66 (snowrock, Reliquary) |
-| Hazards (not dimmed) | ≥ 3.0 | vent 3.42, lightrod 7.55 |
+| Enemy body (normal) | ≥ 3.0. Herald ≥ 3.5. Totem ≥ 4.0. No rim exemption | min 3.61 (forge0 on Rimewood). Herald body 4.35 |
+| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0. Herald ≥ 3.2. Totem ≥ 3.5 | min 3.40 (forge0 on Rimewood). Herald elite 3.92 |
+| Pickup / reward | ≥ 4.5 | min 4.58 (pilgrim0 on Rimewood) |
+| Objective | ≥ 4.5 | rot pool is Moss + Objective (no Bog). Top-3 colour share 0.115 |
+| Bearer | ≥ 4.0. Hunter ≥ 4.5 | min 4.26 (warden on Rimewood). Hunter 5.02 |
+| Prop, at alpha 0.8 over the ground | 1.4 – 2.0 | 1.45 (rock1, Rimewood) – 1.68 (shroom, Reliquary) |
+| Hazards (not dimmed, glow allowed) | ≥ 3.0 | vent 3.99, lightrod 4.41. Ink edge share 0.875 and 0.977 |
 | Enemy rim composite | ≥ 3.0 | 4.26 on Rimewood |
 | Enemy eyes / irises | ≥ 4.5 | held from v1 |
 
-**Effective grounds (v1)**
+Boss craft, measured on the non-ink body (`npm run contrast`): median detail 0.944 (floor 0.45), median flat share 0.002 (ceiling 0.35), median n80 1087 (floor 60). Herald void 0.039 (ceiling 0.20). Tyrant ink share 0.153 (ceiling 0.30) and body-only contrast 4.08. Each boss has at least one gradient.
+
+**Effective grounds (v1.1, tile mean × stage tint)**
 
 | stage | effective ground |
 |---|---|
-| Gloam | `#0c1018` |
-| Ashfields | `#190e09` |
-| Rimewood | `#151c2a` |
-| Marsh | `#09130d` |
-| Reliquary | `#140e1a` |
-| Glass Dunes | `#23170d` |
-| Wayfarer's March | `#161b18` |
-| Stormbreak Coast | `#0e1621` |
+| Gloam | `#0c1017` |
+| Ashfields | `#170c08` |
+| Rimewood | `#101926` |
+| Marsh | `#08110d` |
+| Reliquary | `#110c17` |
+| Glass Dunes | `#20150c` |
+| Wayfarer's March | `#141816` |
+| Stormbreak Coast | `#0a131d` |
 
 All have luminance between 0.005 and 0.011.
 
@@ -175,11 +177,11 @@ All have luminance between 0.005 and 0.011.
 |---|---|---|
 | Horde | gloomling, moth, broodling, imp, scarab, stormkite, sunbearer, thief (24–40px) | one blob or one creature mass, 1–2 glowing eyes as the focal point, ramp from one material |
 | Brute / stage | husk, beetle, wraith, bloater (`splitter`), spitter, sentinel, frostwisp, lurker, acolyte, forge (44–72px) | heavier mass, one readable feature (horn, cracks, tail, spikes) |
-| Boss | Brood Matron 150, Cinder Colossus 190, Gloam Herald 90×120, Eclipse Tyrant 220 | silhouette fills 90–220px; boss halo HEYE |
+| Boss | Brood Matron 150×140, Cinder Colossus 190, Gloam Herald 90×120, Eclipse Tyrant 252 | silhouette fills 90–252px; boss halo HEYE |
 | Special | the Hollow (110×120, can't be harmed), Gloom Totem (40×60, breakable loot) | |
 
 - **[Rule]** an enemy's body uses one hostile material ramp. Eyes use HEYE, HGLARE, SPIRIT_L or WHITE.
-- **[Rule]** the Eclipse Tyrant's light outline (`#ffb060`) is replaced by INK plus RIM (§6).
+- **[Rule]** the Eclipse Tyrant's corona is outlined in INK. The disc is a shaded body, not an INK fill (§6).
 
 **Pickups [Current]**
 - Small and faceted or iconic: gems 22×28 (tier 4 is 31×39), heart, magnet, bomb, freeze, cinder 18, flare orb.
@@ -201,10 +203,11 @@ All have luminance between 0.005 and 0.011.
 ## 6. Outline and rim
 
 **Colour [Rule]**
-- Every silhouette is outlined in INK `#0b0614` only.
+- Every silhouette is outlined in INK `#0b0614` only. INK is for outlines and voids (pupils, open mouths, the Herald's hood void), not for body fills.
+- A 4.0 outline is a 4px INK stroke. It is not an INK-coloured body.
 - No tinted or translucent outlines.
 - Projectiles that need an edge use INK. Pure-glow FX have no outline.
-- Character silhouettes, including the Hollow shroud and the Tyrant corona, are INK. Interior marks (the Hollow's tears) may stay a ramp colour.
+- The Hollow shroud and the Tyrant corona are stroked in INK. Their fills stay on a material ramp. Interior marks (the Hollow's tears) may stay a ramp colour.
 
 **Width by frame size, logical px (×SS on the atlas) [Rule]**
 
@@ -216,7 +219,7 @@ All have luminance between 0.005 and 0.011.
 
 - Interior detail lines: 1.2–1.6.
 - Boss strokes are 4.0, including Matron's legs. Horde strokes are 2.5 (moth, wraith, frost wisp included). Broodling and the enemy orb are 1.5.
-- Bearer silhouettes use 2.5. Shared `boots()` is 2.5. Detail on the Hunter (the widest bearer) is 1.4. Other bearers still carry a few leftover widths.
+- Bearer silhouettes use 2.5. Shared `boots()` is 2.5. The Hearthkeeper uses three widths (1.4, 1.6, 2.5). The atlas source uses eight distinct widths: 1.2, 1.4, 1.5, 1.6, 2.5, 4, and two FX widths (8 and 10).
 
 **Rim [Rule], applies to hostile sprites only**
 - RIM `#e6dcff` at **alpha 0.5**, 1 logical px wide, drawn **outside** the INK outline.
@@ -234,9 +237,9 @@ All have luminance between 0.005 and 0.011.
 |---|---|---|---|---|
 | Bearer | 64×64 | 14 | 2.29 | 38 |
 | Horde (gloomling, moth, imp, scarab, stormkite, sunbearer) | 40×40–42 | 12–14 | 1.43–1.67 | 24 |
-| Broodling | 24×24 | 9 | 1.33 | 14 (body ~8.4) |
+| Broodling | 28×28 | 9 | 1.56 | 17 (body ≥ 10) |
 | Brute (husk 60, beetle 52×48, sentinel 64, forge 72×64) | 44–72 | 15–32 | 1.12–1.60 | 26–43 |
-| Boss: Matron / Colossus / Herald / Tyrant | 150×140 / 190 / 90×120 / 220 | 58 / 75 / 30 / 85 | 1.29 / 1.27 / 1.50 / 1.29 | 84–132 |
+| Boss: Matron / Colossus / Herald / Tyrant | 150×140 / 190 / 90×120 / 252 | 58 / 75 / 30 / 85 | 1.29 / 1.27 / 1.50 / 1.48 | 72–151 |
 | Pickups: gem / cinder / heart | 22×28 / 18 / 28×26 | — | — | 13×17 / 10.8 / 17 |
 | Chest | 44×38 | — | — | 26×23 |
 | Prop | 20–56 wide, up to 72 tall | solids from `stage.solids` | — | 12–43 |

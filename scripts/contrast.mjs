@@ -1,6 +1,29 @@
 // Headless contrast check. Serves nothing: it talks to the Vite dev server.
+import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { PAL, PLAYER, REWARD, AFFIX_TINT, ELITE_HALO, BOSS_HALO } from '../src/palette.js';
+
+const atlasSrc = readFileSync(new URL('../src/atlas.js', import.meta.url), 'utf8');
+const widthSet = new Set([...atlasSrc.matchAll(/lineWidth\s*=\s*(\d+(?:\.\d+)?)/g)].map((m) => m[1]));
+for (const line of atlasSrc.split('\n')) {
+  if (!/\b(?:circle|ellipse|poly|rim)\(/.test(line)) continue;
+  const hit = line.match(/,\s*(\d+(?:\.\d+)?)\)\s*;?\s*$/);
+  if (hit) widthSet.add(hit[1]);
+}
+for (const hit of atlasSrc.matchAll(/\blw\s*=\s*(\d+(?:\.\d+)?)/g)) widthSet.add(hit[1]);
+const hkStart = atlasSrc.indexOf("makeChar('hearthkeeper'");
+const hkEnd = atlasSrc.indexOf('// ---------- enemies');
+const hk = atlasSrc.slice(hkStart, hkEnd);
+const hkSet = new Set([...hk.matchAll(/lineWidth\s*=\s*(\d+(?:\.\d+)?)/g)].map((m) => m[1]));
+for (const line of hk.split('\n')) {
+  if (!/\b(?:circle|ellipse|poly)\(/.test(line)) continue;
+  const hit = line.match(/,\s*(\d+(?:\.\d+)?)\)\s*;?\s*$/);
+  if (hit) hkSet.add(hit[1]);
+}
+const rotStart = atlasSrc.indexOf("make('rotpool'");
+const rot = atlasSrc.slice(rotStart, rotStart + 700);
+console.log('line widths', [...widthSet].sort((a, b) => a - b).join(' '), '(' + widthSet.size + ')');
+console.log('hearthkeeper widths', [...hkSet].sort((a, b) => a - b).join(' '), '(' + hkSet.size + ')');
 
 const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 function lab(hex) {
@@ -19,6 +42,9 @@ const dE = (a, b) => {
 };
 
 const fails = [];
+if (/BOG/.test(rot)) fails.push('rotpool still uses BOG');
+if (widthSet.size > 8) fails.push('line widths ' + [...widthSet].sort().join(' '));
+if (hkSet.size > 3) fails.push('hearthkeeper widths ' + [...hkSet].sort().join(' '));
 const ember = [PAL.EMBER_D, PAL.EMBER, PAL.EMBER_L, PAL.EMBER_H];
 const hostileSignal = [PAL.HFIRE_D, PAL.HFIRE_B, PAL.HFIRE, PAL.HFIRE_H, PAL.HEYE, PAL.HGLARE, PAL.HEYE_D];
 function minPair(as, bs) {
@@ -127,6 +153,15 @@ console.log('  props', report.propMin, report.propMinAt, '…', report.propMax, 
 console.log('  herald rim', report.rimMin, 'on', report.rimAt, 'body', report.enemies.herald0);
 console.log('  poses', report.poses);
 console.log('  hazards', report.props.vent && report.props.vent.hazard, report.props.lightrod && report.props.lightrod.hazard);
+const cs = report.craftSummary || {};
+console.log('  craft bosses detail', cs.bossDetail, 'flat', cs.bossFlat, 'n80', cs.bossN80, 'grads', report.grads);
+console.log('  tyrant body', cs.tyrantBody, 'totem diff', cs.totemDiff);
+console.log('  iou max', cs.maxIou, cs.maxPair, 'hot', cs.hotPairs, 'gloom-bloater', cs.gloomBloater, 'matron-lurker', cs.matronLurker);
+console.log('  upper-left', cs.upperLeft + '/' + cs.lit);
+if (cs.pairs && cs.pairs.length) console.log('  iou≥0.70', cs.pairs.join(' | '));
+if (report.bossCraft) {
+  for (const [name, v] of Object.entries(report.bossCraft)) console.log('   ', name, 'n80', v.n80, 'flat', v.flat, 'detail', v.detail, 'ink', v.ink, 'void', v.void);
+}
 if (report.fails.length) {
   console.log('FAIL');
   for (const f of report.fails.slice(0, 40)) console.log(' ', f);
