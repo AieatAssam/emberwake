@@ -1,3 +1,4 @@
+import { PAL } from './palette.js';
 // Stage objectives: every stage has one visible goal that must be accomplished, and the Eclipse Tyrant is
 // warded (nearly unhurtable) until it is done, so a run is never a blind countdown.
 //
@@ -85,8 +86,8 @@ function kindle(g, cfg) {
     if (stone.prog >= 1) {
       g.dropPickup('chest', stone.x, stone.y, 1);
       g.heal(g.stats.maxHp * 0.15, true);
-      g.burst(stone.x, stone.y, 50, [0xffa040, 0xffe080, 0xffffff], 480, 1);
-      g.shockwave(stone.x, stone.y, 0xffa040, 420, 0.6);
+      g.burst(stone.x, stone.y, 50, [PAL.EMBER, PAL.EMBER_L, PAL.WHITE], 480, 1);
+      g.shockwave(stone.x, stone.y, PAL.EMBER, 420, 0.6);
       stone.spr.texture = tex('waystone1');
       const sp = stone.spr; setTimeout(() => killSpr(g, sp), 2500);
       stone = null;
@@ -109,8 +110,8 @@ function kindle(g, cfg) {
   o.botTargets = () => (stone ? [{ x: stone.x, y: stone.y, r: stone.r * 0.9, v: 5, camp: true, k: stone }] : []);
   o.draw = (gfx) => {
     if (!stone) return;
-    ring(gfx, stone.x, stone.y, stone.r, 0xffa040, 0.07);
-    arcProg(gfx, stone.x, stone.y, stone.r, stone.prog, 0xffd060);
+    ring(gfx, stone.x, stone.y, stone.r, PAL.EMBER, 0.07);
+    arcProg(gfx, stone.x, stone.y, stone.r, stone.prog, PAL.EMBER_L);
   };
   return o;
 }
@@ -140,7 +141,7 @@ function nests(g, cfg) {
           e.nestT = 5;
           let imps = 0; for (const x of g.enemies) if (x.alive && x.type === 'imp') imps++;
           for (let i = 0; i < 2 && imps < 10; i++) { const m = g.spawnEnemy('imp', e.x + rand(-50, 50), e.y + rand(-50, 50), { force: true }); if (m) m.noBurst = true; }
-          g.burst(e.x, e.y, 10, [0xff7a30, 0xffd060], 160, 0.7);
+          g.burst(e.x, e.y, 10, [PAL.HFIRE, PAL.BOG_L], 160, 0.7);
         }
       }
     }
@@ -149,8 +150,8 @@ function nests(g, cfg) {
     if (!e.d.nest) return;
     relief = 30;
     g.dropPickup('magnet', e.x, e.y, 1);
-    g.burst(e.x, e.y, 60, [0xff7a30, 0xffd060, 0xffffff], 520, 1.1);
-    g.shockwave(e.x, e.y, 0xff7a30, 380, 0.5);
+    g.burst(e.x, e.y, 60, [PAL.HFIRE, PAL.BOG_L, PAL.WHITE], 520, 1.1);
+    g.shockwave(e.x, e.y, PAL.HFIRE, 380, 0.5);
     bump(o, g, 'FORGE QUENCHED');
   };
   o.spawnMul = () => (relief > 0 ? 0.85 : 1);
@@ -171,7 +172,7 @@ function nests(g, cfg) {
   o.targets = () => alive();
   o.botTargets = () => alive().map((e) => ({ x: e.x, y: e.y, r: 300, v: 4, camp: true, k: e }));
   o.draw = (gfx) => {
-    for (const e of forges) if (e.alive) { gfx.circle(e.x, e.y, 70).fill({ color: 0xff6020, alpha: 0.08 }); }
+    for (const e of forges) if (e.alive) { gfx.circle(e.x, e.y, 70).fill({ color: PAL.HFIRE, alpha: 0.08 }); }
   };
   return o;
 }
@@ -226,8 +227,8 @@ function carry(g, cfg) {
     if (chan >= 1) {
       g.dropPickup('chest', brazier.x, brazier.y, 1);
       g.heal(g.stats.maxHp * 0.15, true);
-      g.burst(brazier.x, brazier.y, 50, [0xa0e8ff, 0xffa040, 0xffffff], 480, 1);
-      g.shockwave(brazier.x, brazier.y, 0xa0e8ff, 400, 0.6);
+      g.burst(brazier.x, brazier.y, 50, [PAL.FROST_L, PAL.EMBER, PAL.WHITE], 480, 1);
+      g.shockwave(brazier.x, brazier.y, PAL.FROST_L, 400, 0.6);
       clear(); state = 'wait';
       bump(o, g, 'BRAZIER LIT');
     }
@@ -248,9 +249,9 @@ function carry(g, cfg) {
   o.draw = (gfx) => {
     if (state === 'carry') {
       const P = g.player;
-      gfx.circle(P.x, P.y - 14, 40 + Math.sin(g.time * 8) * 3).fill({ color: 0xffa040, alpha: 0.14 });
-      if (brazier) { ring(gfx, brazier.x, brazier.y, brazier.r, 0xa0e8ff, 0.1); arcProg(gfx, brazier.x, brazier.y, brazier.r, chan, 0xffd060); }
-    } else if (stone) ring(gfx, stone.x, stone.y, stone.r, 0xffb060, 0.08);
+      gfx.circle(P.x, P.y - 14, 40 + Math.sin(g.time * 8) * 3).fill({ color: PAL.EMBER, alpha: 0.14 });
+      if (brazier) { ring(gfx, brazier.x, brazier.y, brazier.r, PAL.FROST_L, 0.1); arcProg(gfx, brazier.x, brazier.y, brazier.r, chan, PAL.EMBER_L); }
+    } else if (stone) ring(gfx, stone.x, stone.y, stone.r, PAL.EMBER_L, 0.08);
   };
   return o;
 }
@@ -285,8 +286,8 @@ function purge(g, cfg) {
       if (p.prog >= 1) {
         g.dropPickup('chest', p.x, p.y, 1);
         g.dropPickup('heart', p.x + 30, p.y, 1);
-        g.burst(p.x, p.y, 60, [0x80ffb0, 0xffffff, 0x40c090], 480, 1);
-        g.shockwave(p.x, p.y, 0x80ffb0, p.r * 1.6, 0.6);
+        g.burst(p.x, p.y, 60, [PAL.OBJ, PAL.WHITE, PAL.OBJ_D], 480, 1);
+        g.shockwave(p.x, p.y, PAL.OBJ, p.r * 1.6, 0.6);
         killSpr(g, p.spr); pools.splice(i, 1);
         bump(o, g, 'POOL DRAINED');
       }
@@ -311,7 +312,7 @@ function purge(g, cfg) {
   o.targets = () => pools;
   o.botTargets = () => pools.map((p) => ({ x: p.x, y: p.y, r: p.r * 0.85, v: 5, camp: true, k: p }));
   o.draw = (gfx) => {
-    for (const p of pools) { ring(gfx, p.x, p.y, p.r, 0x50d090, 0.1); arcProg(gfx, p.x, p.y, p.r, p.prog, 0xffd060); }
+    for (const p of pools) { ring(gfx, p.x, p.y, p.r, PAL.OBJ_D, 0.1); arcProg(gfx, p.x, p.y, p.r, p.prog, PAL.EMBER_L); }
   };
   return o;
 }
@@ -351,8 +352,8 @@ function escort(g, cfg) {
       if (d < 45) {
         g.dropPickup('chest', targetC.x, targetC.y, 3);
         g.heal(g.stats.maxHp * 0.2, true);
-        g.burst(targetC.x, targetC.y, 60, [0xffd080, 0xc890ff, 0xffffff], 500, 1);
-        g.shockwave(targetC.x, targetC.y, 0xffd080, 420, 0.6);
+        g.burst(targetC.x, targetC.y, 60, [PAL.EMBER_L, PAL.SLATE_L, PAL.WHITE], 500, 1);
+        g.shockwave(targetC.x, targetC.y, PAL.EMBER_L, 420, 0.6);
         killSpr(g, chapel.spr); chapel = targetC; targetC = null; legStarted = false;
         bump(o, g, 'CHAPEL REACHED');
       }
@@ -388,8 +389,8 @@ function escort(g, cfg) {
   o.botTargets = () => (pil && downT <= 0 && legStarted ? [{ x: pil.x, y: pil.y, r: 230, v: 5, camp: true, k: pil }] : []);
   o.draw = (gfx) => {
     if (!pil) return;
-    if (legStarted) ring(gfx, pil.x, pil.y, 260, 0xffd080, 0.04, 0.8);
-    if (targetC) gfx.circle(targetC.x, targetC.y, 60).fill({ color: 0xffd080, alpha: 0.1 });
+    if (legStarted) ring(gfx, pil.x, pil.y, 260, PAL.EMBER_L, 0.04, 0.8);
+    if (targetC) gfx.circle(targetC.x, targetC.y, 60).fill({ color: PAL.EMBER_L, alpha: 0.1 });
   };
   return o;
 }
@@ -421,8 +422,8 @@ function marked(g, cfg) {
     }
   };
   o.onShard = () => {
-    g.burst(g.player.x, g.player.y, 30, [0xffe080, 0xffffff], 360, 0.9);
-    g.shockwave(g.player.x, g.player.y, 0xffe080, 260, 0.4);
+    g.burst(g.player.x, g.player.y, 30, [PAL.EMBER_L, PAL.WHITE], 360, 0.9);
+    g.shockwave(g.player.x, g.player.y, PAL.EMBER_L, 260, 0.4);
     g.heal(g.stats.maxHp * 0.06, false);
     bump(o, g, 'SUN-SHARD');
   };
@@ -446,7 +447,7 @@ function marked(g, cfg) {
     ...bearers.filter((e) => e.alive).map((e) => ({ x: e.x, y: e.y, r: 200, v: 3.5, camp: false, k: e })),
   ];
   o.draw = (gfx) => {
-    for (const p of shards()) gfx.circle(p.x, p.y, 26).stroke({ color: 0xffe080, width: 3, alpha: 0.4 + 0.3 * Math.sin(g.time * 8) });
+    for (const p of shards()) gfx.circle(p.x, p.y, 26).stroke({ color: PAL.EMBER_L, width: 3, alpha: 0.4 + 0.3 * Math.sin(g.time * 8) });
   };
   return o;
 }
@@ -472,16 +473,16 @@ function defend(g, cfg) {
     lh.hp = near.length ? lh.hp - drain * dt : Math.min(cfg.hp, lh.hp + 4 * dt);
     lh.t -= dt;
     o.exempt = Math.hypot(P.x - lh.x, P.y - lh.y) < lh.r + 160; // a siege is a bounded hold, so no farming cap
-    lh.spr.tint = lh.hp < cfg.hp * 0.35 ? 0xff9090 : 0xffffff;
+    lh.spr.tint = lh.hp < cfg.hp * 0.35 ? PAL.SAND : PAL.WHITE;
     if (lh.hp <= 0) {
       g.ui.toast('THE BEACON FALLS: it relights shortly', 'warn');
-      g.shockwave(lh.x, lh.y, 0xff6050, 400, 0.5);
+      g.shockwave(lh.x, lh.y, PAL.EMBER_D, 400, 0.5);
       killSpr(g, lh.spr); lh = null; at[o.count] = g.time + 18;
     } else if (lh.t <= 0) {
       g.dropPickup('chest', lh.x, lh.y, 1);
       g.heal(g.stats.maxHp * 0.2, true);
-      g.burst(lh.x, lh.y, 60, [0xffe080, 0xffffff, 0x80c0ff], 520, 1);
-      g.shockwave(lh.x, lh.y, 0xffe080, 520, 0.7);
+      g.burst(lh.x, lh.y, 60, [PAL.EMBER_L, PAL.WHITE, PAL.FROST], 520, 1);
+      g.shockwave(lh.x, lh.y, PAL.EMBER_L, 520, 0.7);
       const sp = lh.spr; setTimeout(() => killSpr(g, sp), 2500);
       lh = null;
       bump(o, g, 'SIEGE HELD');
@@ -503,8 +504,8 @@ function defend(g, cfg) {
   o.botTargets = () => (lh ? [{ x: lh.x, y: lh.y, r: lh.r * 0.7, v: 5, camp: true, k: lh }] : []);
   o.draw = (gfx) => {
     if (!lh) return;
-    ring(gfx, lh.x, lh.y, lh.r, 0xffe080, 0.05);
-    arcProg(gfx, lh.x, lh.y, lh.r - 14, lh.hp / cfg.hp, lh.hp < cfg.hp * 0.35 ? 0xff6050 : 0x80e0ff);
+    ring(gfx, lh.x, lh.y, lh.r, PAL.EMBER_L, 0.05);
+    arcProg(gfx, lh.x, lh.y, lh.r - 14, lh.hp / cfg.hp, lh.hp < cfg.hp * 0.35 ? PAL.EMBER_D : PAL.FROST);
   };
   return o;
 }

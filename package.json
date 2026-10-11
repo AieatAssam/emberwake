@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "balance": "node scripts/balance.mjs",
+    "contrast": "node scripts/contrast.mjs",
     "lint:js": "eslint . --max-warnings 0",
     "lint:css": "stylelint \"src/**/*.css\" --max-warnings 0",
     "lint:html": "html-validate index.html --max-warnings 0",
