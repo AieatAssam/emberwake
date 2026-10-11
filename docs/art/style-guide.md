@@ -328,7 +328,7 @@ All have luminance between 0.005 and 0.011.
 - **[Rule]**
   - Cinzel is for titles, names and display text. Chakra Petch is for everything else.
   - **Damage digits change** from `"Arial Black"` (not loaded, so it varies by platform; `atlas.js:1777`) to **Chakra Petch 700**. The atlas must wait for `document.fonts.ready` before drawing the digits, and the digit stroke becomes INK.
-  - Minimum UI text is 11px. A type scale of 7 sizes **[Proposal]**: 11 / 13 / 16 / 20 / 26 / 34 / clamp-display. Today there are 16 sizes, from 9 to 40px.
+  - Minimum UI text is 11px. Chrome tokens, the wallet, and purchase states are §14. A type scale of 7 sizes **[Proposal]**: 11 / 13 / 16 / 20 / 26 / 34 / clamp-display. Today there are 16 sizes, from 9 to 40px.
 
 **UI variables mapped to palette v1 [Rule]**
 
@@ -449,3 +449,32 @@ Each item gives what to measure and the threshold. The method is the drift/palet
 | date | reference | source | why it's here |
 |---|---|---|---|
 | | | | |
+
+## 14. UI chrome
+
+**[Rule]** Menu and HUD chrome uses one token set, declared on `:root` in `src/style.css` and painted with palette swatches. Do not invent a new radius, border width, shadow, or focus ring in a component.
+
+| token | value | use |
+|---|---|---|
+| `--r-sm` | 6px | chips, icons, inputs, info box, stage thumbnail |
+| `--r-md` | 10px | buttons, cards, banners, objective plate |
+| `--r-lg` | 16px | panels |
+| `--r-pill` | 999px | circles (pause, flare, joystick), bars, seals, tags |
+| `--bd` | 1px | every hairline |
+| `--bd-strong` | 2px | emphasis: flare button, reel, the Bearer detail accent |
+| `--space-1` … `--space-5` | 4 / 8 / 12 / 16 / 24px | padding, gap, and stack spacing |
+| `--elev-1` | inset lip | buttons |
+| `--elev-2` | 16px / 48px drop | panels |
+| `--glow-c` | Ember, or a semantic swatch | the colour inside every glow. Set it on the element (pact, fusion, frost, hostile, objective, a Bearer's own colour) |
+| `--glow-1`, `--glow-2`, `--glow-3` | 12px, 22px, 40px | the only glows. Declared on every element and its pseudos, so `--glow-c` resolves there. A value set only on `:root` would stay Ember. `--glow-3` is the chest, boss, and level-up bloom. The chest sprite's reveal halo is the one animated blur (`--glow` in px, set from the open) |
+| `--focus-width`, `--focus-color` | 3px Ember Light | the only focus ring, for `:focus-visible` and the gamepad `.pad-focus` |
+
+**[Rule]** Text is at least 11px. Cinzel is titles. Chakra Petch is everything else. Hit targets are at least 44×44px (buttons, Heat, keepsakes, Dawn, difficulty segments, pause, toggles).
+
+**[Rule]** The cinder balance (`.wallet`) is on every screen where the player decides to spend: Bearer unlock, the Hearth (including Eternal Embers), the Codex, results, and the title's Hearth button. On a scrolling panel it is sticky, and it sits above the action row, never under it.
+
+**[Rule]** A price the player can pay uses Ember (`.can-afford`) and the card reads as a button. A price they cannot pay uses Slate Highlight, a thin Slate border, a lower card, and a shortfall chip (`45 short`). It does not use Hostile Signal, and it does not use a lock. `aria-disabled="true"` and a title still say why. A refused tap replaces that chip with the full sentence (`Need 45 more cinders`) in the same price line. It does not add a second line. A requirement lock keeps the 🔒 and its own text, which is already the reason. Native `disabled` is only for an action that cannot be explained (a spent reroll), and that label stays Slate Highlight, not 35% opacity.
+
+**[Rule]** A stage card's thumbnail is that stage's landmark sprite (`waystone`, `forge`, `brazier`, `rotpool`, `chapel`, `sunshard`, `lighthouse`) on the stage ground, with a wash of the stage's UI colour. Prop sprites are dimmed into the ground and are not used as thumbnails. On a narrow screen the Bearer and stage strips fade out at the trailing edge and say to swipe.
+
+---
