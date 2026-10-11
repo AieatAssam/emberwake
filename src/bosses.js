@@ -430,97 +430,107 @@ export function drawBosses(make, H) {
   }
 
   function drawTyrant() {
-    const tongue = (c, ang, len, hot) => {
-      const base = 54, tipR = base + Math.max(8, len), mid = base + (tipR - base) * 0.55, hw = hot ? 0.2 : 0.15;
-      const q = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
-      const [x0, y0] = q(ang - hw, base);
-      const [x1, y1] = q(ang + hw * 0.85, base);
-      const [mx, my] = q(ang, mid);
-      const [tx, ty] = q(ang, tipR);
+    const flame = [[0, HEX.SOL_H], [0.78, HEX.SOL_H], [0.9, HEX.SOL], [1, HEX.HFIRE]];
+    const at = (ang, r) => [Math.cos(ang) * r, Math.sin(ang) * r];
+    // Bottom of the 240 frame, under the anchor, is the tight edge. Clamp there only.
+    const room = (ang) => {
+      const cs = Math.cos(ang), sn = Math.sin(ang);
+      let m = 150;
+      if (sn > 0.08) m = Math.min(m, 82 / sn);
+      if (sn < -0.08) m = Math.min(m, 132 / -sn);
+      if (Math.abs(cs) > 0.08) m = Math.min(m, 106 / Math.abs(cs));
+      return m;
+    };
+    const lick = (c, ang, base, len, hw, fat) => {
+      const tipR = Math.max(base + 8, Math.min(base + len, room(ang) - 2));
+      const mid = base + (tipR - base) * 0.52;
+      const [x0, y0] = at(ang - hw, base);
+      const [x1, y1] = at(ang + hw, base);
+      const [mx, my] = at(ang, mid);
+      const [tx, ty] = at(ang, tipR);
       const ox = Math.cos(ang + Math.PI / 2), oy = Math.sin(ang + Math.PI / 2);
-      const mw = (hot ? 12 : 8) + (tipR - base) * 0.12;
       const path = () => {
         c.beginPath();
         c.moveTo(x0, y0);
-        c.quadraticCurveTo(mx + ox * mw, my + oy * mw, tx, ty);
-        c.quadraticCurveTo(mx - ox * mw * 0.7, my - oy * mw * 0.7, x1, y1);
+        c.quadraticCurveTo(mx + ox * fat, my + oy * fat, tx, ty);
+        c.quadraticCurveTo(mx - ox * fat * 0.7, my - oy * fat * 0.7, x1, y1);
         c.closePath();
       };
       path();
-      const rx = (x0 + x1) / 2, ry = (y0 + y1) / 2;
-      c.fillStyle = lin(c, rx, ry, tx, ty, hot
-        ? [[0, HEX.SOL_H], [0.42, HEX.SOL], [1, HEX.HFIRE]]
-        : [[0, HEX.SOL], [0.5, HEX.SOL_D], [1, HEX.HFIRE]]);
+      c.fillStyle = lin(c, (x0 + x1) / 2, (y0 + y1) / 2, tx, ty, flame);
       c.fill();
-      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.save();
-      path(); c.clip();
-      c.strokeStyle = hot ? HEX.SOL_H : HEX.SOL; c.lineWidth = 1.6;
-      c.beginPath(); c.moveTo(rx, ry); c.quadraticCurveTo(mx, my, tx * 0.78, ty * 0.78); c.stroke();
-      c.restore();
+      // Hostile fire under the ink keeps the gold edge from blending to olive.
+      path(); c.lineWidth = 4; c.strokeStyle = HEX.HFIRE; c.stroke();
+      path(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
     };
     for (let f = 0; f < 12; f++) make('tyrant' + f, 240, 240, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
       const idle = atk < 0;
       const wind = atk === 0 || atk === 1;
-      const phase = idle ? (f / WALK) * TAU : (wind ? 0.7 : 2.4);
-      c.save(); c.translate(120, 148);
-      c.lineJoin = 'round'; c.lineCap = 'round';
-      shadow(c, 0, 72, 40, 5, 0.26);
-      const flare = wind ? 0.9 : 0.62;
-      c.fillStyle = radial(c, -20, -28, 100, [
-        [0, rgba(HEX.SOL_H, 0.05)],
-        [0.5, rgba(HEX.SOL, 0.08)],
-        [0.74, rgba(HEX.SOL, flare * 0.45)],
-        [0.86, rgba(HEX.SOL, flare)],
+      const phase = idle ? (f / WALK) * TAU : (wind ? 0.45 : 2.15);
+      c.save();
+      c.translate(120, 148);
+      c.lineJoin = 'round';
+      c.lineCap = 'round';
+      shadow(c, 0, 74, 30, 4, 0.26);
+      const haloR = wind ? 86 : idle ? 83 + 3 * Math.cos(phase * 2) : 80;
+      c.fillStyle = radial(c, 0, 0, haloR, [
+        [0, HEX.SOL_H],
+        [0.9, HEX.SOL_H],
+        [0.95, HEX.SOL],
+        [0.98, HEX.HFIRE],
         [1, rgba(HEX.HFIRE, 0)],
       ]);
-      c.beginPath(); c.arc(-2, -16, 96, 0, TAU); c.fill();
-      const n = wind ? 16 : 12;
-      for (let i = 0; i < n; i++) {
-        const ang = -Math.PI / 2 + (i / n) * TAU + (idle ? Math.sin(phase) * 0.12 : wind ? 0.22 : 0.04);
-        const wave = Math.sin(i * 1.37 + phase);
-        const up = Math.max(0, -Math.sin(ang));
-        const down = Math.max(0, Math.sin(ang));
-        let len = idle ? 20 + 8 * wave : wind ? 40 + 10 * wave : (atk === 2 ? 10 + 4 * wave : 20 + 6 * wave);
-        len *= (1 + up * 1.05) * (1 - down * 0.45);
-        if (wind && atk === 1) len *= 0.86;
-        const cs = Math.cos(ang), sn = Math.sin(ang);
-        const maxR = Math.min(
-          sn < -0.08 ? (148 - 12) / -sn : 180,
-          sn > 0.08 ? (240 - 148 - 14) / sn : 180,
-          Math.abs(cs) > 0.08 ? (120 - 12) / Math.abs(cs) : 180,
-        );
-        tongue(c, ang, Math.min(len, maxR - 54), Math.cos(ang) < 0.15 && Math.sin(ang) < 0.2);
+      c.beginPath(); c.arc(0, 0, haloR, 0, TAU); c.fill();
+      for (let i = 0; i < 12; i++) {
+        const sway = Math.sin(phase + i * 0.85) * (idle ? 0.11 : 0.04);
+        const ang = -Math.PI / 2 + ((i + 0.5) / 12) * TAU + sway;
+        const wave = Math.sin(phase + i * 1.7);
+        const len = wind ? (atk === 0 ? 110 : 92) + 4 * wave
+          : idle ? 40 + 5 * wave
+          : (atk === 2 ? 8 : 16) + 2 * wave;
+        lick(c, ang, 48, len, wind ? 0.36 : 0.16, wind ? 26 : 11);
+      }
+      const crownH = [18, 32, 16, 48, 18, 36, 18];
+      for (let i = 0; i < crownH.length; i++) {
+        const ang = -Math.PI * 0.9 + (i / 6) * Math.PI * 0.8 + Math.sin(phase + i) * 0.07;
+        const wob = idle ? Math.sin(phase + i * 0.7) * 6 : wind ? 44 : 0;
+        lick(c, ang, 70, crownH[i] + wob, wind ? 0.12 : 0.07, wind ? 12 : 6);
       }
       const discR = 64;
-      const disc = () => { c.beginPath(); c.arc(0, 0, discR, 0, TAU); };
-      disc();
-      c.fillStyle = radial(c, -22, -20, 80, [[0, HEX.ECLIPSE_L], [0.28, HEX.ECLIPSE], [1, HEX.ECLIPSE]]);
+      c.beginPath(); c.arc(0, 0, discR, 0, TAU);
+      c.fillStyle = radial(c, -40, -34, 90, [[0, HEX.ECLIPSE_L], [1, HEX.ECLIPSE]]);
       c.fill();
-      c.save();
-      disc(); c.clip();
-      ellipse(c, -26, -24, 18, 10, rgba(HEX.ECLIPSE_L, 0.95));
       if (atk >= 2) {
-        const a = atk === 2 ? 0.9 : 0.4;
-        glowDot(c, -4, -2, 28, rgba(HEX.SOL_H, a));
-        c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5; c.globalAlpha = a;
-        c.beginPath(); c.moveTo(-40, -8); c.lineTo(-8, 10); c.lineTo(-22, 28); c.lineTo(12, 8); c.lineTo(36, 24); c.stroke();
+        c.save();
+        c.beginPath(); c.arc(0, 0, discR - 1, 0, TAU); c.clip();
+        if (atk === 2) {
+          c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5;
+          c.beginPath();
+          c.moveTo(-34, -12); c.lineTo(-4, 6); c.lineTo(-16, 24); c.lineTo(16, 4); c.lineTo(32, 20);
+          c.stroke();
+          glowDot(c, 0, 2, 14, HEX.SOL_H);
+        }
         c.strokeStyle = HEX.HFIRE; c.lineWidth = 1.6;
-        c.beginPath(); c.moveTo(-30, 16); c.lineTo(4, -6); c.lineTo(24, 12); c.stroke();
-        c.globalAlpha = 1;
+        c.beginPath(); c.moveTo(-26, 12); c.lineTo(4, -6); c.lineTo(22, 12); c.stroke();
+        c.restore();
       }
-      c.restore();
-      disc();
+      c.beginPath(); c.arc(0, 0, discR - 5, 0, TAU);
+      c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5; c.stroke();
+      c.beginPath(); c.arc(0, 0, discR, 0, TAU);
+      c.strokeStyle = HEX.HFIRE; c.lineWidth = 8; c.stroke();
+      c.beginPath(); c.arc(0, 0, discR, 0, TAU);
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5;
-      c.beginPath(); c.arc(-8, -10, 58, Math.PI * 1.05, Math.PI * 1.72); c.stroke();
-      const eyeRy = 4.2 + (idle ? Math.sin(phase) * 0.35 : 0) + (atk === 2 ? 1.3 : 0);
       for (const s of [-1, 1]) {
-        c.save(); c.translate(s * 22, 6); c.rotate(s * 0.38);
-        ellipse(c, 0, 0, 12, eyeRy, HEX.HEYE, OUT, 1.4);
-        ellipse(c, 0.8 * s, 0.6, 3.1, eyeRy * 0.62, HEX.INK);
-        circle(c, -4.2, -1.4, 1.6, HEX.WHITE);
+        c.save();
+        c.translate(s * 20, 2);
+        c.scale(s, 1);
+        c.strokeStyle = HEX.HEYE; c.lineWidth = 2.5;
+        c.beginPath(); c.moveTo(-15, 3); c.quadraticCurveTo(0, -10, 16, -4); c.stroke();
+        ellipse(c, 1, 4, 13, 6.5, HEX.HEYE, OUT, 1.4);
+        ellipse(c, 2.2, 4.8, 4.2, 3.4, HEX.INK);
+        circle(c, -3.2, 2.4, 3.2, HEX.SOL_H);
+        circle(c, -4.4, 1.3, 1.5, HEX.WHITE);
         c.restore();
       }
       c.restore();

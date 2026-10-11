@@ -559,12 +559,82 @@ let skull = 0, skullN = 0;
 }
 if (!skullN || skull / skullN < 0.5) fails.push('hollow skull ' + skull + '/' + skullN);
 if (window.__atlasUse > 2048) fails.push('atlas ' + window.__atlasUse);
+// Tyrant corona at zoom 0.6 over the Gloam. Lightness is CIE Lab L* (SOL #e0b000 is L* 74).
+// Olive/green is an HSL hue in [40, 160] with real chroma, under L* 50. A flat disc is one exact RGB.
+function tyrantCorona() {
+  const f = frames.tyrant0;
+  const gnd = grounds.gloam;
+  if (!f || !gnd) return null;
+  const zoom = 0.6;
+  const img = ctx.getImageData(f.x * SS, f.y * SS, f.w * SS, f.h * SS);
+  const d = img.data, W = f.w * SS, H = f.h * SS;
+  const ow = Math.max(1, Math.round(f.w * zoom)), oh = Math.max(1, Math.round(f.h * zoom));
+  const cx = 120, cy = 148, discR = 64;
+  let corona = 0, bright = 0, olive = 0, discN = 0, flatMax = 0;
+  const hist = new Map();
+  for (let oy = 0; oy < oh; oy++) {
+    const y0 = Math.floor(oy * H / oh), y1 = Math.max(y0 + 1, Math.floor((oy + 1) * H / oh));
+    for (let ox = 0; ox < ow; ox++) {
+      const x0 = Math.floor(ox * W / ow), x1 = Math.max(x0 + 1, Math.floor((ox + 1) * W / ow));
+      let r = 0, g = 0, b = 0, a = 0, c = 0;
+      for (let y = y0; y < y1 && y < H; y++) for (let x = x0; x < x1 && x < W; x++) {
+        const o = (y * W + x) * 4, al = d[o + 3] / 255;
+        r += d[o] * al + gnd[0] * (1 - al);
+        g += d[o + 1] * al + gnd[1] * (1 - al);
+        b += d[o + 2] * al + gnd[2] * (1 - al);
+        a += al;
+        c++;
+      }
+      if (!c || a / c < 0.5) continue;
+      const rgb = [r / c, g / c, b / c];
+      const lx = (ox + 0.5) * f.w / ow, ly = (oy + 0.5) * f.h / oh;
+      const dist = Math.hypot(lx - cx, ly - cy);
+      const chroma = Math.max(rgb[0], rgb[1], rgb[2]) - Math.min(rgb[0], rgb[1], rgb[2]);
+      if (dist < discR - 8) {
+        discN++;
+        const key = rgb.map((v) => Math.round(v)).join(',');
+        const n = (hist.get(key) || 0) + 1;
+        hist.set(key, n);
+        if (n > flatMax) flatMax = n;
+      } else if (dist > discR + 2) {
+        if (ly > cy + 52 && chroma < 22) continue;
+        corona++;
+        const L = labOf(rgb)[0];
+        if (L >= 65) bright++;
+        const max = Math.max(rgb[0], rgb[1], rgb[2]), min = Math.min(rgb[0], rgb[1], rgb[2]);
+        let hue = 0;
+        if (max !== min) {
+          const dv = max - min;
+          if (max === rgb[0]) hue = ((rgb[1] - rgb[2]) / dv) % 6;
+          else if (max === rgb[1]) hue = (rgb[2] - rgb[0]) / dv + 2;
+          else hue = (rgb[0] - rgb[1]) / dv + 4;
+          hue *= 60;
+          if (hue < 0) hue += 360;
+        }
+        if (hue >= 40 && hue <= 160 && chroma >= 20 && L < 50) olive++;
+      }
+    }
+  }
+  return {
+    corona, olive,
+    bright: corona ? +(bright / corona).toFixed(3) : 0,
+    flat: discN ? +(flatMax / discN).toFixed(3) : 1,
+    discN,
+  };
+}
+const tyrant = tyrantCorona();
+if (!tyrant || !tyrant.corona) fails.push('tyrant corona missing');
+else {
+  if (tyrant.bright < 0.4) fails.push('tyrant corona L*≥65 ' + tyrant.bright);
+  if (tyrant.olive) fails.push('tyrant corona olive ' + tyrant.olive);
+  if (tyrant.flat >= 0.3) fails.push('tyrant disc flat ' + tyrant.flat);
+}
 const craftSummary = {
   hollowPose: +hollowPose.toFixed(3), totemDiff: +totemDiff.toFixed(3),
   maxIou: +maxIou.toFixed(3), maxPair, hotPairs, gloomBloater: +gb.toFixed(3), matronLurker: +ml.toFixed(3),
   upperLeft: litN, lit: LIT.length, pairs: pairList,
 };
-const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens, edgeReport, zoomRead: zoomReadReport, nova, summon, bossMeans };
+const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens, edgeReport, zoomRead: zoomReadReport, nova, summon, bossMeans, tyrant };
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>
 </body>

@@ -166,6 +166,7 @@ console.log('  upper-left', cs.upperLeft + '/' + cs.lit);
 if (cs.pairs && cs.pairs.length) console.log('  iou≥0.70', cs.pairs.join(' | '));
 console.log('  bossMeans', report.bossMeans);
 console.log('  edge', report.edgeReport, 'nova', report.nova, 'summon', report.summon);
+if (report.tyrant) console.log('  tyrant corona', report.tyrant);
 if (report.zoomRead) {
   for (const [name, row] of Object.entries(report.zoomRead)) console.log('  zoom0.6', name, row);
 }
