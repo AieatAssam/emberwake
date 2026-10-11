@@ -32,10 +32,38 @@ function payState(cost, ok = true, blocked = '') {
 const blockAttrs = (why) => (why ? ` aria-disabled="true" title="${esc(why)}"` : '');
 const shortChip = (cost) => (save.cinders < cost ? ` <span class="shortfall">${cost - save.cinders} short</span>` : '');
 function deny(why, card) {
-  document.querySelectorAll('.buy-reason').forEach((el) => { el.textContent = ''; });
-  const el = card?.querySelector('.buy-reason');
-  if (el) el.textContent = why;
+  // The chip is the line. A refused tap puts the sentence there instead of under it.
+  document.querySelectorAll('[data-price]').forEach((el) => {
+    el.innerHTML = el.dataset.price;
+    el.classList.remove('said');
+    el.removeAttribute('data-price');
+    el.removeAttribute('role');
+  });
+  const line = card?.querySelector('.mcost, .cost');
+  const req = card?.querySelector('.req');
+  if (line && !(req && req.textContent.includes(why))) {
+    line.dataset.price = line.innerHTML;
+    line.textContent = why;
+    line.classList.add('said');
+    line.setAttribute('role', 'status');
+  }
   sfx.deny();
+}
+
+// A taller stage card off-screen must not leave a gap under the one you can see.
+function fitStageStrip(grid) {
+  if (!grid) return;
+  if (getComputedStyle(grid).display !== 'flex') { grid.style.height = ''; return; }
+  const view = grid.getBoundingClientRect();
+  let h = 0;
+  for (const card of grid.children) {
+    const r = card.getBoundingClientRect();
+    const vis = Math.min(r.right, view.right) - Math.max(r.left, view.left);
+    if (vis >= r.width * 0.5) h = Math.max(h, card.offsetHeight);
+  }
+  const cs = getComputedStyle(grid);
+  const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  grid.style.height = h ? `${Math.ceil(h + pad)}px` : '';
 }
 
 export class UI {
@@ -52,6 +80,7 @@ export class UI {
     this.padIdx = 0;
     const padLoop = () => { this.padNav(); requestAnimationFrame(padLoop); };
     requestAnimationFrame(padLoop);
+    addEventListener('resize', () => fitStageStrip(this.screen.querySelector('.panel.select .stage-grid')));
   }
 
   // Gamepad menu navigation: D-pad/stick moves a highlight over clickable elements, A selects, B backs out
@@ -160,7 +189,7 @@ export class UI {
         return `<div class="card char ${un ? '' : 'locked'} ${short ? 'cant-afford' : ''} ${id === sel ? 'sel' : ''}" data-a="pick" data-id="${id}" style="--c:${c.color}">
           <img src="${spriteURL(c.sprite, 2)}" alt="">
           <div class="cname">${c.name}</div><div class="ctitle">${c.title}</div>
-          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost ${short ? 'cant-afford' : 'can-afford'}">${c.cost} ✦${shortChip(c.cost)}</div>${reqOf('chars', id) ? `<div class="req ${reqMet('chars', id, save) ? 'ok' : ''}">${reqMet('chars', id, save) ? '✓' : '🔒'} ${reqOf('chars', id).text}</div>` : ''}<p class="buy-reason" role="status"></p>`}
+          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost ${short ? 'cant-afford' : 'can-afford'}">${c.cost} ✦${shortChip(c.cost)}</div>${reqOf('chars', id) ? `<div class="req ${reqMet('chars', id, save) ? 'ok' : ''}">${reqMet('chars', id, save) ? '✓' : '🔒'} ${reqOf('chars', id).text}</div>` : ''}`}
           ${un && (save.records['char:' + id] || {}).wins ? `<button class="dawn-btn ${save.skins[id] === 'dawn' ? 'on' : ''}" data-a="skin" data-id="${id}" title="Dawn variant (earned by breaking the Eclipse)">☀ Dawn</button>` : ''}
         </div>`;
       }).join('');
@@ -188,7 +217,7 @@ export class UI {
             return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}"${blockAttrs(lockedWhy)}>
               <div class="stage-swatch" style="background:radial-gradient(circle at 30% 30%, ${st.color}, transparent 68%), ${st.ground.base}"><img alt="" src="${spriteURL(STAGE_ART[id] || 'pillar', 2)}"></div>
               <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
-              ${open ? `<div class="obj-line">${esc(st.objective.title)}${objDone(save, id) ? ' · ✓ done' : objProg(save, id) ? ` · best ${objProg(save, id)}/${st.objective.n}` : ''}</div>` : `<div class="req">🔒 ${reqOf('stages', id) ? reqOf('stages', id).text : 'Locked'}</div><p class="buy-reason" role="status"></p>`}</div></div>`;
+              ${open ? `<div class="obj-line">${esc(st.objective.title)}${objDone(save, id) ? ' · ✓ done' : objProg(save, id) ? ` · best ${objProg(save, id)}/${st.objective.n}` : ''}</div>` : `<div class="req">🔒 ${reqOf('stages', id) ? reqOf('stages', id).text : 'Locked'}</div>`}</div></div>`;
           }).join('')}</div>
           <p class="scroll-hint">Swipe for more stages</p>
           ${(() => {
@@ -222,6 +251,11 @@ export class UI {
         if (st) st.scrollIntoView({ block: 'nearest', inline: 'center' });
         this.screen.querySelector('.panel.select').scrollTop = 0;
       }
+      const stageGrid = this.screen.querySelector('.stage-grid');
+      const fit = () => fitStageStrip(stageGrid);
+      fit();
+      document.fonts?.ready.then(fit);
+      stageGrid.addEventListener('scroll', fit, { passive: true });
       this.bind({
         pick: (el) => { sel = el.dataset.id; render(); },
         skin: (el, ev) => { ev.stopPropagation(); const id = el.dataset.id; save.skins[id] = save.skins[id] === 'dawn' ? '' : 'dawn'; persist(); sel = id; render(); },
@@ -293,8 +327,7 @@ export class UI {
         return `<div class="card meta ${maxed ? 'maxed' : st.can ? 'can-afford' : 'cant-afford'}" data-a="buy" data-id="${id}"${blockAttrs(why)}>
           <div class="mname">${m.name}</div><div class="mdesc">${m.desc}</div>
           <div class="pips">${pips}</div>
-          <div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${cost} ✦${st.short ? shortChip(cost) : ''}`}</div>
-          <p class="buy-reason" role="status"></p></div>`;
+          <div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${cost} ✦${st.short ? shortChip(cost) : ''}`}</div></div>`;
       }).join('');
       this.open(`
         <div class="panel wide">
@@ -307,7 +340,7 @@ export class UI {
             const cost = maxed ? 0 : eternalCost(id, l);
             const st = payState(maxed ? 0 : cost);
             const why = maxed ? 'Already maxed' : st.why;
-            return `<div class="card meta eternal ${maxed ? 'maxed' : st.can ? 'can-afford' : 'cant-afford'}" data-a="ebuy" data-id="${id}"${blockAttrs(why)}><div class="mname">${m.name} <span class="lv">${l}/${m.max}</span></div><div class="mdesc">${m.desc}</div><div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${cost} ✦${st.short ? shortChip(cost) : ''}`}</div><p class="buy-reason" role="status"></p></div>`;
+            return `<div class="card meta eternal ${maxed ? 'maxed' : st.can ? 'can-afford' : 'cant-afford'}" data-a="ebuy" data-id="${id}"${blockAttrs(why)}><div class="mname">${m.name} <span class="lv">${l}/${m.max}</span></div><div class="mdesc">${m.desc}</div><div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${cost} ✦${st.short ? shortChip(cost) : ''}`}</div></div>`;
           }).join('')}</div>` : `<div class="heat-row muted">Win a run to light the <b>Eternal Embers</b>: an endless sink for spare cinders.</div>`}
           <div class="row"><button class="btn" data-a="back">Back</button><button class="btn ghost" data-a="refund">Refund all</button></div>
         </div>`);
