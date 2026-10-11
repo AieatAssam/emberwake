@@ -1,7 +1,7 @@
 # Emberwake Art Style Guide, v1.1
 
 **Status:** this is the source of truth. Every future art audit compares against this document.
-**Version:** v1.1, 2026-10-10. It goes with **palette v1.1 (73 swatches)**. v1.1 keeps the same swatches and adds the hazard band, the CANDLE row already in the palette, and the boss craft floors.
+**Version:** v1.2, 2026-10-11. It goes with **palette v1.1 (73 swatches)**. v1.2 drops the boss n80, flat-share and detail floors from v1.1. Those counts went up when a sprite was filled with stripes, so they are not a craft gate.
 **Based on:**
 - the repo survey of `AieatAssam/emberwake` @ `758ad49`
 - `ew-reports/drift-2026-10-10.md`
@@ -122,7 +122,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | class | band | v1.1 result |
 |---|---|---|
 | Enemy body (normal) | ≥ 3.0. Herald ≥ 3.5. Totem ≥ 4.0. No rim exemption | min 3.61 (forge0 on Rimewood). Herald body 4.35 |
-| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0. Herald ≥ 3.2. Totem ≥ 3.5 | min 3.40 (forge0 on Rimewood). Herald elite 3.92 |
+| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0. Herald ≥ 3.2. Totem ≥ 3.5 | min 3.36 (matron0 on Rimewood). Herald elite 3.92 |
 | Pickup / reward | ≥ 4.5 | min 4.58 (pilgrim0 on Rimewood) |
 | Objective | ≥ 4.5 | rot pool is Moss + Objective (no Bog). Top-3 colour share 0.115 |
 | Bearer | ≥ 4.0. Hunter ≥ 4.5 | min 4.26 (warden on Rimewood). Hunter 5.02 |
@@ -131,7 +131,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | Enemy rim composite | ≥ 3.0 | 4.26 on Rimewood |
 | Enemy eyes / irises | ≥ 4.5 | held from v1 |
 
-Boss craft, measured on the non-ink body (`npm run contrast`): median detail 0.944 (floor 0.45), median flat share 0.002 (ceiling 0.35), median n80 1087 (floor 60). Herald void 0.039 (ceiling 0.20). Tyrant ink share 0.153 (ceiling 0.30) and body-only contrast 4.08. Each boss has at least one gradient.
+Boss craft (`npm run contrast`) is the WCAG floors above, plus a real gradient on every boss, Herald void ≤ 0.20, Tyrant ink share ≤ 0.30, Matron ink-edge ≥ 0.90, and a pose change ≥ 0.10 between the two ends of the idle cycle. The v1.1 n80, flat-share and detail floors are gone: a banded fill cleared them without modelling a form.
 
 **Effective grounds (v1.1, tile mean × stage tint)**
 

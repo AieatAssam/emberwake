@@ -573,11 +573,11 @@ export class Game {
     const d = ENEMIES[type];
     if (!d._t) {
       const tex = [], wh = [];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 16; i++) {
         const t = T[d.tex + i] || (i === 0 ? T[d.tex] : null);
         if (!t) break;
         tex.push(t);
-        wh.push(T[d.tex + i + '_w'] || T[d.tex + '_w'] || t);
+        wh.push(T[d.tex + i + '_w'] || T[d.tex + '0_w'] || t);
       }
       d._t = tex; d._w = wh;
     }
@@ -601,7 +601,7 @@ export class Game {
     e.r = d.r * scale; e.scale = scale; e.xp = d.xp * (elite ? 10 : 1); e.elite = elite; e.boss = !!d.boss; e.inert = !!d.inert;
     e.flash = 0; e.slowT = 0; e.freezeT = 0; e.anim = Math.random() * 10; e.frame = 0; e.t = 0; e.state = 0;
     e.stT = d.blink ? 1 : d.boss ? 3.5 : rand(1, 3); e.lastBlink = -99; e.dirX = 0; e.dirY = 0; e.rush = o.rush || null; e.life = o.life || 0;
-    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.affix = null; e.sunk = false;
+    e.phase = Math.random() * TAU; e._q = 0; e.glow = null; e.spiral = 0; e.charging = 0; e.recover = 0; e.affix = null; e.sunk = false;
     e.p = this.L.enemies.add(d._t[0], x, y);
     e.p.anchorY = 0.62;
     e.p.scaleX = e.p.scaleY = scale;
@@ -1634,7 +1634,7 @@ export class Game {
 
       // visuals
       e.anim += dt * (e.d.anim || 4);
-      const fr = (e.anim | 0) % e.d._t.length;
+      const fr = bossPose(e, dt);
       p.texture = e.flash > 0 ? e.d._w[fr] : e.d._t[fr];
       if (e.flash > 0) e.flash -= dt;
       p.x = e.x; p.y = e.y;
@@ -1676,7 +1676,7 @@ export class Game {
     e.t += dt;
     const sp = Math.min(200, e.speed + e.t * 0.5);
     e.x += dx * sp * dt; e.y += dy * sp * dt;
-    e.anim += dt * 3;
+    e.anim += dt * 2.2;
     const p = e.p;
     p.texture = e.d._t[(e.anim | 0) % e.d._t.length];
     p.x = e.x; p.y = e.y + Math.sin(e.t * 3) * 4;
@@ -1712,6 +1712,7 @@ export class Game {
       return;
     }
     e.charging = 0;
+    e.recover = 0.42;
     this._shotSrc = 'shot:' + e.type;
     if (e.d.summon) {
       e.stT = 4;
@@ -2308,6 +2309,29 @@ function elementTint(id) {
   return (tintCache[id] = (w && ELEMENT_TINT[w.element]) || PAL.WHITE);
 }
 function bossName(t) { return { matron: 'THE BROOD MATRON', colossus: 'THE CINDER COLOSSUS', herald: 'THE GLOAM HERALD', tyrant: 'THE ECLIPSE TYRANT' }[t] || t.toUpperCase(); }
+
+// Walk frames lead the strip. Attack frames follow, and play during the existing
+// windup (charging, or the last moment before a summon) and a short recover.
+function bossPose(e, dt) {
+  const n = e.d._t.length;
+  const atk = e.d.atkFrames || 0;
+  const walk = n - atk;
+  if (e.recover > 0 && atk) {
+    e.recover -= dt;
+    const u = 1 - Math.max(0, e.recover) / 0.42;
+    const start = walk + (atk > 2 ? 2 : 1);
+    const span = n - start;
+    return start + Math.min(span - 1, (Math.max(0, u) * span) | 0);
+  }
+  const wind = e.charging || (e.d.summon && e.stT > 0 && e.stT < 0.45);
+  if (wind && atk) {
+    const full = e.d.slam ? 0.8 : e.d.blink ? 0.7 : e.d.nova ? 0.5 : 0.45;
+    const u = e.charging ? 1 - e.charging / full : 1 - e.stT / 0.45;
+    const span = atk > 2 ? 2 : 1;
+    return walk + Math.min(span - 1, (Math.max(0, u) * span) | 0);
+  }
+  return (e.anim | 0) % walk;
+}
 function kindleTierOf(c) { let t = 0; for (let i = 0; i < KINDLE_TIERS.length; i++) if (c >= KINDLE_TIERS[i].at) t = i; return t; }
 function weighted(pairs) {
   let tot = 0; for (const [, w] of pairs) tot += w;

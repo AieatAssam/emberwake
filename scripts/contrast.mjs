@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { PAL, PLAYER, REWARD, AFFIX_TINT, ELITE_HALO, BOSS_HALO } from '../src/palette.js';
 
-const atlasSrc = readFileSync(new URL('../src/atlas.js', import.meta.url), 'utf8');
+const atlasSrc = readFileSync(new URL('../src/atlas.js', import.meta.url), 'utf8')
+  + readFileSync(new URL('../src/bosses.js', import.meta.url), 'utf8');
 const widthSet = new Set([...atlasSrc.matchAll(/lineWidth\s*=\s*(\d+(?:\.\d+)?)/g)].map((m) => m[1]));
 for (const line of atlasSrc.split('\n')) {
   if (!/\b(?:circle|ellipse|poly|rim)\(/.test(line)) continue;
@@ -144,6 +145,7 @@ if (!text || !text.startsWith('{')) {
 const report = JSON.parse(text);
 const s = report.summary;
 console.log('grounds', Object.fromEntries(Object.entries(report.grounds).map(([k, v]) => [k, '#' + v.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')])));
+console.log('atlas rows', report.atlasUse);
 console.log('contrast');
 console.log('  enemy body  min', s.enemyBody.v, s.enemyBody.name, 'on', s.enemyBody.bodyAt);
 console.log('  enemy elite min', s.enemyElite.v, s.enemyElite.name, 'on', s.enemyElite.eliteAt);
@@ -154,8 +156,7 @@ console.log('  herald rim', report.rimMin, 'on', report.rimAt, 'body', report.en
 console.log('  poses', report.poses);
 console.log('  hazards', report.props.vent && report.props.vent.hazard, report.props.lightrod && report.props.lightrod.hazard);
 const cs = report.craftSummary || {};
-console.log('  craft bosses detail', cs.bossDetail, 'flat', cs.bossFlat, 'n80', cs.bossN80, 'grads', report.grads);
-console.log('  tyrant body', cs.tyrantBody, 'totem diff', cs.totemDiff);
+console.log('  grads', report.grads, 'hollow pose', cs.hollowPose, 'totem diff', cs.totemDiff);
 console.log('  iou max', cs.maxIou, cs.maxPair, 'hot', cs.hotPairs, 'gloom-bloater', cs.gloomBloater, 'matron-lurker', cs.matronLurker);
 console.log('  upper-left', cs.upperLeft + '/' + cs.lit);
 if (cs.pairs && cs.pairs.length) console.log('  iou≥0.70', cs.pairs.join(' | '));

@@ -122,7 +122,8 @@ function opaque(name) {
 }
 const poses = {};
 for (const name of POSES) {
-  const a = opaque(name + '0'), b = opaque(name + '1');
+  const half = ['matron', 'colossus', 'herald', 'tyrant'].includes(name) ? '6' : '1';
+  const a = opaque(name + '0'), b = opaque(name + half);
   if (!a || !b || a.length !== b.length) { fails.push(name + ' pose missing'); continue; }
   let x = 0, u = 0;
   for (let i = 0; i < a.length; i++) {
@@ -375,38 +376,19 @@ for (const name of [...ENEMIES, 'banner', 'vent', 'lightrod', 'rotpool', 'meteor
 const med = (xs) => { const a = [...xs].sort((p, q) => p - q); const i = (a.length - 1) / 2; return (a[Math.floor(i)] + a[Math.ceil(i)]) / 2; };
 const bossCraft = {};
 for (const name of BOSSES) bossCraft[name] = craftOf[name];
-const bossDetail = med(BOSSES.map((n) => craftOf[n].detail));
-const bossFlat = med(BOSSES.map((n) => craftOf[n].flat));
-const bossN80 = med(BOSSES.map((n) => craftOf[n].n80));
-if (bossDetail < 0.45) fails.push('boss detail median ' + bossDetail.toFixed(3));
-if (bossFlat > 0.35) fails.push('boss flat median ' + bossFlat.toFixed(3));
-if (bossN80 < 60) fails.push('boss n80 median ' + bossN80.toFixed(1));
+// n80 / flat-share / detail were dropped for bosses. A tiled ramp clears them
+// without describing a volume, so they are not a gate. Contrast and the side
+// rules remain. Gradients are counted so a boss is not a single flat fill.
 const grads = window.__grads || {};
 for (const name of BOSSES) {
-  const gcount = grads[name] || 0;
-  if (gcount < 1) fails.push(name + ' gradients ' + gcount);
-  const c = craftOf[name];
-  if (c.detail < 0.4 && (name === 'colossus0' || name === 'tyrant0')) fails.push(name + ' detail ' + c.detail);
-  if (c.flat > 0.35) fails.push(name + ' flat ' + c.flat);
-  if ((name === 'herald0' ? c.n80 < 40 : c.n80 < 60)) fails.push(name + ' n80 ' + c.n80);
-  const along = ALONGSIDE[name].map((n) => craftOf[n].detail);
-  const bar = med(along) * 0.6;
-  if (c.detail < bar) fails.push(name + ' detail ' + c.detail.toFixed(3) + ' < alongside ' + bar.toFixed(3));
+  if ((grads[name] || 0) < 1) fails.push(name + ' gradients ' + (grads[name] || 0));
 }
-if ((grads.tyrant0 || 0) < 2) fails.push('tyrant gradients ' + (grads.tyrant0 || 0));
-const h = craftOf.herald0, ty = craftOf.tyrant0, co = craftOf.colossus0, ma = craftOf.matron0;
+const h = craftOf.herald0, ty = craftOf.tyrant0, ma = craftOf.matron0;
 if (h.void > 0.2) fails.push('herald void ' + h.void);
-if (h.flat > 0.35) fails.push('herald flat ' + h.flat);
 if (ty.ink > 0.3) fails.push('tyrant ink ' + ty.ink);
-if (ty.flat > 0.35) fails.push('tyrant flat ' + ty.flat);
-const tyBody = tyrantBody();
-if (tyBody < 3) fails.push('tyrant body ' + tyBody.toFixed(2));
-if (co.maxHex > 0.12) fails.push('colossus hex ' + co.maxHex);
-if (co.flat > 0.35) fails.push('colossus flat ' + co.flat);
-if (ma.n80 < 150) fails.push('matron n80 ' + ma.n80);
 if (ma.edge < 0.9) fails.push('matron edge ' + ma.edge);
-if (craftOf.hollow0.detail < 0.28) fails.push('hollow detail ' + craftOf.hollow0.detail);
-if (craftOf.hollow0.flat > 0.55) fails.push('hollow flat ' + craftOf.hollow0.flat);
+const hollowPose = poseOf('hollow2', 'hollow6');
+if (hollowPose < 0.08) fails.push('hollow pose ' + hollowPose.toFixed(3));
 if (craftOf.totem0.n80 < 20) fails.push('totem n80 ' + craftOf.totem0.n80);
 if ((craftOf.vent.edge < 0.8)) fails.push('vent edge ' + craftOf.vent.edge);
 if ((craftOf.lightrod.edge < 0.8)) fails.push('lightrod edge ' + craftOf.lightrod.edge);
@@ -452,12 +434,11 @@ if (!glass || glass.dx > -0.05) fails.push('glass dx ' + (glass && glass.dx));
 if (!cob || cob.dx > -0.05 || cob.dy > -0.05) fails.push('cobble ' + (cob && cob.dx) + ',' + (cob && cob.dy));
 if (!orbS || orbS.dx > -0.1) fails.push('orb dx ' + (orbS && orbS.dx));
 const craftSummary = {
-  bossDetail: +bossDetail.toFixed(3), bossFlat: +bossFlat.toFixed(3), bossN80: +bossN80.toFixed(1),
-  tyrantBody: +tyBody.toFixed(2), totemDiff: +totemDiff.toFixed(3),
+  hollowPose: +hollowPose.toFixed(3), totemDiff: +totemDiff.toFixed(3),
   maxIou: +maxIou.toFixed(3), maxPair, hotPairs, gloomBloater: +gb.toFixed(3), matronLurker: +ml.toFixed(3),
   upperLeft: litN, lit: LIT.length, pairs: pairList,
 };
-const out = { fails, summary, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens };
+const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens };
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>
 </body>

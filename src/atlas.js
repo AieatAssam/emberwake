@@ -1,4 +1,5 @@
 import { HEX, rgba, SHADOW, PROP_RULE, RIM } from './palette.js';
+import { drawBosses } from './bosses.js';
 // Procedural sprite atlas. Every sprite in Emberwake is drawn here with Canvas2D
 // into ONE texture source, so all ParticleContainers can batch from it.
 import { Texture, Rectangle, CanvasSource } from 'pixi.js';
@@ -968,197 +969,8 @@ function drawEnemies() {
     circle(c, 32, 28, 8, HEX.HEYE); circle(c, 32, 28, 4, HEX.INK); circle(c, 29, 25, 2, HEX.WHITE);
   });
   // ---- Bosses ----
-  // Brood Matron — fused head, eye cluster, pincers, tapered legs. Not a chibi.
-  for (let f = 0; f < 4; f++) make('matron' + f, 150, 140, (c) => {
-    shadow(c, 75, 128, 58, 12);
-    if (f % 2) c.translate(0, 6);
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    const leg = (x0, y0, x1, y1, w0, w1) => {
-      const a = Math.atan2(y1 - y0, x1 - x0), px = Math.cos(a + Math.PI / 2), py = Math.sin(a + Math.PI / 2);
-      c.beginPath();
-      c.moveTo(x0 + px * w0, y0 + py * w0);
-      c.lineTo(x1 + px * w1, y1 + py * w1);
-      c.lineTo(x1 - px * w1, y1 - py * w1);
-      c.lineTo(x0 - px * w0, y0 - py * w0);
-      c.closePath();
-      c.fillStyle = lin(c, x0, y0, x1, y1, [[0, HEX.GLOOM_L], [0.45, HEX.GLOOM], [1, HEX.GLOOM_D]]);
-      c.fill();
-      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    };
-    for (let i = 0; i < 4; i++) for (const s of [-1, 1]) {
-      const swing = Math.sin(((f + i) / 4) * TAU) * 18;
-      const hipX = 75 + s * 24, hipY = 96;
-      const kneeX = 75 + s * (46 + i * 3), kneeY = 78 + i * 5;
-      const footX = 75 + s * (68 + swing), footY = 126 + (i % 2) * 4;
-      leg(hipX, hipY, kneeX, kneeY, 5.5, 3.2);
-      leg(kneeX, kneeY, footX, footY, 3.2, 1.3);
-    }
-    const body = () => {
-      c.beginPath();
-      c.moveTo(75, 40);
-      c.bezierCurveTo(96, 40, 104, 54, 100, 68);
-      c.bezierCurveTo(122, 78, 116, 112, 75, 118);
-      c.bezierCurveTo(34, 112, 28, 78, 50, 68);
-      c.bezierCurveTo(46, 54, 54, 40, 75, 40);
-    };
-    fillSteep(c, body, 28, 40, 122, 118, [[0, HEX.WHITE], [0.22, HEX.GLOOM_L], [0.62, HEX.GLOOM], [1, HEX.GLOOM_D]]);
-    c.save();
-    body(); c.clip();
-    c.globalAlpha = 0.4;
-    c.fillStyle = lin(c, 75, 40, 75, 118, [[0, HEX.ROSE_L], [0.5, HEX.ROSE], [1, rgba(HEX.ROSE_D, 0)]]);
-    c.fillRect(28, 40, 94, 78);
-    c.restore();
-    body();
-    c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    c.strokeStyle = OUT; c.lineWidth = 4;
-    c.beginPath();
-    c.moveTo(62, 70); c.quadraticCurveTo(36, 78, 46, 98);
-    c.moveTo(88, 70); c.quadraticCurveTo(114, 78, 104, 98);
-    c.stroke();
-    for (const [x, y] of [[64, 52], [75, 48], [86, 52], [60, 58], [70, 56], [80, 56], [90, 58]]) {
-      circle(c, x, y, 2.2, HEX.HEYE, OUT, 1.4);
-    }
-  });
-  // Cinder Colossus — plated gradient, molten core, knuckled fists, 4-frame slam
-  for (let f = 0; f < 4; f++) make('colossus' + f, 190, 190, (c) => {
-    shadow(c, 100, 178, 68, 14);
-    const stride = [0, 10, 4, -8][f];
-    const hulk = [[0, HEX.WHITE], [0.22, HEX.HULK_L], [0.58, HEX.HULK], [1, HEX.HULK_D]];
-    c.lineJoin = 'round';
-    const limb = (x, y, w, h) => {
-      c.beginPath(); c.roundRect(x, y, w, h, 6);
-      c.fillStyle = lin(c, x, y, x + w, y + h, hulk); c.fill();
-      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    };
-    limb(58 + stride, 144, 26, 34);
-    limb(112 - stride, 148, 24, 30);
-    const torso = () => { c.beginPath(); poly(c, [[55, 150], [38, 96], [58, 52], [96, 34], [138, 58], [162, 100], [142, 154]]); };
-    fillSteep(c, torso, 38, 34, 162, 154, hulk);
-    torso(); c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    c.strokeStyle = OUT; c.lineWidth = 1.4;
-    c.beginPath(); c.moveTo(70, 64); c.lineTo(128, 72); c.moveTo(58, 100); c.lineTo(136, 94); c.moveTo(66, 128); c.lineTo(126, 122); c.stroke();
-    c.strokeStyle = HEX.RIM; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(70, 62); c.lineTo(128, 70); c.moveTo(58, 98); c.lineTo(136, 92); c.moveTo(66, 126); c.lineTo(126, 120); c.stroke();
-    c.fillStyle = radial(c, 92, 96, 22, [[0, HEX.HFIRE_H], [0.35, HEX.HFIRE], [0.7, HEX.HFIRE_D], [1, rgba(HEX.HFIRE, 0)]]);
-    c.beginPath(); c.arc(100, 104, 22, 0, TAU); c.fill();
-    c.strokeStyle = OUT; c.lineWidth = 1.4;
-    c.beginPath(); c.moveTo(86, 96); c.lineTo(98, 112); c.lineTo(90, 124); c.moveTo(116, 94); c.lineTo(106, 112); c.stroke();
-    const head = () => { c.beginPath(); c.roundRect(82, 22, 40, 28, 8); };
-    fillSteep(c, head, 82, 22, 122, 50, hulk);
-    head(); c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    c.fillStyle = HEX.INK; c.fillRect(90, 32, 24, 7);
-    eye(c, 98, 35, 2.6, HEX.HFIRE); eye(c, 112, 35, 2.6, HEX.HFIRE);
-    ellipse(c, 78, 70, 16, 9, rgba(HEX.WHITE, 0.28));
-    const fists = [
-      [[12, 48, 36, 46], [150, 72, 32, 44]],
-      [[16, 86, 38, 42], [146, 124, 36, 48]],
-      [[8, 64, 34, 48], [152, 96, 30, 44]],
-      [[6, 112, 38, 40], [148, 58, 34, 46]],
-    ][f];
-    for (const [x, y, w, h] of fists) {
-      const cx = x + w * 0.38, cy = y + h * 0.32;
-      c.beginPath(); c.roundRect(x, y, w, h, 10);
-      c.fillStyle = radial(c, cx, cy, Math.max(w, h) * 0.75, [[0, HEX.HFIRE_H], [0.4, HEX.HFIRE], [1, HEX.HFIRE_D]]);
-      c.fill();
-      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      for (let k = 0; k < 3; k++) circle(c, x + 7 + k * (w * 0.26), y + 4, 2.1, HEX.INK);
-      c.strokeStyle = OUT; c.lineWidth = 1.4;
-      c.beginPath();
-      c.moveTo(x + w * 0.32, y + 10); c.lineTo(x + w * 0.48, y + h * 0.55); c.lineTo(x + w * 0.3, y + h - 8);
-      c.moveTo(x + w * 0.7, y + 12); c.lineTo(x + w * 0.55, y + h * 0.7);
-      c.stroke();
-    }
-  });
-  // Gloam Herald — light shroud gradient. The void is a small hood, not the body. Banner stays one side.
-  for (let f = 0; f < 4; f++) make('herald' + f, 90, 120, (c) => {
-    shadow(c, 44, 114, 24, 6);
-    c.save();
-    if (f === 1) c.translate(-12, 0);
-    const hem = [0, 16, -8, 10][f];
-    const bx = 76;
-    c.strokeStyle = HEX.SLATE; c.lineWidth = 2.5; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(bx, 112); c.lineTo(bx, 8); c.stroke();
-    c.beginPath();
-    c.moveTo(bx, 14);
-    c.lineTo(bx - 16, 20);
-    c.lineTo(bx - 11, 34 + hem);
-    c.lineTo(bx - 18, 46);
-    c.lineTo(bx, 52 + hem * 0.4);
-    c.closePath();
-    c.fillStyle = lin(c, bx - 18, 14, bx, 52, [[0, HEX.SHROUD], [0.4, HEX.SHROUD_D], [1, HEX.SHROUD]]);
-    c.fill();
-    c.lineWidth = 1.6; c.strokeStyle = OUT; c.stroke();
-    const robe = () => {
-      c.beginPath();
-      c.moveTo(45, 18);
-      c.bezierCurveTo(66, 28, 66, 70, 56, 100);
-      c.lineTo(50, 96);
-      c.lineTo(44, 110 + hem);
-      c.lineTo(36, 98 + hem * 0.5);
-      c.lineTo(28, 112);
-      c.lineTo(22, 96);
-      c.bezierCurveTo(18, 70, 22, 28, 45, 18);
-    };
-    fillSteep(c, robe, 18, 16, 66, 114, [[0, HEX.WHITE], [0.2, HEX.SHROUD], [0.62, HEX.SHROUD_D], [1, HEX.SHROUD]]);
-    robe();
-    c.lineWidth = 4; c.strokeStyle = OUT; c.lineJoin = 'round'; c.stroke();
-    const hood = () => {
-      c.beginPath(); c.moveTo(45, 4); c.bezierCurveTo(62, 10, 60, 34, 45, 40); c.bezierCurveTo(30, 34, 28, 10, 45, 4);
-    };
-    fillSteep(c, hood, 28, 4, 62, 40, [[0, HEX.WHITE], [0.35, HEX.SHROUD], [1, HEX.SHROUD_D]]);
-    hood(); c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    ellipse(c, 45, 22, 5.5, 6.5, HEX.INK);
-    eye(c, 41, 21, 1.5, HEX.RIM); eye(c, 49, 21, 1.5, HEX.RIM);
-    c.restore();
-  });
-  // Eclipse Tyrant — shaded disc, tapered corona, ink outline only. Frame padded so flames miss the edge.
-  for (let f = 0; f < 4; f++) make('tyrant' + f, 252, 252, (c) => {
-    shadow(c, 126, 228, 46 * SHADOW.floatWidth, 12 * SHADOW.floatWidth, SHADOW.floatAlpha);
-    c.save(); c.translate(126 + (f === 1 ? 16 : 0), 118 + (f === 1 ? 8 : 0));
-    const base = [70, 98, 76, 90][f];
-    for (let i = 0; i < 11; i++) {
-      const a = -Math.PI / 2 + ((i + f) / 11) * TAU;
-      const spike = f === 0 && (i === 1 || i === 6);
-      const len = spike ? 116 : base * (0.62 + ((i * 3 + f) % 5) * 0.09);
-      const w = spike ? 0.28 : 0.15;
-      c.beginPath();
-      c.moveTo(Math.cos(a - w) * 40, Math.sin(a - w) * 40);
-      c.quadraticCurveTo(Math.cos(a) * len * 0.62, Math.sin(a) * len * 0.62, Math.cos(a) * len, Math.sin(a) * len);
-      c.quadraticCurveTo(Math.cos(a + w * 0.35) * len * 0.5, Math.sin(a + w * 0.35) * len * 0.5, Math.cos(a + w) * 40, Math.sin(a + w) * 40);
-      c.closePath();
-      c.fillStyle = radial(c, Math.cos(a) * len * 0.4, Math.sin(a) * len * 0.4, len * 0.62, [[0, HEX.HFIRE_H], [0.45, HEX.HFIRE], [1, HEX.HFIRE_D]]);
-      c.fill();
-      c.lineWidth = 1.6; c.strokeStyle = OUT; c.stroke();
-    }
-    c.beginPath(); c.arc(0, 0, 58, 0, TAU);
-    c.fillStyle = radial(c, -18, -20, 86, [[0, HEX.VOID], [0.32, HEX.SHROUD], [0.7, HEX.SHROUD_D], [1, HEX.INK]]);
-    c.fill();
-    c.globalAlpha = 0.42;
-    c.fillStyle = lin(c, -58, -58, 48, 48, [[0, HEX.WHITE], [0.35, HEX.SHROUD], [1, rgba(HEX.SHROUD_D, 0)]]);
-    c.fill();
-    c.globalAlpha = 1;
-    c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    c.strokeStyle = HEX.RIM; c.lineWidth = 2.5;
-    c.beginPath(); c.arc(-8, -10, 44, Math.PI * 1.02, Math.PI * 1.72); c.stroke();
-    c.strokeStyle = HEX.SHROUD; c.lineWidth = 1.4;
-    for (let k = 0; k < 4; k++) {
-      c.beginPath(); c.arc(-12, -14, 16 + k * 9, Math.PI * 0.85, Math.PI * 1.85); c.stroke();
-    }
-    c.strokeStyle = HEX.WHITE; c.lineWidth = 1.4;
-    c.beginPath(); c.arc(-20, -16, 18, Math.PI * 0.95, Math.PI * 1.65); c.stroke();
-    c.beginPath(); c.arc(-8, -6, 30, Math.PI * 0.75, Math.PI * 1.45); c.stroke();
-    c.beginPath(); c.arc(-14, -12, 42, Math.PI * 1.05, Math.PI * 1.7); c.stroke();
-    c.strokeStyle = OUT; c.lineWidth = 4; c.lineJoin = 'round';
-    c.beginPath();
-    c.moveTo(-34, -40); c.lineTo(-26, -70); c.lineTo(-14, -48); c.lineTo(0, -78); c.lineTo(14, -48); c.lineTo(26, -70); c.lineTo(34, -40);
-    c.stroke();
-    for (const [x, y] of [[-26, -70], [0, -78], [26, -70]]) circle(c, x, y, 3.2, HEX.HGLARE, OUT, 1.4);
-    circle(c, -16, 0, 5.2, HEX.HEYE, OUT, 1.4);
-    circle(c, 16, 0, 5.2, HEX.HEYE, OUT, 1.4);
-    circle(c, -16, 0, 2, HEX.INK);
-    circle(c, 16, 0, 2, HEX.INK);
-    c.restore();
-  });
+  drawBosses(make, { HEX, rgba, OUT, TAU, lin, radial, circle, ellipse, poly, shadow, glowDot });
+
   // Cinder Imp — squat ember-bodied imp with a flame tuft (Ashfields)
   for (const f of [0, 1]) make('imp' + f, 40, 42, (c) => {
     shadow(c, 20, 38, 11, 3.5);
@@ -1241,33 +1053,6 @@ function drawEnemies() {
     }
     circle(c, 15, 16, 1.5, HEX.HGLARE);
   });
-  // The Hollow — shroud hood, rim inside the ink, violet hem
-  for (const f of [0, 1]) make('hollow' + f, 110, 120, (c) => {
-    shadow(c, 55, 112, 30 * SHADOW.floatWidth, 6 * SHADOW.floatWidth, SHADOW.floatAlpha);
-    const shroud = () => {
-      c.beginPath(); c.moveTo(55, 10);
-      c.bezierCurveTo(88, 14, 96, 60, 90, 98);
-      for (let i = 0; i < 6; i++) { const x = 90 - i * 14.5; c.lineTo(x - 7, 100 + ((i + f) % 2) * 12); c.lineTo(x - 14.5, 96 + ((i + f) % 2) * -4); }
-      c.bezierCurveTo(14, 60, 22, 14, 55, 10);
-    };
-    fillSteep(c, shroud, 14, 8, 96, 112, [[0, HEX.SHROUD], [0.35, HEX.SHROUD_D], [0.62, HEX.ROSE], [1, HEX.ROSE_L]]);
-    shroud();
-    c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-    c.save(); shroud(); c.clip();
-    c.lineWidth = 2.5; c.strokeStyle = HEX.RIM; c.stroke();
-    c.restore();
-    c.strokeStyle = HEX.ROSE_L; c.lineWidth = 1.6;
-    c.beginPath();
-    for (let i = 0; i < 6; i++) { const x = 90 - i * 14.5; c.moveTo(x - 2, 96); c.lineTo(x - 7, 102 + ((i + f) % 2) * 8); }
-    c.stroke();
-    c.beginPath(); c.moveTo(55, 18); c.bezierCurveTo(78, 20, 80, 44, 72, 64); c.quadraticCurveTo(55, 80, 38, 64); c.bezierCurveTo(30, 44, 32, 20, 55, 18);
-    c.fillStyle = lin(c, 32, 18, 80, 78, [[0, HEX.WHITE], [0.4, HEX.FROST_H], [1, HEX.FROST_L]]);
-    c.fill(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
-    ellipse(c, 45, 42, 5, 9, HEX.INK); ellipse(c, 65, 42, 5, 9, HEX.INK);
-    c.strokeStyle = HEX.GLOOM; c.lineWidth = 1.6; c.beginPath(); c.moveTo(45, 50); c.lineTo(44, 66 + f * 3); c.moveTo(65, 50); c.lineTo(66, 66 + f * 3); c.stroke();
-    ellipse(c, 55, 66, 4, 6 + f, HEX.INK);
-    eye(c, 45, 42, 2, HEX.GLOOM_L); eye(c, 65, 42, 2, HEX.GLOOM_L);
-  });
   // Glass Scarab — fast glassy desert beetle: iridescent turquoise/gold shell, wings and legs flicker
   for (const f of [0, 1]) make('scarab' + f, 40, 40, (c) => {
     shadow(c, 20, 35, 11, 3);
@@ -1336,12 +1121,11 @@ function drawEnemies() {
     c.restore();
   });
   drawExtraEnemies();
-  for (const n of Object.keys(frames)) if (/^(gloomling|moth|husk|wraith|splitter|broodling|beetle|spitter|sentinel|matron|colossus|herald|tyrant|imp|frostwisp|lurker|hollow|scarab|acolyte|stormkite|forge|totem)\d?$/.test(n)) rimFrame(n);
+  for (const n of Object.keys(frames)) if (/^(gloomling|moth|husk|wraith|splitter|broodling|beetle|spitter|sentinel|matron|colossus|herald|tyrant|imp|frostwisp|lurker|hollow|scarab|acolyte|stormkite|forge|totem)\d+$/.test(n)) rimFrame(n);
   // White flash variants
   for (const n of ['gloomling0', 'gloomling1', 'moth0', 'moth1', 'husk0', 'husk1', 'wraith0', 'wraith1',
     'splitter0', 'splitter1', 'broodling0', 'broodling1', 'beetle0', 'beetle1', 'spitter0', 'spitter1',
-    'sentinel0', 'sentinel1', 'matron0', 'matron1', 'matron2', 'matron3', 'colossus0', 'colossus1', 'colossus2', 'colossus3',
-    'tyrant0', 'tyrant1', 'tyrant2', 'tyrant3', 'totem0', 'totem1', 'herald0', 'herald1', 'herald2', 'herald3',
+    'sentinel0', 'sentinel1', 'matron0', 'colossus0', 'tyrant0', 'totem0', 'totem1', 'herald0', 'hollow0',
     'imp0', 'imp1', 'frostwisp0', 'frostwisp1', 'lurker0', 'lurker1', 'scarab0', 'scarab1', 'acolyte0', 'acolyte1',
     'forge0', 'forge1', 'sunbearer0', 'sunbearer1', 'stormkite0', 'stormkite1']) makeWhite(n);
 }
@@ -2311,7 +2095,7 @@ export function buildAtlas() {
   drawDigits();
   drawIcons();
   groundSeed = seed;
-  if (import.meta.env.DEV) { window.__frames = frames; window.__grads = gradCounts; }
+  if (import.meta.env.DEV) { window.__frames = frames; window.__grads = gradCounts; window.__atlasUse = sy + sh; }
   const source = new CanvasSource({ resource: atlasCanvas, resolution: SS, scaleMode: 'linear', autoGenerateMipmaps: false });
   for (const k in frames) {
     const f = frames[k];
