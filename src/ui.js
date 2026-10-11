@@ -13,6 +13,29 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const fmtTime = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 const fmtNum = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(Math.round(n)));
 
+// Landmark sprite for each stage card. Props are dimmed into the ground, so the thumbnail uses the
+// objective the stage is built around, painted on that stage's ground colour.
+const STAGE_ART = {
+  gloam: 'waystone0', ashfields: 'forge0', rimewood: 'brazier0', marsh: 'rotpool',
+  reliquary: 'chapel', glassdunes: 'sunshard', wayfarers: 'waystone0', stormcoast: 'lighthouse',
+};
+
+const walletHTML = (lead = '') => `<div class="wallet">${lead}<b>${save.cinders}</b> ✦ cinders</div>`;
+
+// ok is an extra gate (an unlock requirement). short is purely "not enough cinders".
+function payState(cost, ok = true, blocked = '') {
+  const short = save.cinders < cost;
+  const can = ok && !short;
+  const why = !ok ? (blocked || 'Locked') : short ? `Need ${cost - save.cinders} more cinders` : '';
+  return { can, short, why };
+}
+const blockAttrs = (why) => (why ? ` aria-disabled="true" title="${esc(why)}"` : '');
+function deny(why) {
+  const el = document.querySelector('.buy-reason');
+  if (el) el.textContent = why;
+  sfx.deny();
+}
+
 export class UI {
   constructor(handlers) {
     this.h = handlers; // { startRun(charId), quitToTitle() }
@@ -106,9 +129,18 @@ export class UI {
 
   bind(map) {
     this.screen.querySelectorAll('[data-a]').forEach((el) => {
+      if (el.tagName !== 'BUTTON' && el.tagName !== 'INPUT') {
+        if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+        if (!el.getAttribute('role') && !el.querySelector('button, input, a')) el.setAttribute('role', 'button');
+        el.addEventListener('keydown', (ev) => {
+          if (ev.key !== 'Enter' && ev.key !== ' ') return;
+          ev.preventDefault();
+          el.click();
+        });
+      }
       el.addEventListener('click', (ev) => {
         initAudio();
-        sfx.select();
+        if (el.getAttribute('aria-disabled') !== 'true') sfx.select();
         const fn = map[el.dataset.a];
         if (fn) fn(el, ev);
       });
@@ -125,12 +157,13 @@ export class UI {
         return `<div class="card char ${un ? '' : 'locked'} ${id === sel ? 'sel' : ''}" data-a="pick" data-id="${id}" style="--c:${c.color}">
           <img src="${spriteURL(c.sprite, 2)}" alt="">
           <div class="cname">${c.name}</div><div class="ctitle">${c.title}</div>
-          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost">${c.cost} ✦</div>${reqOf('chars', id) ? `<div class="req ${reqMet('chars', id, save) ? 'ok' : ''}">${reqMet('chars', id, save) ? '✓' : '🔒'} ${reqOf('chars', id).text}</div>` : ''}`}
+          ${un ? `<div class="cw"><img src="${iconURL(c.weapon)}">${WEAPONS[c.weapon].name}</div>` : `<div class="cost ${save.cinders < c.cost ? 'cant-afford' : 'can-afford'}">${save.cinders < c.cost ? '<span aria-hidden="true">🔒 </span>' : ''}${c.cost} ✦</div>${reqOf('chars', id) ? `<div class="req ${reqMet('chars', id, save) ? 'ok' : ''}">${reqMet('chars', id, save) ? '✓' : '🔒'} ${reqOf('chars', id).text}</div>` : ''}`}
           ${un && (save.records['char:' + id] || {}).wins ? `<button class="dawn-btn ${save.skins[id] === 'dawn' ? 'on' : ''}" data-a="skin" data-id="${id}" title="Dawn variant (earned by breaking the Eclipse)">☀ Dawn</button>` : ''}
         </div>`;
       }).join('');
       const c = CHARACTERS[sel];
       const un = save.unlocked[sel];
+      const buySt = payState(c.cost, reqMet('chars', sel, save), reqOf('chars', sel)?.text || 'Locked');
       // keep the scroll position across re-renders (selecting must not throw you back to the top)
       const keep = this.screen.querySelector('.panel.select');
       const pos = keep ? { top: keep.scrollTop, cg: (keep.querySelector('.char-grid') || {}).scrollLeft || 0, sg: (keep.querySelector('.stage-grid') || {}).scrollLeft || 0 } : null;
@@ -148,11 +181,13 @@ export class UI {
           <div class="stage-grid">${Object.entries(STAGES).map(([id, st]) => {
             const open = save.stages[id];
             const cur = (save.lastStage || 'gloam') === id;
-            return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}">
-              <div class="stage-swatch" style="background:${st.ground.base}"><i style="background:${st.ground.blobs[0]}"></i><i style="background:${st.ground.blobs[2]}"></i></div>
+            const lockedWhy = open ? '' : (reqOf('stages', id) ? reqOf('stages', id).text : 'Locked');
+            return `<div class="card stage ${open ? '' : 'locked'} ${cur ? 'sel' : ''}" data-a="stage" data-id="${id}" style="--c:${st.color}"${blockAttrs(lockedWhy)}>
+              <div class="stage-swatch" style="background:radial-gradient(circle at 30% 30%, ${st.color}, transparent 68%), ${st.ground.base}"><img alt="" src="${spriteURL(STAGE_ART[id] || 'pillar', 2)}"></div>
               <div><div class="cname">${st.name}</div><div class="mdesc">${st.desc}</div>
               ${open ? `<div class="obj-line">${esc(st.objective.title)}${objDone(save, id) ? ' · ✓ done' : objProg(save, id) ? ` · best ${objProg(save, id)}/${st.objective.n}` : ''}</div>` : `<div class="req">🔒 ${reqOf('stages', id) ? reqOf('stages', id).text : 'Locked'}</div>`}</div></div>`;
           }).join('')}</div>
+          <p class="scroll-hint">Swipe for more stages</p>
           ${(() => {
             const st = save.lastStage || 'gloam', mx = save.heatMax[st] || 0, cur = Math.min(save.heatSel[st] || 0, mx);
             if (!mx) return `<div class="heat-row muted">Win on this stage to unlock <b>Heat</b> — harder runs for richer cinders.</div>`;
@@ -165,13 +200,16 @@ export class UI {
             return `<div class="heat-row"><span>Keepsake</span><button class="heat-btn ${!save.keepsakeSel ? 'on' : ''}" data-a="keep" data-k="">None</button>${ks.map((k) => `<button class="heat-btn ${save.keepsakeSel === k ? 'on' : ''}" data-a="keep" data-k="${k}" title="${esc(KEEPSAKES[k].desc)}">${KEEPSAKES[k].name}</button>`).join('')}
               <em>${save.keepsakeSel && KEEPSAKES[save.keepsakeSel] ? KEEPSAKES[save.keepsakeSel].desc : 'Choose one'}</em></div>`;
           })()}
-          <div class="row">
-            <button class="btn" data-a="back">Back</button>
-            ${un ? `<button class="btn primary" data-a="go">Begin</button>`
-              : `<button class="btn primary" data-a="buy" ${save.cinders < c.cost || !reqMet('chars', sel, save) ? 'disabled' : ''}>Unlock · ${c.cost} ✦</button>`}
-            <button class="btn ghost" data-a="diff" title="${esc(DIFFICULTY[save.settings.difficulty || 'normal'].desc)}">${DIFFICULTY[save.settings.difficulty || 'normal'].name} ▸</button>
+          <div class="dock">
+            <p class="buy-reason" role="status" aria-live="polite"></p>
+            ${walletHTML()}
+            <div class="row">
+              <button class="btn" data-a="back">Back</button>
+              ${un ? `<button class="btn primary" data-a="go">Begin</button>`
+                : `<button class="btn primary ${buySt.can ? 'can-afford' : 'cant-afford'}" data-a="buy"${blockAttrs(buySt.why)}>Unlock · ${c.cost} ✦</button>`}
+              <button class="btn ghost" data-a="diff" title="${esc(DIFFICULTY[save.settings.difficulty || 'normal'].desc)}">${DIFFICULTY[save.settings.difficulty || 'normal'].name} ▸</button>
+            </div>
           </div>
-          <div class="wallet">${save.cinders} ✦ cinders</div>
         </div>`);
       if (pos) {
         const pn = this.screen.querySelector('.panel.select');
@@ -190,13 +228,15 @@ export class UI {
         heat: (el) => { save.heatSel[save.lastStage || 'gloam'] = +el.dataset.h; persist(); render(); },
         stage: (el) => {
           const id = el.dataset.id;
-          if (!save.stages[id]) { sfx.deny(); return; }
+          if (!save.stages[id]) { deny(reqOf('stages', id)?.text || 'Locked'); return; }
           save.lastStage = id; persist(); render();
         },
         back: () => { sfx.back(); this.showTitle(); },
         go: () => { this.close(); this.h.startRun(sel); },
         buy: () => {
-          if (save.cinders >= c.cost && reqMet('chars', sel, save)) { save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.purchase(); render(); } else sfx.deny();
+          const st = payState(c.cost, reqMet('chars', sel, save), reqOf('chars', sel)?.text || 'Locked');
+          if (!st.can) { deny(st.why); return; }
+          save.cinders -= c.cost; save.unlocked[sel] = true; persist(); sfx.purchase(); render();
         },
       });
       this.keyHandler = (e) => {
@@ -245,34 +285,44 @@ export class UI {
         const l = save.meta[id] || 0;
         const cost = Math.round(m.cost * (1 + l * 0.6));
         const maxed = l >= m.max;
+        const st = payState(cost);
+        const why = maxed ? 'Already maxed' : st.why;
         const pips = Array.from({ length: m.max }, (_, i) => `<i class="${i < l ? 'on' : ''}"></i>`).join('');
-        return `<div class="card meta ${maxed ? 'maxed' : ''}" data-a="buy" data-id="${id}">
+        return `<div class="card meta ${maxed ? 'maxed' : st.can ? 'can-afford' : 'cant-afford'}" data-a="buy" data-id="${id}"${blockAttrs(why)}>
           <div class="mname">${m.name}</div><div class="mdesc">${m.desc}</div>
           <div class="pips">${pips}</div>
-          <div class="mcost">${maxed ? 'MAX' : cost + ' ✦'}</div></div>`;
+          <div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${st.short ? '<span aria-hidden="true">🔒 </span>' : ''}${cost} ✦`}</div></div>`;
       }).join('');
       this.open(`
         <div class="panel wide">
+          <div class="wallet-bar"><p class="buy-reason" role="status" aria-live="polite"></p>${walletHTML()}</div>
           <h2>The Hearth</h2>
           <div class="sub">Cinders gathered in the Gloam feed the Hearth. Its warmth follows you into every run.</div>
           <div class="meta-grid">${items}</div>
           ${save.totals.wins >= 1 ? `<h3 class="stage-h">Eternal Embers <small>— an endless sink for the long game</small></h3><div class="meta-grid">${Object.entries(ETERNAL).map(([id, m]) => {
             const l = save.eternal[id] || 0, maxed = l >= m.max;
-            return `<div class="card meta eternal ${maxed ? 'maxed' : ''}" data-a="ebuy" data-id="${id}"><div class="mname">${m.name} <span class="lv">${l}/${m.max}</span></div><div class="mdesc">${m.desc}</div><div class="mcost">${maxed ? 'MAX' : eternalCost(id, l) + ' ✦'}</div></div>`;
+            const cost = maxed ? 0 : eternalCost(id, l);
+            const st = payState(maxed ? 0 : cost);
+            const why = maxed ? 'Already maxed' : st.why;
+            return `<div class="card meta eternal ${maxed ? 'maxed' : st.can ? 'can-afford' : 'cant-afford'}" data-a="ebuy" data-id="${id}"${blockAttrs(why)}><div class="mname">${m.name} <span class="lv">${l}/${m.max}</span></div><div class="mdesc">${m.desc}</div><div class="mcost ${maxed ? '' : st.short ? 'cant-afford' : 'can-afford'}">${maxed ? 'MAX' : `${st.short ? '<span aria-hidden="true">🔒 </span>' : ''}${cost} ✦`}</div></div>`;
           }).join('')}</div>` : `<div class="heat-row muted">Win a run to light the <b>Eternal Embers</b>: an endless sink for spare cinders.</div>`}
           <div class="row"><button class="btn" data-a="back">Back</button><button class="btn ghost" data-a="refund">Refund all</button></div>
-          <div class="wallet">${save.cinders} ✦ cinders</div>
         </div>`);
       this.bind({
         back: () => this.showTitle(),
         buy: (el) => {
           const id = el.dataset.id, m = META[id], l = save.meta[id] || 0;
           const cost = Math.round(m.cost * (1 + l * 0.6));
-          if (l < m.max && save.cinders >= cost) { save.cinders -= cost; save.meta[id] = l + 1; persist(); sfx.purchase(); render(); } else sfx.deny();
+          if (l >= m.max) { deny('Already maxed'); return; }
+          if (save.cinders < cost) { deny(`Need ${cost - save.cinders} more cinders`); return; }
+          save.cinders -= cost; save.meta[id] = l + 1; persist(); sfx.purchase(); render();
         },
         ebuy: (el) => {
-          const id = el.dataset.id, l = save.eternal[id] || 0, cost = l < ETERNAL[id].max ? eternalCost(id, l) : Infinity;
-          if (save.cinders >= cost) { save.cinders -= cost; save.eternal[id] = l + 1; persist(); sfx.purchase(); render(); } else sfx.deny();
+          const id = el.dataset.id, l = save.eternal[id] || 0;
+          if (l >= ETERNAL[id].max) { deny('Already maxed'); return; }
+          const cost = eternalCost(id, l);
+          if (save.cinders < cost) { deny(`Need ${cost - save.cinders} more cinders`); return; }
+          save.cinders -= cost; save.eternal[id] = l + 1; persist(); sfx.purchase(); render();
         },
         refund: () => {
           let back = 0;
@@ -300,6 +350,7 @@ export class UI {
     const pas = Object.entries(PASSIVES).map(([id, p]) => `<div class="card mini ${itemOpen(save, id) ? '' : 'locked-item'}"><img src="${iconURL(id)}"><div><b>${p.name}</b><div class="mdesc">${p.desc} (max ${p.max})</div>${lockLine(id)}</div></div>`).join('');
     this.open(`
       <div class="panel wide scroll">
+        <div class="wallet-bar">${walletHTML()}</div>
         <h2>Codex</h2>
         <h3>Ascensions — ${Object.keys(save.fusions).length}/${Object.keys(FUSIONS).length} discovered</h3>
         <div class="codex-grid">${fus}</div>
@@ -799,11 +850,14 @@ export class UI {
         ${g.featsEarned.length ? `<div class="run-feats">${g.featsEarned.map((id) => `<span>★ ${FEATS[id].name} +${FEATS[id].reward}</span>`).join('')}</div>` : ''}
         <div class="earned">+${g.cinders} gathered · +${bonus} survival bonus${milestoneGain ? ` · +${milestoneGain} milestone` : ''}${sealGain ? ` · +${sealGain} seals` : ''} = <b>${total} ✦</b>${g.diff && g.diff.cinders !== 1 ? ` <small>(${g.diff.name}: x${g.diff.cinders} cinders, x${g.diff.xp} XP)</small>` : ''}</div>
         <div class="hook">${affordable ? `${affordable} Hearth upgrade${affordable > 1 ? 's' : ''} affordable!` : nextChar ? `${nextChar[1].cost - save.cinders > 0 ? nextChar[1].cost - save.cinders + ' ✦ until ' + nextChar[1].name + ' unlocks' : nextChar[1].name + ' can be unlocked!'}` : ''}</div>
-        <div class="row">
-          <button class="btn primary" data-a="again">Again [Enter]</button>
-          <button class="btn" data-a="share">Share</button>
-          <button class="btn" data-a="hearth">The Hearth</button>
-          <button class="btn ghost" data-a="title">Title</button>
+        <div class="dock">
+          ${walletHTML('Holding ')}
+          <div class="row">
+            <button class="btn primary" data-a="again">Again [Enter]</button>
+            <button class="btn" data-a="share">Share</button>
+            <button class="btn" data-a="hearth">The Hearth</button>
+            <button class="btn ghost" data-a="title">Title</button>
+          </div>
         </div>
       </div>`, 'dim');
     const charId = g.charId;
