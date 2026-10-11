@@ -1,7 +1,7 @@
-# Emberwake Art Style Guide, v1.3
+# Emberwake Art Style Guide, v1.4
 
 **Status:** this is the source of truth. Every future art audit compares against this document.
-**Version:** v1.3, 2026-10-11. It goes with **palette v1.3 (85 swatches)**. Boss bodies are exempt from the flat 3:1 floor: a boss may be near-black. Readability is the whole silhouette. The outer rim, glow, corona or emissive edge must be ≥ 3:1 (target ≥ 4:1) against all 8 grounds over at least 60% of the perimeter, and the face or eyes must read. Minions keep the 3:1 body floor. v1.2 dropped the boss n80, flat-share and detail floors, because a striped fill cleared them without describing a volume.
+**Version:** v1.4, 2026-10-11. It goes with **palette v1.4 (85 swatches)**. Boss bodies are exempt from the flat 3:1 floor: a boss may be near-black. Readability is the whole silhouette, measured by compositing the sprite at its real alpha over the ground and area-averaging to zoom 0.6. A boss must put at least 8% of those pixels at ≥ 3:1 on the Gloam (the Matron's floor is 10%). Minions keep the 3:1 body floor. v1.2 dropped the boss n80, flat-share and detail floors, because a striped fill cleared them without describing a volume. v1.3's perimeter edge-read is retired: it sampled a rim pixel's raw colour and let a near-invisible boss pass.
 **Based on:**
 - the repo survey of `AieatAssam/emberwake` @ `758ad49`
 - `ew-reports/drift-2026-10-10.md`
@@ -108,7 +108,9 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | pair | min ΔE | v1 measured |
 |---|---|---|
 | Player Ember ramp vs Hostile Fire and Hostile Signal | 20 | 28.4 |
-| Corona (SOL_D, SOL, SOL_H) vs Reward Gold, Player Ember and CANDLE | 20 | 20.3 (SOL vs R_GOLD) |
+| Corona (SOL_D, SOL, SOL_H) vs Reward Gold | 15 | 15.4 (SOL `#e0b000` vs R_GOLD). Boss-only, so the old floor of 20 is relaxed |
+| Corona vs Player Ember | 20 | 21.2 (SOL vs EMBER_L) |
+| Corona vs CANDLE | 15 | 19.7 (SOL vs CANDLE). A warm gold cannot hold 20 against both Reward Gold and CANDLE |
 | Any Reward swatch vs Hostile Fire and Hostile Signal | 20 | 28.5 |
 | Any player-side swatch vs Hostile Fire and Hostile Signal | 20 | 22.0 |
 | Hostile Glare `#e8ff4a` vs Reward Gold `#ffd84a` | 20 | 30.5 |
@@ -132,7 +134,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | Enemy rim composite | ≥ 3.0 | 4.26 on Rimewood |
 | Enemy eyes / irises | ≥ 4.5 | held from v1 |
 
-Boss craft (`npm run contrast`) keeps a real gradient on every boss, Herald void ≤ 0.20, Tyrant ink share ≤ 0.30, Matron ink-edge ≥ 0.90, and a pose change ≥ 0.10 between the two ends of the idle cycle. v1.3 adds the silhouette read (edge-read ≥ 0.60 at 3:1), a body-hue separation of ΔE ≥ 25 between bosses and ΔE ≥ 15 from the Gloomling, and a Tyrant nova pose that is ≥ 0.20 and larger than the idle pose. Measured this round: edge-read 0.98–1.00 (and ≥ 4:1 on the same share), closest boss bodies matron/hollow ΔE 25.1, nova pose 0.30. The v1.1 n80, flat-share and detail floors stay dropped.
+Boss craft (`npm run contrast`) keeps a real gradient on every boss, Herald void ≤ 0.20, Tyrant ink share ≤ 0.30, Matron ink-edge ≥ 0.90, and a pose change ≥ 0.10 between the two ends of the idle cycle. Body hues stay ΔE ≥ 25 apart and ΔE ≥ 15 from the Gloomling. The Tyrant's windup (the corona flare, before the crack) is ≥ 0.20 and larger than the idle pose. The Matron's summon windup is ≥ 0.20. v1.4's read is the zoom-0.6 composite above, not the raw rim. Measured this round: Gloam share at ≥ 3:1 is Matron 13.4%, Tyrant 12.3%, Hollow 17.5%, Colossus 53%, Herald 9.2% (Gloomling, for scale, is 54%). Closest boss bodies are Matron/Hollow and Herald/Tyrant, both ΔE 31.3. Tyrant windup pose 0.36, Matron summon pose 0.22. The v1.1 n80, flat-share and detail floors stay dropped.
 
 **Effective grounds (v1.1, tile mean × stage tint)**
 
@@ -178,11 +180,11 @@ All have luminance between 0.005 and 0.011.
 |---|---|---|
 | Horde | gloomling, moth, broodling, imp, scarab, stormkite, sunbearer, thief (24–40px) | one blob or one creature mass, 1–2 glowing eyes as the focal point, ramp from one material |
 | Brute / stage | husk, beetle, wraith, bloater (`splitter`), spitter, sentinel, frostwisp, lurker, acolyte, forge (44–72px) | heavier mass, one readable feature (horn, cracks, tail, spikes) |
-| Boss | Brood Matron 150×140, Cinder Colossus 190, Gloam Herald 90×120, Eclipse Tyrant 252 | silhouette fills 90–252px; boss halo HEYE |
+| Boss | Brood Matron 208×148, Cinder Colossus 190, Gloam Herald 90×120, Eclipse Tyrant 240 | silhouette fills 90–240px; boss halo HEYE |
 | Special | the Hollow (110×120, can't be harmed), Gloom Totem (40×60, breakable loot) | |
 
 - **[Rule]** a minion's body uses one hostile material ramp. Eyes use HEYE, HGLARE, SPIRIT_L or WHITE.
-- **[Rule]** bosses may use the boss ramps (eclipse, abyss, ash, brood, corona) and the older hostile ramps. Corona (SOL_D, SOL, SOL_H) is hostile-only and boss-only. It stays ΔE ≥ 20 from Reward Gold, Player Ember and CANDLE. The Tyrant's disc is the eclipse ramp, not an INK fill, and the corona is outlined in INK (§6).
+- **[Rule]** bosses may use the boss ramps (eclipse, abyss, ash, brood, corona) and the older hostile ramps. Corona (SOL_D, SOL, SOL_H) is hostile-only and boss-only. SOL is `#e0b000` (L* about 74). It stays ΔE ≥ 15 from Reward Gold, ΔE ≥ 20 from Player Ember, and ΔE ≥ 15 from CANDLE. The hot stop is warm white-gold (`#fdec90`), and the outer tongue stop is HFIRE. The Tyrant's disc is the eclipse ramp, not an INK fill, and the corona is outlined in INK (§6). A soft radial glow behind the disc is allowed; bosses may glow.
 - **[Rule]** the main body hue of any two bosses differs by ΔE ≥ 25. No boss body sits within ΔE 15 of the Gloomling.
 
 **Pickups [Current]**

@@ -1,4 +1,4 @@
-// Emberwake locked palette, v1.3 (85 swatches). Art source of truth: docs/art/style-guide.md
+// Emberwake locked palette, v1.4 (85 swatches). Art source of truth: docs/art/style-guide.md
 // and docs/art/palette.md. Drawing code and CSS variables name these swatches; they do not
 // inline hex. Numeric PAL values are Pixi tints (0xRRGGBB). HEX strings are Canvas2D fills.
 
@@ -73,10 +73,12 @@ export const HOSTILE = Object.freeze({
   ASH_L: 0x4a7874, // Herald robe lit fold
   BROOD: 0x4a0a46, // Matron carapace, brood violet-black
   BROOD_L: 0x7a2868, // Matron carapace lit
-  // Hostile solar. Boss corona only. ΔE ≥ 20 from Reward Gold, Player Ember and CANDLE.
+  // Hostile solar. Boss corona only. ΔE ≥ 15 from Reward Gold (the corona is boss-only).
+  // SOL is #e0b000, L* 74. Measured 15.4 from Reward Gold, 19.7 from CANDLE, 21.2 from Ember Light.
+  // SOL_H is warm white-gold. The outer tongue stop is HFIRE, not a second swatch.
   SOL_D: 0x7a6410,
-  SOL: 0xc4a000,
-  SOL_H: 0xc0d400,
+  SOL: 0xe0b000,
+  SOL_H: 0xfdec90,
 });
 
 export const REWARD = Object.freeze({

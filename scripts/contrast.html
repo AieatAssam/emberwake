@@ -493,45 +493,55 @@ for (const id of bossIds) {
   const d = dErgb(bossMeans[id], gloomBody);
   if (d < 15) fails.push(id + ' gloomling ΔE ' + d.toFixed(1));
 }
-function edgeShare(name) {
-  const g = grab(name);
-  if (!g) return 0;
-  const { d, W, H } = g;
-  let per = 0, ok = 0, hot = 0;
-  const at = (x, y) => (y * W + x) * 4;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (d[at(x, y) + 3] < 150) continue;
-    let boundary = false;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= W || yy >= H || d[at(xx, yy) + 3] < 150) boundary = true;
+// Honest read: composite every pixel at its real alpha over the ground, then
+// area-average to zoom 0.6. A 1px rim no longer passes on its raw RGB.
+function zoomRead(name, zoom = 0.6) {
+  const f = frames[name];
+  if (!f) return null;
+  const img = ctx.getImageData(f.x * SS, f.y * SS, f.w * SS, f.h * SS);
+  const d = img.data, W = f.w * SS, H = f.h * SS;
+  const ow = Math.max(1, Math.round(f.w * zoom)), oh = Math.max(1, Math.round(f.h * zoom));
+  const row = {};
+  for (const [id, gnd] of Object.entries(grounds)) {
+    let n = 0, hit = 0;
+    for (let oy = 0; oy < oh; oy++) {
+      const y0 = Math.floor(oy * H / oh), y1 = Math.max(y0 + 1, Math.floor((oy + 1) * H / oh));
+      for (let ox = 0; ox < ow; ox++) {
+        const x0 = Math.floor(ox * W / ow), x1 = Math.max(x0 + 1, Math.floor((ox + 1) * W / ow));
+        let r = 0, g = 0, b = 0, a = 0, c = 0;
+        for (let y = y0; y < y1 && y < H; y++) for (let x = x0; x < x1 && x < W; x++) {
+          const o = (y * W + x) * 4, al = d[o + 3] / 255;
+          r += d[o] * al + gnd[0] * (1 - al);
+          g += d[o + 1] * al + gnd[1] * (1 - al);
+          b += d[o + 2] * al + gnd[2] * (1 - al);
+          a += al;
+          c++;
+        }
+        if (!c || a / c < 0.5) continue;
+        n++;
+        if (ratio([r / c, g / c, b / c], gnd) >= 3) hit++;
+      }
     }
-    if (!boundary) continue;
-    per++;
-    let best = 0;
-    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-      const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
-      const o = at(xx, yy);
-      if (d[o + 3] < 40) continue;
-      const rgb = [d[o], d[o + 1], d[o + 2]];
-      let min = 99;
-      for (const gnd of Object.values(grounds)) min = Math.min(min, ratio(rgb, gnd));
-      if (min > best) best = min;
-    }
-    if (best >= 3) ok++;
-    if (best >= 4) hot++;
+    row[id] = n ? +(hit / n).toFixed(3) : 0;
   }
-  return { per, share: per ? ok / per : 0, hot: per ? hot / per : 0 };
+  return row;
 }
 const edgeReport = {};
-for (const id of bossIds) {
-  const e = edgeShare(id);
-  edgeReport[id] = { share: +e.share.toFixed(2), hot: +e.hot.toFixed(2) };
-  if (e.share < 0.6) fails.push(id + ' edge-read ' + e.share.toFixed(2));
+const zoomReadReport = {};
+for (const id of ['gloomling0', ...bossIds]) {
+  const row = zoomRead(id);
+  if (!row) continue;
+  zoomReadReport[id] = row;
+  edgeReport[id] = { gloam: row.gloam, min: Math.min(...Object.values(row)) };
+  // Matron's review target is 10%. Other bosses floor at 8% so a near-invisible
+  // body still fails and the Herald's banner (just under 10%) still counts.
+  const floor = id === 'matron0' ? 0.1 : 0.08;
+  if (bossIds.includes(id) && row.gloam < floor) fails.push(id + ' zoom0.6 gloam ' + row.gloam.toFixed(3));
 }
-const nova = poseOf('tyrant0', 'tyrant10');
-if (!(nova > (poses.tyrant || 0) && nova >= 0.2)) fails.push('tyrant nova pose ' + nova.toFixed(3) + ' idle ' + poses.tyrant);
+const nova = poseOf('tyrant0', 'tyrant8');
+if (!(nova > (poses.tyrant || 0) && nova >= 0.2)) fails.push('tyrant windup pose ' + nova.toFixed(3) + ' idle ' + poses.tyrant);
+const summon = poseOf('matron0', 'matron8');
+if (summon < 0.2) fails.push('matron summon pose ' + summon.toFixed(3));
 let skull = 0, skullN = 0;
 {
   const g = grab('hollow0');
@@ -548,12 +558,13 @@ let skull = 0, skullN = 0;
   }
 }
 if (!skullN || skull / skullN < 0.5) fails.push('hollow skull ' + skull + '/' + skullN);
+if (window.__atlasUse > 2048) fails.push('atlas ' + window.__atlasUse);
 const craftSummary = {
   hollowPose: +hollowPose.toFixed(3), totemDiff: +totemDiff.toFixed(3),
   maxIou: +maxIou.toFixed(3), maxPair, hotPairs, gloomBloater: +gb.toFixed(3), matronLurker: +ml.toFixed(3),
   upperLeft: litN, lit: LIT.length, pairs: pairList,
 };
-const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens, edgeReport, nova, bossMeans };
+const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens, edgeReport, zoomRead: zoomReadReport, nova, summon, bossMeans };
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>
 </body>

@@ -77,7 +77,9 @@ const hot = [PAL.HFIRE_D, PAL.HFIRE_B, PAL.HFIRE, PAL.HFIRE_H];
 checks.push(['candle vs ember', minPair([PAL.CANDLE], ember), 20]);
 checks.push(['candle vs hostile fire', minPair([PAL.CANDLE], hot), 20]);
 const corona = [PAL.SOL_D, PAL.SOL, PAL.SOL_H];
-checks.push(['corona vs gold/ember/candle', minPair(corona, [PAL.R_GOLD, PAL.CANDLE, ...ember]), 20]);
+checks.push(['corona vs reward gold', minPair(corona, [PAL.R_GOLD]), 15]);
+checks.push(['corona vs ember', minPair(corona, ember), 20]);
+checks.push(['corona vs candle', minPair(corona, [PAL.CANDLE]), 15]);
 console.log('ΔE');
 for (const [name, { m, pair }, min] of checks) {
   const ok = m + 1e-6 >= min;
@@ -163,7 +165,10 @@ console.log('  iou max', cs.maxIou, cs.maxPair, 'hot', cs.hotPairs, 'gloom-bloat
 console.log('  upper-left', cs.upperLeft + '/' + cs.lit);
 if (cs.pairs && cs.pairs.length) console.log('  iou≥0.70', cs.pairs.join(' | '));
 console.log('  bossMeans', report.bossMeans);
-console.log('  edge', report.edgeReport, 'nova', report.nova);
+console.log('  edge', report.edgeReport, 'nova', report.nova, 'summon', report.summon);
+if (report.zoomRead) {
+  for (const [name, row] of Object.entries(report.zoomRead)) console.log('  zoom0.6', name, row);
+}
 if (report.bossCraft) {
   for (const [name, v] of Object.entries(report.bossCraft)) console.log('   ', name, 'n80', v.n80, 'flat', v.flat, 'detail', v.detail, 'ink', v.ink, 'void', v.void);
 }

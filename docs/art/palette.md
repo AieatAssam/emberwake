@@ -1,4 +1,4 @@
-# Emberwake locked palette, v1.3 (2026-10-11)
+# Emberwake locked palette, v1.4 (2026-10-11)
 
 This is the locked palette. The constants are [`src/palette.js`](../../src/palette.js). The rules that use them are [style-guide.md](style-guide.md). It was checked, before it landed, against a throwaway copy (the repo source plus a colour-remap shim) served by a local Vite dev server. `npm run contrast` remeasures the atlas in the repo.
 
@@ -200,11 +200,13 @@ The new hostile swatches are boss-only. They are darker than the minion ramps an
 | `#4a0a46` | BROOD | brood | Matron carapace |
 | `#7a2868` | BROOD_L | brood | Matron carapace, lit |
 | `#7a6410` | SOL_D | corona | Tyrant corona, shadow side |
-| `#c4a000` | SOL | corona | Tyrant corona gold |
-| `#c0d400` | SOL_H | corona | Tyrant corona, hot stop |
+| `#e0b000` | SOL | corona | Tyrant corona gold, L* 74 |
+| `#fdec90` | SOL_H | corona | Tyrant corona, warm white-gold hot stop |
 | `#7affd0` | MINT | UI | Unlock banner. Replaces the inline `#7affd0` from the stage-unlock UI |
 
-Corona is hostile-only and boss-only. The closest pair against Reward Gold, Player Ember and CANDLE is SOL vs R_GOLD at ΔE 20.3. A true amber cannot clear ΔE 20 from Reward Gold, Player Ember and CANDLE at once, so the hot stop is the yellow-green SOL_H and the gold read is SOL.
+Corona is hostile-only and boss-only. v1.4 moves SOL to `#e0b000` (L* 74.1) and the hot stop to warm white-gold `#fdec90`. The outer end of a tongue is HFIRE, not a separate swatch. Because the corona is boss-only, the floor against Reward Gold is ΔE ≥ 15 (measured 15.4, SOL vs R_GOLD). Player Ember stays ≥ 20 (measured 21.2, SOL vs EMBER_L). CANDLE is 19.7, under the old combined floor of 20, which a warm gold cannot hold against both Reward Gold and CANDLE, so that floor is 15 as well.
+
+v1.3 had tried to hold ΔE ≥ 20 from Reward Gold, Player Ember and CANDLE at once. The only golds that cleared it read as mustard, and the hot stop `#c0d400` read as lime. That pair is retired.
 
 Any two boss body hues differ by ΔE ≥ 25 (closest rendered pair this round: Matron and the Hollow, 25.1). No boss body is within ΔE 15 of the Gloomling. Colossus stays on the Hulk ramp.
 - this document: how v1 was chosen, including the contrast numbers from the throwaway check
