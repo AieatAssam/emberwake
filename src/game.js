@@ -1,7 +1,7 @@
 import { PAL, PROP_RULE, ELITE_TINT, ELITE_HALO, BOSS_HALO, AFFIX_TINT } from './palette.js';
 // Emberwake core simulation + rendering.
 import { Container, ParticleContainer, Particle, Sprite, TilingSprite, Texture, Graphics, Rectangle, ColorMatrixFilter } from 'pixi.js';
-import { T, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
+import { T, bossFlashTex, makeGroundCanvas, makeVignetteCanvas, makeEdgeGlowCanvas } from './atlas.js';
 import { DIFFICULTY, ETERNAL, KEEPSAKES, hasSeal,
   BASE_STATS, WEAPONS, PASSIVES, PACTS, CHARACTERS, ENEMIES, WAVES, EVENTS, META, FUSIONS, FEATS, STAGES,
   MAX_WEAPON_LEVEL, MAX_WEAPONS, MAX_PASSIVES, xpForLevel, enemyHpScale, midRamp, weaponStatsAt, fusionPartnersOf, HOLLOW_AT } from './data.js';
@@ -161,6 +161,10 @@ export class Game {
       enemies: new Layer(this.world),
       motes: new Layer(this.world, 'add'),
     };
+    // ponytail: one sprite. The atlas has no row left for the other boss whites, and a Particle cannot sample a second texture.
+    this.bossFlash = new Sprite(Texture.EMPTY);
+    this.bossFlash.visible = false;
+    this.world.addChildAt(this.bossFlash, this.world.getChildIndex(this.L.enemies.pc) + 1);
     this.initMotes();
     this.shrineG = new Graphics();
     this.world.addChildAt(this.shrineG, this.world.getChildIndex(this.L.pickups.pc));
@@ -641,6 +645,24 @@ export class Game {
     this.L.enemies.kill(e.p);
     if (e.glow) this.L.glowUnder.kill(e.glow);
     if (this.boss === e) this.boss = null;
+    if (this.bossFlash) this.bossFlash.visible = false;
+  }
+
+  // White copy of the current boss frame. Particles can only show atlas textures.
+  showBossFlash(e, p, fr) {
+    const tex = bossFlashTex[e.d.tex + fr];
+    if (!tex) return false;
+    const s = this.bossFlash;
+    s.texture = tex;
+    s.visible = true;
+    s.x = p.x; s.y = p.y;
+    s.scale.set(p.scaleX, p.scaleY);
+    s.anchor.set(0.5, p.anchorY);
+    s.rotation = p.rotation;
+    s.tint = p.tint;
+    s.alpha = p.alpha;
+    p.alpha = 0;
+    return true;
   }
 
   damage(e, amount, o = null) {
@@ -1519,6 +1541,7 @@ export class Game {
   }
 
   updateEnemies(dt) {
+    this.bossFlash.visible = false;
     const P = this.player, es = this.enemies, ES = Math.min(1.5, this.stats.enemySpeed * (this.buffs.bloodMoon > 0 ? 1.3 : 1));
     const farX = this.halfW * 2 + 200, farY = this.halfH * 2 + 200;
     const kd = Math.exp(-9 * dt);
@@ -1635,16 +1658,19 @@ export class Game {
       // visuals
       e.anim += dt * (e.d.anim || 4);
       const fr = bossPose(e, dt);
-      p.texture = e.flash > 0 ? e.d._w[fr] : e.d._t[fr];
+      const flashed = e.flash > 0 && bossFlashTex[e.d.tex + fr];
+      p.texture = e.flash > 0 && !flashed ? e.d._w[fr] : e.d._t[fr];
       if (e.flash > 0) e.flash -= dt;
       p.x = e.x; p.y = e.y;
       const face = (e.rush ? e.rush.x : dx) < 0 ? -1 : 1;
       const squash = 1 + Math.sin(e.anim * 1.6 + e.phase) * 0.05;
       p.scaleX = e.scale * face * (2 - squash);
       p.scaleY = e.scale * squash;
+      p.alpha = 1;
       if (e.d.alpha) p.alpha = e.d.alpha * (0.75 + Math.sin(e.t * 5 + e.phase) * 0.25);
       if (e.d.shroud) p.alpha = this.time - e.lastBlink > 1.5 ? 0.55 : 1;
       if (e.d.submerge) { p.alpha = e.sunk ? 0.22 : 1; p.texture = e.flash > 0 ? e.d._w[e.sunk ? 1 : 0] : e.d._t[e.sunk ? 1 : 0]; }
+      if (flashed) this.showBossFlash(e, p, fr);
       if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.alpha = 0.45 + Math.sin(e.t * 4) * 0.15; }
       if (e.affix === 'vampiric' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.025 * dt);
     }
@@ -1678,10 +1704,13 @@ export class Game {
     e.x += dx * sp * dt; e.y += dy * sp * dt;
     e.anim += dt * 2.2;
     const p = e.p;
-    p.texture = e.d._t[(e.anim | 0) % e.d._t.length];
+    const fr = (e.anim | 0) % e.d._t.length;
+    const flashed = e.flash > 0 && bossFlashTex[e.d.tex + fr];
+    p.texture = e.d._t[fr];
     p.x = e.x; p.y = e.y + Math.sin(e.t * 3) * 4;
     p.scaleX = e.scale * (dx < 0 ? -1 : 1); p.scaleY = e.scale;
     p.alpha = 0.9;
+    if (flashed) { e.flash -= dt; this.showBossFlash(e, p, fr); }
     if (e.glow) { e.glow.x = e.x; e.glow.y = e.y; e.glow.tint = PAL.GLOOM; e.glow.alpha = 0.5 + Math.sin(e.t * 4) * 0.15; }
     if (this.fx.length < this.maxFx * 0.5 && Math.random() < dt * 24) {
       this.spawnFx(T.smoke, e.x + rand(-20, 20), e.y + rand(-10, 20), { life: 0.9, s0: 0.6, s1: 1.4, tint: PAL.SLATE_D, a: 0.5, add: false });

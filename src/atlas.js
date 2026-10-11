@@ -48,18 +48,24 @@ function make(name, w, h, draw) {
 
 // Hit-flash variant of a frame: solid body pixels turn white, while soft pixels
 // (drop shadows, glows, coronas) keep their colour so flashes read as the creature.
-function makeWhite(name) {
-  const src = frames[name];
-  const r = alloc(src.w, src.h);
-  const img = actx.getImageData(src.x * SS, src.y * SS, src.w * SS, src.h * SS);
+function whitenImage(img) {
   const d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     const a = d[i + 3];
     if (a > 150) { const k = (a - 150) / 105; d[i] += (255 - d[i]) * k; d[i + 1] += (255 - d[i + 1]) * k; d[i + 2] += (255 - d[i + 2]) * k; }
   }
+}
+function makeWhite(name) {
+  const src = frames[name];
+  const r = alloc(src.w, src.h);
+  const img = actx.getImageData(src.x * SS, src.y * SS, src.w * SS, src.h * SS);
+  whitenImage(img);
   actx.putImageData(img, r.x * SS, r.y * SS);
   frames[name + '_w'] = r;
 }
+// Boss frames past 0 do not fit in the atlas (row 2042 of 2048). These textures
+// are drawn by a Sprite, not a Particle: a ParticleContainer samples one atlas.
+export const bossFlashTex = {};
 
 // ---------- drawing helpers ----------
 const TAU = Math.PI * 2;
@@ -2100,6 +2106,19 @@ export function buildAtlas() {
   for (const k in frames) {
     const f = frames[k];
     T[k] = new Texture({ source, frame: new Rectangle(f.x, f.y, f.w, f.h) });
+  }
+  for (const n of Object.keys(frames)) {
+    if (!/^(matron|colossus|herald|tyrant|hollow)\d+$/.test(n)) continue;
+    if (frames[n + '_w']) { bossFlashTex[n] = T[n + '_w']; continue; }
+    const src = frames[n];
+    const cv = document.createElement('canvas');
+    cv.width = src.w * SS; cv.height = src.h * SS;
+    const img = actx.getImageData(src.x * SS, src.y * SS, src.w * SS, src.h * SS);
+    whitenImage(img);
+    cv.getContext('2d').putImageData(img, 0, 0);
+    bossFlashTex[n] = new Texture({
+      source: new CanvasSource({ resource: cv, resolution: SS, scaleMode: 'linear', autoGenerateMipmaps: false }),
+    });
   }
   return T;
 }

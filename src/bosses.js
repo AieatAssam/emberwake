@@ -430,50 +430,77 @@ export function drawBosses(make, H) {
   }
 
   function drawTyrant() {
-    const flame = [[0, HEX.SOL_H], [0.78, HEX.SOL_H], [0.9, HEX.SOL], [1, HEX.HFIRE]];
+    const hot = [[0, HEX.SOL_H], [0.62, HEX.SOL_H], [0.84, HEX.SOL], [1, HEX.HFIRE]];
     const at = (ang, r) => [Math.cos(ang) * r, Math.sin(ang) * r];
-    // Bottom of the 240 frame, under the anchor, is the tight edge. Clamp there only.
-    const room = (ang) => {
-      const cs = Math.cos(ang), sn = Math.sin(ang);
-      let m = 150;
-      if (sn > 0.08) m = Math.min(m, 82 / sn);
-      if (sn < -0.08) m = Math.min(m, 132 / -sn);
-      if (Math.abs(cs) > 0.08) m = Math.min(m, 106 / Math.abs(cs));
-      return m;
+    // Stay off the outer pixel. The box is convex, so a curve of fitted points stays inside.
+    const fit = (x, y) => [Math.max(-116, Math.min(115, x)), Math.max(-144, Math.min(87, y))];
+    const paint = (c, path, x0, y0, tx, ty, core) => {
+      path();
+      c.fillStyle = lin(c, x0, y0, tx, ty, hot);
+      c.fill();
+      c.save();
+      path();
+      c.clip();
+      c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5;
+      c.beginPath(); c.moveTo(x0, y0); core(c); c.stroke();
+      c.restore();
+      path(); c.lineWidth = 2.5; c.strokeStyle = HEX.HFIRE; c.stroke();
     };
-    const lick = (c, ang, base, len, hw, fat) => {
-      const tipR = Math.max(base + 8, Math.min(base + len, room(ang) - 2));
-      const mid = base + (tipR - base) * 0.52;
-      const [x0, y0] = at(ang - hw, base);
-      const [x1, y1] = at(ang + hw, base);
-      const [mx, my] = at(ang, mid);
-      const [tx, ty] = at(ang, tipR);
-      const ox = Math.cos(ang + Math.PI / 2), oy = Math.sin(ang + Math.PI / 2);
+    // Thin curling flame. The return edge stays near the curl so it is a ribbon, not a petal.
+    const tongue = (c, ang, base, len, curl, belly) => {
+      const tipR = base + Math.max(8, len);
+      const px = Math.cos(ang + Math.PI / 2), py = Math.sin(ang + Math.PI / 2);
+      const [x0, y0] = fit(...at(ang - 0.05, base));
+      const [x1, y1] = fit(...at(ang + 0.07, base));
+      const mid = at(ang + curl * 0.4, base + (tipR - base) * 0.5);
+      const [cx, cy] = fit(mid[0] + px * curl * belly, mid[1] + py * curl * belly);
+      const tip = at(ang + curl * 0.95, tipR);
+      const [tx, ty] = fit(tip[0], tip[1]);
+      const back = at(ang + curl * 0.7, tipR - Math.min(16, len * 0.35));
+      const [bx, by] = fit(back[0] - px * curl * 2, back[1] - py * curl * 2);
       const path = () => {
         c.beginPath();
         c.moveTo(x0, y0);
-        c.quadraticCurveTo(mx + ox * fat, my + oy * fat, tx, ty);
-        c.quadraticCurveTo(mx - ox * fat * 0.7, my - oy * fat * 0.7, x1, y1);
+        c.quadraticCurveTo(cx, cy, tx, ty);
+        c.quadraticCurveTo(bx, by, x1, y1);
         c.closePath();
       };
-      path();
-      c.fillStyle = lin(c, (x0 + x1) / 2, (y0 + y1) / 2, tx, ty, flame);
-      c.fill();
-      // Hostile fire under the ink keeps the gold edge from blending to olive.
-      path(); c.lineWidth = 4; c.strokeStyle = HEX.HFIRE; c.stroke();
-      path(); c.lineWidth = 2.5; c.strokeStyle = OUT; c.stroke();
+      paint(c, path, (x0 + x1) / 2, (y0 + y1) / 2, tx, ty, (g) => g.quadraticCurveTo(cx, cy, tx, ty));
     };
+    // Straight jagged tooth. Sits on the disc, separate from the curling tongues.
+    const spike = (c, ang, len, jag) => {
+      const base = 70;
+      const tipR = base + len;
+      const px = Math.cos(ang + Math.PI / 2), py = Math.sin(ang + Math.PI / 2);
+      const [x0, y0] = fit(...at(ang - 0.11, base));
+      const [x1, y1] = fit(...at(ang + 0.07, base));
+      const knee = at(ang + jag, base + len * 0.42);
+      const [kx, ky] = fit(knee[0] + px * 8 * jag, knee[1] + py * 8 * jag);
+      const [tx, ty] = fit(...at(ang - jag * 0.15, tipR));
+      const path = () => {
+        c.beginPath();
+        c.moveTo(x0, y0);
+        c.lineTo(kx, ky);
+        c.lineTo(tx, ty);
+        c.lineTo(x1, y1);
+        c.closePath();
+      };
+      paint(c, path, (x0 + x1) / 2, (y0 + y1) / 2, tx, ty, (g) => g.lineTo(tx, ty));
+    };
+    const span = [1.65, 0.32, 1.4, 0.4, 0.85, 1.75, 0.28, 1.15, 0.45, 1.5, 0.36, 0.95];
+    const crownA = [-2.35, -1.98, -1.57, -1.16, -0.8];
+    const crownH = [34, 52, 76, 46, 30];
     for (let f = 0; f < 12; f++) make('tyrant' + f, 240, 240, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
       const idle = atk < 0;
       const wind = atk === 0 || atk === 1;
-      const phase = idle ? (f / WALK) * TAU : (wind ? 0.45 : 2.15);
+      const phase = idle ? (f / WALK) * TAU : (f - WALK + 1) * 0.95;
       c.save();
       c.translate(120, 148);
       c.lineJoin = 'round';
       c.lineCap = 'round';
       shadow(c, 0, 74, 30, 4, 0.26);
-      const haloR = wind ? 86 : idle ? 83 + 3 * Math.cos(phase * 2) : 80;
+      const haloR = wind ? 86 : idle ? 84 + Math.cos(phase * 2) : 80;
       c.fillStyle = radial(c, 0, 0, haloR, [
         [0, HEX.SOL_H],
         [0.9, HEX.SOL_H],
@@ -483,19 +510,15 @@ export function drawBosses(make, H) {
       ]);
       c.beginPath(); c.arc(0, 0, haloR, 0, TAU); c.fill();
       for (let i = 0; i < 12; i++) {
-        const sway = Math.sin(phase + i * 0.85) * (idle ? 0.11 : 0.04);
-        const ang = -Math.PI / 2 + ((i + 0.5) / 12) * TAU + sway;
-        const wave = Math.sin(phase + i * 1.7);
-        const len = wind ? (atk === 0 ? 110 : 92) + 4 * wave
-          : idle ? 40 + 5 * wave
-          : (atk === 2 ? 8 : 16) + 2 * wave;
-        lick(c, ang, 48, len, wind ? 0.36 : 0.16, wind ? 26 : 11);
-      }
-      const crownH = [18, 32, 16, 48, 18, 36, 18];
-      for (let i = 0; i < crownH.length; i++) {
-        const ang = -Math.PI * 0.9 + (i / 6) * Math.PI * 0.8 + Math.sin(phase + i) * 0.07;
-        const wob = idle ? Math.sin(phase + i * 0.7) * 6 : wind ? 44 : 0;
-        lick(c, ang, 70, crownH[i] + wob, wind ? 0.12 : 0.07, wind ? 12 : 6);
+        const curl = (i % 2 ? 1 : -1) * (0.65 + (i % 3) * 0.22);
+        const sway = Math.sin(phase + i * 0.85) * (wind ? 0.07 : 0.11);
+        const ang = -Math.PI / 2 + ((i + 0.35) / 12) * TAU + sway;
+        const wave = Math.sin(phase + i * 1.4);
+        let len = wind ? (atk === 0 ? 112 : 92) + 44 * span[i] + wave * 5
+          : idle ? 16 + 30 * span[i] + wave * 6
+          : (atk === 2 ? 6 : 12) + 6 * span[i] + wave * 2;
+        if (!wind && Math.sin(ang) < -0.38) len = Math.min(len, 16);
+        tongue(c, ang, 50, len, curl, wind ? 26 : 7);
       }
       const discR = 64;
       c.beginPath(); c.arc(0, 0, discR, 0, TAU);
@@ -532,6 +555,11 @@ export function drawBosses(make, H) {
         circle(c, -3.2, 2.4, 3.2, HEX.SOL_H);
         circle(c, -4.4, 1.3, 1.5, HEX.WHITE);
         c.restore();
+      }
+      for (let i = 0; i < crownH.length; i++) {
+        const wob = Math.sin(phase + i * 1.1) * (wind ? 10 : 6);
+        const ang = crownA[i] + Math.sin(phase + i) * 0.05;
+        spike(c, ang, crownH[i] + wob + (wind ? 26 : 0), i % 2 ? 0.2 : -0.14);
       }
       c.restore();
     });

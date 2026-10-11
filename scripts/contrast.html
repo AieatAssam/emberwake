@@ -539,7 +539,8 @@ for (const id of ['gloomling0', ...bossIds]) {
   if (bossIds.includes(id) && row.gloam < floor) fails.push(id + ' zoom0.6 gloam ' + row.gloam.toFixed(3));
 }
 const nova = poseOf('tyrant0', 'tyrant8');
-if (!(nova > (poses.tyrant || 0) && nova >= 0.2)) fails.push('tyrant windup pose ' + nova.toFixed(3) + ' idle ' + poses.tyrant);
+const tyrantIdle = poses.tyrant || 0;
+if (!(nova > tyrantIdle && nova >= 0.2 && nova >= tyrantIdle * 2)) fails.push('tyrant windup pose ' + nova.toFixed(3) + ' idle ' + tyrantIdle.toFixed(3));
 const summon = poseOf('matron0', 'matron8');
 if (summon < 0.2) fails.push('matron summon pose ' + summon.toFixed(3));
 let skull = 0, skullN = 0;
