@@ -452,6 +452,7 @@ body.touch #toasts { top: 28%; }
   #timer { font-size: 20px; }
   body.touch #flarebtn { bottom: calc(68px + var(--sab)); width: 76px; height: 76px; }
 }
+
 /* Bearer and stage pickers: swipeable strips on narrow screens, and the action row stays in reach */
 .panel.select > .row { position: sticky; bottom: -22px; z-index: 2; margin: 10px -22px -22px; padding: 12px 22px; background: linear-gradient(transparent, var(--panel) 35%); }
 .obj-line { font-size: 12px; color: var(--muted); margin-top: 2px; }
