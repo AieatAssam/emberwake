@@ -1,4 +1,4 @@
-// Emberwake locked palette, v1 (73 swatches). Art source of truth: docs/art/style-guide.md
+// Emberwake locked palette, v1.3 (85 swatches). Art source of truth: docs/art/style-guide.md
 // and docs/art/palette.md. Drawing code and CSS variables name these swatches; they do not
 // inline hex. Numeric PAL values are Pixi tints (0xRRGGBB). HEX strings are Canvas2D fills.
 
@@ -64,6 +64,19 @@ export const HOSTILE = Object.freeze({
   SPIRIT: 0x4ab8a0,
   SPIRIT_L: 0xb0f4e4,
   RIM: 0xe6dcff, // Enemy Rim, drawn outside the ink outline at alpha 0.5
+  // Boss-only. Darker than the minion ramps, and far enough from Ink that a lit rim still separates the stroke.
+  ECLIPSE: 0x1a1028, // Tyrant disc, near-black violet
+  ECLIPSE_L: 0x3a2468, // Tyrant disc lit from the upper left
+  ABYSS: 0x2a1870, // Hollow shroud, deep indigo
+  ABYSS_L: 0x4a38a8, // Hollow shroud lit fold
+  ASH: 0x1a4048, // Herald robe, cold teal-grey
+  ASH_L: 0x4a7874, // Herald robe lit fold
+  BROOD: 0x4a0a46, // Matron carapace, brood violet-black
+  BROOD_L: 0x7a2868, // Matron carapace lit
+  // Hostile solar. Boss corona only. ΔE ≥ 20 from Reward Gold, Player Ember and CANDLE.
+  SOL_D: 0x7a6410,
+  SOL: 0xc4a000,
+  SOL_H: 0xc0d400,
 });
 
 export const REWARD = Object.freeze({
@@ -95,6 +108,7 @@ export const UI = Object.freeze({
   PANEL: 0x120c1e,
   TEXT: 0xf3e9dc,
   PACT: 0x8a2ad0, // Dark Pact, moved off red
+  MINT: 0x7affd0, // Unlock banner (was the inline #7affd0 from the stage-unlock UI)
 });
 
 export const FX = Object.freeze({
@@ -123,6 +137,11 @@ export const RAMP = Object.freeze({
   stone: ['SLATE_D', 'SLATE', 'SLATE_L', 'SLATE_H'],
   moss: ['MOSS_D', 'MOSS', 'MOSS_L'],
   wood: ['WOOD_D', 'WOOD', 'WOOD_L'],
+  eclipse: ['ECLIPSE', 'ECLIPSE_L'],
+  abyss: ['ABYSS', 'ABYSS_L'],
+  ash: ['ASH', 'ASH_L'],
+  brood: ['BROOD', 'BROOD_L'],
+  corona: ['SOL_D', 'SOL', 'SOL_H'],
 });
 
 export const GEM_TIERS = Object.freeze(['R_BLUE', 'R_GREEN', 'R_PINK', 'R_VIOLET', 'R_GOLD']);

@@ -34,8 +34,8 @@ function tapered(c, H, x0, y0, x1, y1, w0, w1, stops) {
 
 function joint(c, H, x, y, r) {
   const { HEX, rgba, circle } = H;
-  circle(c, x, y, r, HEX.GLOOM_D, H.OUT, 1.4);
-  circle(c, x - r * 0.3, y - r * 0.3, r * 0.35, rgba(HEX.GLOOM_L, 0.9));
+  circle(c, x, y, r, HEX.BROOD, H.OUT, 4);
+  circle(c, x - r * 0.28, y - r * 0.28, r * 0.32, rgba(HEX.BROOD_L, 0.9));
 }
 
 export function drawBosses(make, H) {
@@ -50,107 +50,102 @@ export function drawBosses(make, H) {
     for (let f = 0; f < 12; f++) make('matron' + f, 150, 140, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
       const t = (f % WALK) / WALK;
-      const bob = atk < 0 ? Math.sin(t * TAU) * 2.2 : [2, -2, 6, 1][atk];
-      const abd = atk < 0 ? Math.sin(t * TAU - 0.8) * 2.4 : bob * 0.45;
-      const mand = atk < 0 ? 2 + Math.sin(t * TAU * 2) * 1.4 : [4, 12, 8, 3][atk];
-      const step = atk < 0 ? t : 0.15;
+      const bob = atk < 0 ? Math.sin(t * TAU) * 3.2 : [2, -2, 5, 1][atk];
+      const abd = atk < 0 ? Math.sin(t * TAU - 0.8) * 2.4 : bob * 0.4;
+      const mand = atk < 0 ? 2 + Math.sin(t * TAU * 2) * 1.6 : [4, 10, 6, 3][atk];
+      const step = atk < 0 ? t : 0.12;
+      const brood = [[0, HEX.BROOD], [1, HEX.BROOD]];
       c.lineJoin = 'round'; c.lineCap = 'round';
-      shadow(c, 76, 130, 56, 11);
-      const leg = (i, s, back) => {
-        const phase = step * TAU + (i % 2) * Math.PI + (s < 0 ? 0.35 : 0);
-        const swing = atk < 0 ? Math.sin(phase) : (atk === 2 ? 0.2 : -0.15);
-        const lift = atk < 0 ? Math.max(0, Math.cos(phase)) * 9 : (atk === 1 ? 6 : 0);
-        const hipX = 74 + s * (16 + i * 3);
-        const hipY = 78 + i * 6 + bob;
-        const kneeX = hipX + s * (18 + swing * 6);
-        const kneeY = hipY + 14 - lift * 0.45;
-        const footX = hipX + s * (36 + i * 7 + swing * 16);
-        const footY = 126 - lift + (swing > 0 ? -2 : 3);
-        if (!back) return;
-        const gloom = [[0, HEX.GLOOM_L], [0.5, HEX.GLOOM], [1, HEX.GLOOM_D]];
-        tapered(c, H, hipX, hipY, kneeX, kneeY, 8.4 - i * 0.4, 5.6, gloom);
-        joint(c, H, kneeX, kneeY, 4.2);
-        tapered(c, H, kneeX, kneeY, footX, footY, 5.2, 2.2, gloom);
-        ellipse(c, footX + s * 3, footY, 3.2, 1.6, HEX.GLOOM_D, OUT, 4);
-        poly(c, [[footX + s * 5, footY - 1], [footX + s * 11, footY + 2], [footX + s * 4, footY + 3]], HEX.GLOOM_D, OUT, 4);
+      shadow(c, 76, 118, 34, 5);
+      const leg = (i, s) => {
+        const phase = step * TAU + i * 2.1 + (s < 0 ? 0.5 : 0);
+        const swing = atk < 0 ? Math.sin(phase) : (atk === 2 ? 0.25 : -0.2);
+        const lift = atk < 0 ? Math.max(0, Math.cos(phase)) * 7 : (atk === 1 ? 5 : 0);
+        const hipX = 76 + s * (10 + i * 5);
+        const hipY = 74 + i * 3 + bob;
+        const kneeX = hipX + s * (14 + swing * 4);
+        const kneeY = hipY + 14 - lift * 0.3;
+        const footX = Math.max(16, Math.min(134, hipX + s * (24 + swing * 7)));
+        const footY = Math.max(100, Math.min(122, 114 - lift * 0.55 + (swing > 0 ? -2 : 2)));
+        tapered(c, H, hipX, hipY, kneeX, kneeY, 5.4 - i * 0.35, 3.6, brood);
+        joint(c, H, kneeX, kneeY, 3.1);
+        tapered(c, H, kneeX, kneeY, footX, footY, 3.4, 2.2, brood);
+        ellipse(c, footX + s * 2, footY, 2.6, 1.4, HEX.BROOD, OUT, 4);
       };
-      for (let i = 3; i >= 2; i--) for (const s of [-1, 1]) leg(i, s, true);
-      // abdomen, behind the thorax, with a lagging bob
+      for (const s of [-1, 1]) leg(2, s);
       c.beginPath();
-      c.ellipse(80, 100 + abd, 36, 24, 0.15, 0, TAU);
-      c.fillStyle = radial(c, 64, 86 + abd, 48, [[0, HEX.GLOOM_L], [0.45, HEX.GLOOM], [1, HEX.GLOOM_D]]);
+      c.ellipse(78, 96 + abd, 30, 18, 0.08, 0, TAU);
+      c.fillStyle = HEX.BROOD;
       c.fill();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
       c.save();
-      c.beginPath(); c.ellipse(80, 100 + abd, 34, 22, 0.15, 0, TAU); c.clip();
-      c.strokeStyle = rgba(HEX.GLOOM_D, 0.9); c.lineWidth = 1.6;
-      for (const k of [-8, 2, 12]) {
+      c.beginPath(); c.ellipse(78, 96 + abd, 28, 16, 0.08, 0, TAU); c.clip();
+      c.strokeStyle = rgba(HEX.BROOD_L, 0.55); c.lineWidth = 1.6;
+      for (const k of [-6, 2, 8]) {
         c.beginPath();
-        c.ellipse(80, 100 + abd + k, 30 - Math.abs(k) * 0.3, 5, 0.15, 0.15, Math.PI - 0.15);
+        c.ellipse(78, 96 + abd + k, 22, 4, 0.08, 0.2, Math.PI - 0.2);
         c.stroke();
       }
-      ellipse(c, 62, 90 + abd, 12, 6, rgba(HEX.WHITE, 0.28));
+      ellipse(c, 64, 88 + abd, 8, 4, rgba(HEX.BROOD_L, 0.85));
+      ellipse(c, 62, 86 + abd, 6, 3, rgba(HEX.WHITE, 0.22));
       c.restore();
-      // egg sacs along the belly
-      for (const [x, y, r] of [[58, 112 + abd, 7], [78, 118 + abd, 8.5], [98, 110 + abd, 6.5]]) {
-        circle(c, x, y, r, radial(c, x - 2, y - 2, r, [[0, HEX.ROSE_L], [0.55, HEX.ROSE], [1, HEX.ROSE_D]]), OUT, 4);
-        circle(c, x - r * 0.3, y - r * 0.35, r * 0.28, rgba(HEX.WHITE, 0.75));
+      // a clutch along the belly, not a second face
+      for (const [x, y, r] of [[62, 104 + abd, 2.6], [72, 107 + abd, 3.1], [84, 106 + abd, 2.8], [94, 103 + abd, 2.4]]) {
+        circle(c, x, y, r, HEX.ROSE_D, OUT, 1.4);
       }
-      for (let i = 1; i >= 0; i--) for (const s of [-1, 1]) leg(i, s, true);
-      // fused head-thorax
+      for (const s of [-1, 1]) { leg(1, s); leg(0, s); }
       const thorax = () => {
         c.beginPath();
-        c.moveTo(74, 34 + bob);
-        c.bezierCurveTo(104, 36 + bob, 112, 54 + bob, 104, 70 + bob);
-        c.bezierCurveTo(98, 86 + bob, 86, 92 + bob, 74, 90 + bob);
-        c.bezierCurveTo(60, 92 + bob, 48, 84 + bob, 44, 68 + bob);
-        c.bezierCurveTo(36, 50 + bob, 46, 34 + bob, 74, 34 + bob);
+        c.moveTo(74, 32 + bob);
+        c.bezierCurveTo(106, 34 + bob, 112, 52 + bob, 104, 68 + bob);
+        c.bezierCurveTo(98, 84 + bob, 86, 90 + bob, 74, 88 + bob);
+        c.bezierCurveTo(60, 90 + bob, 48, 82 + bob, 44, 66 + bob);
+        c.bezierCurveTo(36, 48 + bob, 46, 32 + bob, 74, 32 + bob);
         c.closePath();
       };
       thorax();
-      c.fillStyle = lin(c, 40, 28 + bob, 112, 96 + bob, [[0, HEX.GLOOM_L], [0.42, HEX.GLOOM], [1, HEX.GLOOM_D]]);
+      c.fillStyle = HEX.BROOD;
       c.fill();
       c.save();
       thorax();
       c.clip();
-      ellipse(c, 74, 96 + bob, 22, 5, rgba(HEX.INK, 0.35));
-      ellipse(c, 58, 48 + bob, 14, 7, rgba(HEX.WHITE, 0.32));
-      c.strokeStyle = rgba(HEX.GLOOM_L, 0.8); c.lineWidth = 1.6;
-      c.beginPath(); c.arc(62, 46 + bob, 16, Math.PI * 1.05, Math.PI * 1.7); c.stroke();
+      ellipse(c, 78, 82 + bob, 18, 4, rgba(HEX.INK, 0.28));
+      ellipse(c, 56, 44 + bob, 12, 6, rgba(HEX.BROOD_L, 0.9));
+      ellipse(c, 54, 42 + bob, 8, 4, rgba(HEX.WHITE, 0.28));
+      c.strokeStyle = rgba(HEX.ROSE, 0.7); c.lineWidth = 1.6;
+      c.beginPath(); c.arc(60, 46 + bob, 14, Math.PI * 1.1, Math.PI * 1.65); c.stroke();
       c.restore();
       thorax();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      // mandibles
       for (const s of [-1, 1]) {
         c.beginPath();
-        c.moveTo(74 + s * 8, 72 + bob);
-        c.quadraticCurveTo(74 + s * (22 + mand), 78 + bob, 74 + s * (16 + mand), 96 + bob);
-        c.quadraticCurveTo(74 + s * (8 + mand * 0.3), 88 + bob, 74 + s * 4, 78 + bob);
+        c.moveTo(74 + s * 6, 70 + bob);
+        c.quadraticCurveTo(74 + s * (18 + mand), 76 + bob, 74 + s * (14 + mand), 92 + bob);
+        c.quadraticCurveTo(74 + s * (6 + mand * 0.25), 84 + bob, 74 + s * 3, 76 + bob);
         c.closePath();
-        c.fillStyle = lin(c, 74, 70, 74 + s * 20, 96, [[0, HEX.GLOOM_L], [1, HEX.ROSE_D]]);
+        c.fillStyle = lin(c, 74, 68, 74 + s * 16, 92, [[0, HEX.BROOD_L], [1, HEX.ROSE_D]]);
         c.fill();
         c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
       }
-      const eyes = [[58, 50], [66, 44], [74, 42], [82, 44], [90, 50], [63, 56], [85, 56]];
-      const er = [2, 2.3, 2.8, 2.3, 2, 1.7, 1.7];
+      const eyes = [[56, 48], [64, 42], [74, 40], [84, 42], [92, 48], [62, 54], [86, 54]];
+      const er = [2.1, 2.4, 2.9, 2.4, 2.1, 1.7, 1.7];
       eyes.forEach(([x, y], i) => {
-        glowDot(c, x, y + bob, er[i] * 2.4, rgba(HEX.HEYE, 0.8));
+        glowDot(c, x, y + bob, er[i] * 2.2, rgba(HEX.HEYE, 0.75));
         circle(c, x, y + bob, er[i], HEX.HEYE, OUT, 1.4);
-        circle(c, x - er[i] * 0.35, y + bob - er[i] * 0.35, er[i] * 0.35, HEX.WHITE);
+        circle(c, x - er[i] * 0.32, y + bob - er[i] * 0.32, er[i] * 0.32, HEX.WHITE);
       });
     });
   }
 
   function drawColossus() {
-    for (let f = 0; f < 10; f++) make('colossus' + f, 190, 190, (c) => {
+    for (let f = 0; f < 11; f++) make('colossus' + f, 190, 190, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
       const t = (f % WALK) / WALK;
-      const shift = atk < 0 ? Math.sin(t * TAU) * 14 : 0;
-      const bob = atk < 0 ? -Math.abs(Math.sin(t * TAU)) * 3 : (atk === 0 ? -10 : 8);
-      const arm = atk < 0 ? Math.sin(t * TAU) : (atk === 0 ? -1.1 : 1);
-      const hulk = [[0, HEX.HULK_L], [0.45, HEX.HULK], [1, HEX.HULK_D]];
+      const shift = atk < 0 ? Math.sin(t * TAU) * 12 : 0;
+      const bob = atk < 0 ? -Math.abs(Math.sin(t * TAU)) * 3 : [-8, 6, 2][atk];
+      const hulk = [[0, HEX.HULK_L], [0.4, HEX.HULK], [1, HEX.HULK_D]];
       c.lineJoin = 'round'; c.lineCap = 'round';
-      shadow(c, 96, 178, 64, 12);
+      shadow(c, 96, 166, 46, 7);
       const fist = (x, y, w, h) => {
         c.beginPath(); c.roundRect(x, y, w, h, 14);
         c.fillStyle = radial(c, x + w * 0.3, y + h * 0.28, Math.max(w, h) * 0.85, [[0, HEX.HFIRE_H], [0.28, HEX.HULK_L], [0.62, HEX.HULK], [1, HEX.HULK_D]]);
@@ -170,13 +165,12 @@ export function drawBosses(make, H) {
         ellipse(c, x + w * 0.32, y + h * 0.3, w * 0.16, h * 0.1, rgba(HEX.WHITE, 0.4));
       };
       const armAt = (side) => {
-        const lift = atk === 0 ? -1.2 : atk === 1 ? 1.15 : arm * side * 1.35;
-        const x = 96 + side * 62 + (side < 0 ? shift : -shift) * 0.3;
-        const y = 70 + bob + lift * 34;
-        return [x - 16, y, 36, 42];
+        const swing = Math.sin(t * TAU) * side;
+        const lift = atk === 0 ? -1.05 : atk === 1 ? 0.95 : atk === 2 ? 0.28 : swing * 1.15;
+        const x = 96 + side * 50 + (side < 0 ? shift : -shift) * 0.25;
+        const y = 78 + bob + lift * 28;
+        return [x - 16, y, 34, 38];
       };
-      // far arm, then legs, then body, then near arm
-      fist(...armAt(-1));
       const stoneLimb = (x0, y0, x1, y1, w0, w1) => {
         const a = Math.atan2(y1 - y0, x1 - x0);
         const px = Math.cos(a + Math.PI / 2), py = Math.sin(a + Math.PI / 2);
@@ -199,6 +193,14 @@ export function drawBosses(make, H) {
         c.beginPath(); c.moveTo(x0, y0 + 2); c.lineTo((x0 + x1) / 2, (y0 + y1) / 2 + 1); c.stroke();
         c.restore();
       };
+      const forearm = (side) => {
+        const [x, y, w, h] = armAt(side);
+        const sx = (side < 0 ? 62 : 132) + shift * 0.4;
+        const sy = (side < 0 ? 80 : 84) + bob;
+        stoneLimb(sx, sy, x + w * 0.5, y + h * 0.42, 12, 9);
+      };
+      forearm(-1);
+      fist(...armAt(-1));
       const foot = (side, phase) => {
         const s = atk < 0 ? Math.sin(t * TAU + phase) : 0;
         const x = 86 + side * 20 + s * 8 + shift * 0.35;
@@ -235,218 +237,233 @@ export function drawBosses(make, H) {
         c.beginPath(); c.moveTo(pts[1][0] + 4, pts[1][1] + 2); c.lineTo(pts[2][0], pts[2][1] + 4); c.stroke();
         c.restore();
       }
-      // shoulders
-      ellipse(c, 58 + shift, 78 + bob, 22, 16, lin(c, 40, 60, 80, 96, hulk), OUT, 4);
-      ellipse(c, 136 + shift, 82 + bob, 24, 16, lin(c, 116, 64, 160, 100, hulk), OUT, 4);
-      // molten core, after the plates so it lights them
-      glowDot(c, 96 + shift, 96 + bob, 34, rgba(HEX.HFIRE, 0.95));
-      circle(c, 96 + shift, 98 + bob, 15, radial(c, 90 + shift, 92 + bob, 18, [[0, HEX.HFIRE_H], [0.4, HEX.HFIRE], [1, HEX.HFIRE_D]]), OUT, 1.6);
-      c.strokeStyle = HEX.HFIRE; c.lineWidth = 1.4;
+      ellipse(c, 58 + shift, 82 + bob, 22, 16, lin(c, 36, 64, 80, 100, [[0, HEX.HULK_L], [0.55, HEX.HULK], [1, HEX.HULK_D]]), OUT, 4);
+      ellipse(c, 134 + shift, 86 + bob, 24, 16, lin(c, 112, 68, 158, 104, hulk), OUT, 4);
+      const chest = plates[1];
+      c.save();
+      c.beginPath(); c.moveTo(chest[0][0], chest[0][1]);
+      for (let i = 1; i < chest.length; i++) c.lineTo(chest[i][0], chest[i][1]);
+      c.closePath(); c.clip();
+      for (const [gx, gy] of [[88, 98], [106, 96], [96, 108], [78, 114]]) {
+        glowDot(c, gx + shift, gy + bob, 8, rgba(HEX.HFIRE, 0.9));
+      }
+      c.strokeStyle = HEX.HFIRE; c.lineWidth = 4; c.lineCap = 'round';
       c.beginPath();
-      c.moveTo(78 + shift, 88 + bob); c.lineTo(88 + shift, 102 + bob); c.lineTo(80 + shift, 114 + bob);
-      c.moveTo(118 + shift, 84 + bob); c.lineTo(108 + shift, 100 + bob); c.lineTo(122 + shift, 116 + bob);
+      c.moveTo(74 + shift, 78 + bob); c.lineTo(88 + shift, 98 + bob); c.lineTo(78 + shift, 116 + bob);
+      c.moveTo(120 + shift, 74 + bob); c.lineTo(106 + shift, 96 + bob); c.lineTo(124 + shift, 114 + bob);
+      c.moveTo(92 + shift, 70 + bob); c.lineTo(98 + shift, 108 + bob);
       c.stroke();
-      // helm sunk between the shoulders, brow lit from the upper left
-      const hx = 98 + shift, hy = 52 + bob;
+      c.strokeStyle = HEX.HFIRE_H; c.lineWidth = 1.6;
       c.beginPath();
-      c.moveTo(hx - 24, hy + 14);
-      c.lineTo(hx - 28, hy + 2);
-      c.quadraticCurveTo(hx - 26, hy - 18, hx, hy - 20);
-      c.quadraticCurveTo(hx + 28, hy - 16, hx + 26, hy + 4);
-      c.lineTo(hx + 20, hy + 16);
-      c.quadraticCurveTo(hx, hy + 22, hx - 24, hy + 14);
-      c.closePath();
-      c.fillStyle = lin(c, hx - 20, hy - 22, hx + 24, hy + 20, hulk);
+      c.moveTo(76 + shift, 82 + bob); c.lineTo(86 + shift, 98 + bob); c.lineTo(80 + shift, 112 + bob);
+      c.moveTo(118 + shift, 78 + bob); c.lineTo(108 + shift, 96 + bob);
+      c.stroke();
+      c.restore();
+      const hx = 98 + shift, hy = 58 + bob;
+      const helm = () => {
+        c.beginPath();
+        c.moveTo(hx - 30, hy + 16);
+        c.lineTo(hx - 34, hy);
+        c.quadraticCurveTo(hx - 32, hy - 16, hx - 8, hy - 22);
+        c.lineTo(hx, hy - 30);
+        c.lineTo(hx + 10, hy - 20);
+        c.quadraticCurveTo(hx + 34, hy - 14, hx + 32, hy + 2);
+        c.lineTo(hx + 26, hy + 18);
+        c.quadraticCurveTo(hx, hy + 26, hx - 30, hy + 16);
+        c.closePath();
+      };
+      helm();
+      c.fillStyle = lin(c, hx - 28, hy - 28, hx + 30, hy + 22, [[0, HEX.HULK_L], [0.35, HEX.HULK], [1, HEX.HULK_D]]);
       c.fill();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.beginPath();
-      c.moveTo(hx - 6, hy - 20); c.lineTo(hx, hy - 30); c.lineTo(hx + 8, hy - 18);
-      c.fillStyle = lin(c, hx - 6, hy - 30, hx + 8, hy - 16, hulk); c.fill();
-      c.strokeStyle = OUT; c.lineWidth = 4; c.stroke();
-      ellipse(c, hx - 10, hy - 8, 8, 4, rgba(HEX.WHITE, 0.35));
-      c.fillStyle = HEX.HFIRE; c.fillRect(hx - 10, hy + 2, 18, 4);
-      glowDot(c, hx - 6, hy + 4, 6, rgba(HEX.HFIRE, 0.9));
-      glowDot(c, hx + 6, hy + 4, 6, rgba(HEX.HFIRE, 0.9));
-      c.strokeStyle = OUT; c.lineWidth = 1.4;
-      c.beginPath(); c.moveTo(hx - 16, hy - 4); c.lineTo(hx - 8, hy + 6); c.lineTo(hx - 14, hy + 12); c.stroke();
+      c.save(); helm(); c.clip();
+      ellipse(c, hx - 12, hy - 8, 12, 6, rgba(HEX.WHITE, 0.38));
+      c.restore();
+      helm(); c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
+      c.fillStyle = HEX.HFIRE; c.fillRect(hx - 12, hy + 4, 22, 5);
+      glowDot(c, hx - 6, hy + 6, 7, rgba(HEX.HFIRE, 0.9));
+      glowDot(c, hx + 8, hy + 6, 7, rgba(HEX.HFIRE, 0.9));
+      forearm(1);
       fist(...armAt(1));
-      if (atk === 1) {
-        ellipse(c, 62, 172, 16, 5, rgba(HEX.HULK_L, 0.55));
-        ellipse(c, 128, 174, 18, 5, rgba(HEX.HULK_L, 0.4));
-        ellipse(c, 96, 170, 22, 4, rgba(HEX.HFIRE, 0.35));
+      if (atk === 1 || atk === 2) {
+        const a = atk === 1 ? 0.5 : 0.22;
+        ellipse(c, 70, 168, 14, 4, rgba(HEX.HULK_L, a));
+        ellipse(c, 124, 170, 16, 4, rgba(HEX.HULK_L, a * 0.8));
+        ellipse(c, 96, 166, 18, 3.5, rgba(HEX.HFIRE, a * 0.6));
       }
     });
   }
+
 
   function drawHerald() {
     for (let f = 0; f < 12; f++) make('herald' + f, 90, 120, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
       const t = (f % WALK) / WALK;
-      const bob = atk < 0 ? Math.sin(t * TAU) * 6 : [1, -4, 2, 0][atk];
-      const hemLag = atk < 0 ? Math.sin(t * TAU - 0.9) * 9 : [2, -8, 10, 1][atk];
-      const clothLag = atk < 0 ? Math.sin(t * TAU - 1.4) * 7 : hemLag * 0.6;
+      const bob = atk < 0 ? Math.sin(t * TAU) * 5.4 : [1, -3, 2, 0][atk];
+      const hemLag = atk < 0 ? Math.sin(t * TAU + Math.PI / 4) * 8 : [1, -4, 5, 1][atk];
+      const clothLag = atk < 0 ? Math.sin(t * TAU + 1) * 5 : [2, 7, 3, -2][atk];
+      const fade = atk < 0 ? 1 : [0.88, 0.42, 0.14, 0.66][atk];
       c.lineJoin = 'round'; c.lineCap = 'round';
-      shadow(c, 42, 112, 22, 5, 0.3);
-      // pole behind the figure
+      shadow(c, 54, 106, 16, 4, 0.28);
+      c.save();
+      c.globalAlpha = fade;
       c.strokeStyle = OUT; c.lineWidth = 4;
-      c.beginPath(); c.moveTo(76, 110); c.lineTo(76, 6 + bob * 0.3); c.stroke();
+      c.beginPath(); c.moveTo(18, 102); c.lineTo(18, 18 + bob * 0.12); c.stroke();
       c.strokeStyle = HEX.WOOD; c.lineWidth = 1.6;
-      c.beginPath(); c.moveTo(76, 108); c.lineTo(76, 8 + bob * 0.3); c.stroke();
+      c.beginPath(); c.moveTo(18, 100); c.lineTo(18, 20 + bob * 0.12); c.stroke();
       const robe = () => {
         c.beginPath();
-        c.moveTo(44, 24 + bob);
-        c.bezierCurveTo(66, 32 + bob, 64, 68 + bob, 60, 92 + bob);
-        c.lineTo(54, 98 + hemLag * 0.4 + bob);
-        c.lineTo(46, 90 + hemLag + bob);
-        c.lineTo(38, 104 + hemLag * 0.5 + bob);
-        c.lineTo(30, 94 + hemLag * 0.2 + bob);
-        c.lineTo(22, 100 + bob);
-        c.bezierCurveTo(18, 64 + bob, 22, 32 + bob, 44, 24 + bob);
+        c.moveTo(54, 30 + bob);
+        c.bezierCurveTo(74, 36 + bob, 76, 64 + bob, 70, 84 + bob);
+        c.lineTo(66, 90 + hemLag * 0.3);
+        c.lineTo(58, 82 + hemLag);
+        c.lineTo(50, 94 + hemLag * 0.4);
+        c.lineTo(42, 84 + hemLag * 0.15);
+        c.lineTo(36, 92);
+        c.bezierCurveTo(32, 66 + bob, 34, 38 + bob, 54, 30 + bob);
         c.closePath();
       };
       robe();
-      c.fillStyle = lin(c, 20, 18 + bob, 66, 108, [[0, HEX.SHROUD], [0.55, HEX.SHROUD], [1, HEX.SHROUD_D]]);
+      c.fillStyle = lin(c, 32, 24 + bob, 76, 98, [[0, HEX.ASH_L], [0.4, HEX.ASH], [1, HEX.ASH]]);
       c.fill();
       c.save(); robe(); c.clip();
-      c.fillStyle = rgba(HEX.SHROUD_D, 0.55);
+      c.fillStyle = rgba(HEX.ASH_L, 0.9);
       c.beginPath();
-      c.moveTo(50, 36 + bob); c.quadraticCurveTo(58, 60, 52, 96 + hemLag * 0.3); c.lineTo(44, 98 + hemLag * 0.2); c.quadraticCurveTo(46, 60, 42, 40 + bob);
-      c.fill();
-      c.fillStyle = rgba(HEX.WHITE, 0.2);
+      c.moveTo(42, 38 + bob); c.quadraticCurveTo(36, 62 + bob, 44, 86);
+      c.lineTo(38, 84); c.quadraticCurveTo(34, 60 + bob, 40, 36 + bob); c.fill();
+      c.fillStyle = rgba(HEX.INK, 0.32);
       c.beginPath();
-      c.moveTo(30, 34 + bob); c.quadraticCurveTo(28, 58, 32, 90 + hemLag * 0.2); c.lineTo(26, 88); c.quadraticCurveTo(24, 56, 28, 32 + bob);
-      c.fill();
-      c.fillStyle = rgba(HEX.SHROUD_D, 0.62);
+      c.moveTo(62, 42 + bob); c.quadraticCurveTo(70, 66 + bob, 64, 88 + hemLag * 0.15);
+      c.lineTo(58, 86); c.quadraticCurveTo(60, 64 + bob, 56, 44 + bob); c.fill();
+      c.fillStyle = rgba(HEX.ASH_L, 0.4);
       c.beginPath();
-      c.moveTo(40, 48 + bob); c.quadraticCurveTo(36, 70 + bob, 42, 96 + hemLag * 0.35);
-      c.lineTo(36, 98 + hemLag * 0.2); c.quadraticCurveTo(32, 68 + bob, 36, 46 + bob);
-      c.fill();
+      c.moveTo(50, 50 + bob); c.quadraticCurveTo(46, 70, 52, 90);
+      c.lineTo(48, 88); c.quadraticCurveTo(44, 68, 48, 52 + bob); c.fill();
       c.restore();
       robe();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      // hood
       c.beginPath();
-      c.moveTo(44, 8 + bob);
-      c.bezierCurveTo(64, 12 + bob, 62, 36 + bob, 44, 42 + bob);
-      c.bezierCurveTo(26, 36 + bob, 24, 12 + bob, 44, 8 + bob);
-      c.fillStyle = lin(c, 26, 6 + bob, 64, 44 + bob, [[0, HEX.SHROUD], [1, HEX.SHROUD_D]]);
-      c.fill();
-      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      ellipse(c, 36, 16 + bob, 8, 4, rgba(HEX.WHITE, 0.28));
-      ellipse(c, 44, 24 + bob, 8, 10, HEX.INK);
-      ellipse(c, 40, 22 + bob, 1.6, 2.4, HEX.FROST_H);
-      ellipse(c, 48, 22 + bob, 1.6, 2.4, HEX.FROST_H);
-      circle(c, 39.4, 21.2 + bob, 0.7, HEX.WHITE);
-      circle(c, 47.4, 21.2 + bob, 0.7, HEX.WHITE);
-      // banner cloth in front, lagging the body
-      c.beginPath();
-      c.moveTo(74, 12 + bob * 0.2);
-      c.lineTo(58, 16 + clothLag * 0.15);
-      c.quadraticCurveTo(50, 26 + clothLag * 0.35, 56, 34 + clothLag);
-      c.lineTo(50, 40 + clothLag);
-      c.lineTo(60, 44 + clothLag * 0.65);
-      c.lineTo(66, 36 + clothLag * 0.3);
-      c.lineTo(72, 50 + clothLag);
-      c.lineTo(76, 26);
+      c.moveTo(54, 18 + bob);
+      c.bezierCurveTo(70, 22 + bob, 68, 42 + bob, 54, 48 + bob);
+      c.bezierCurveTo(38, 42 + bob, 36, 22 + bob, 54, 18 + bob);
       c.closePath();
-      c.fillStyle = lin(c, 50, 12, 76, 52, [[0, HEX.SLATE_L], [0.45, HEX.SLATE], [1, HEX.SLATE_D]]);
+      c.fillStyle = lin(c, 36, 16 + bob, 70, 48 + bob, [[0, HEX.ASH_L], [0.5, HEX.ASH], [1, HEX.ASH]]);
       c.fill();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.save();
-      c.clip();
-      c.fillStyle = rgba(HEX.SLATE_D, 0.55);
-      c.beginPath(); c.moveTo(70, 18); c.quadraticCurveTo(62, 28 + clothLag * 0.4, 68, 46 + clothLag); c.lineTo(74, 40); c.quadraticCurveTo(66, 26, 74, 16); c.fill();
+      ellipse(c, 46, 26 + bob, 8, 4, rgba(HEX.WHITE, 0.4));
+      ellipse(c, 54, 32 + bob, 6.5, 7.5, HEX.INK);
+      ellipse(c, 50.5, 30 + bob, 1.4, 2.2, HEX.FROST_H);
+      ellipse(c, 57.5, 30 + bob, 1.4, 2.2, HEX.FROST_H);
+      const banner = () => {
+        c.beginPath();
+        c.moveTo(16, 22);
+        c.lineTo(34, 26);
+        c.quadraticCurveTo(40, 36 + clothLag * 0.2, 32, 44 + clothLag * 0.3);
+        c.lineTo(38, 52 + clothLag * 0.35);
+        c.lineTo(28, 48 + clothLag * 0.25);
+        c.lineTo(22, 60 + clothLag * 0.3);
+        c.lineTo(14, 40);
+        c.closePath();
+      };
+      banner();
+      c.fillStyle = lin(c, 14, 20, 38, 62, [[0, HEX.HEYE], [0.5, HEX.HEYE], [1, HEX.HEYE_D]]);
+      c.fill();
+      c.save(); banner(); c.clip();
+      c.fillStyle = rgba(HEX.HEYE_D, 0.7);
+      c.beginPath(); c.moveTo(20, 30); c.quadraticCurveTo(30, 42, 22, 56); c.lineTo(16, 50); c.quadraticCurveTo(24, 38, 18, 28); c.fill();
       c.restore();
-      c.beginPath();
-      c.moveTo(74, 12 + bob * 0.2);
-      c.lineTo(58, 16 + clothLag * 0.15);
-      c.quadraticCurveTo(50, 26 + clothLag * 0.35, 56, 34 + clothLag);
-      c.lineTo(50, 40 + clothLag);
-      c.lineTo(60, 44 + clothLag * 0.65);
-      c.lineTo(66, 36 + clothLag * 0.3);
-      c.lineTo(72, 50 + clothLag);
-      c.lineTo(76, 26);
-      c.closePath();
+      banner();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.fillStyle = HEX.BONE;
-      c.beginPath();
-      c.moveTo(66, 22 + clothLag * 0.3); c.lineTo(70, 28); c.lineTo(66, 34 + clothLag * 0.2); c.lineTo(62, 28); c.closePath();
-      c.fill();
-      c.lineWidth = 1.4; c.strokeStyle = OUT; c.stroke();
+      c.restore();
+      if (atk >= 0) {
+        const lift = [4, 14, 26, 8][atk];
+        for (let i = 0; i < 5; i++) {
+          ellipse(c, 28 + i * 9, 78 - lift - (i % 3) * 6, 3.4, 1.5, i % 2 ? rgba(HEX.ASH_L, 0.95) : rgba(HEX.SPIRIT, 0.8));
+        }
+        if (atk === 2) ellipse(c, 54, 52, 20, 5, rgba(HEX.ASH_L, 0.7));
+      }
     });
   }
 
   function drawTyrant() {
-    const tongue = (c, ang, len, curl) => {
-      const base = 46, w = 0.2;
-      const tipA = ang + curl;
+    const tongue = (c, ang, len, hot) => {
+      const base = 46, tip = base + len, mid = base + len * 0.55, hw = 0.18;
       const q = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
-      const [x0, y0] = q(ang - w, base);
-      const [x1, y1] = q(ang + w * 0.65, base);
-      const [mx, my] = q(ang + curl * 0.5, base + len * 0.58);
-      const [tx, ty] = q(tipA, base + len);
+      const [x0, y0] = q(ang - hw, base);
+      const [x1, y1] = q(ang + hw, base);
+      const [mx, my] = q(ang, mid);
+      const [tx, ty] = q(ang, tip);
       const ox = Math.cos(ang + Math.PI / 2), oy = Math.sin(ang + Math.PI / 2);
+      const mw = 8 + len * 0.1;
       c.beginPath();
       c.moveTo(x0, y0);
-      c.quadraticCurveTo(mx + ox * 12, my + oy * 12, tx, ty);
-      c.quadraticCurveTo(mx - ox * 5, my - oy * 5, x1, y1);
+      c.quadraticCurveTo(mx + ox * mw, my + oy * mw, tx, ty);
+      c.quadraticCurveTo(mx - ox * mw * 0.8, my - oy * mw * 0.8, x1, y1);
       c.closePath();
-      c.fillStyle = radial(c, mx, my, len * 0.8, [[0, HEX.HFIRE_H], [0.4, HEX.HFIRE], [1, HEX.HFIRE_D]]);
+      c.fillStyle = lin(c, tx, ty, mx * 0.2, my * 0.2, hot
+        ? [[0, HEX.HFIRE], [0.42, HEX.SOL], [1, HEX.SOL_H]]
+        : [[0, HEX.HFIRE_D], [0.5, HEX.SOL_D], [1, HEX.SOL]]);
       c.fill();
-      c.lineWidth = 1.6; c.strokeStyle = OUT; c.stroke();
+      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
+      c.strokeStyle = hot ? HEX.SOL_H : HEX.SOL; c.lineWidth = 1.6;
+      c.beginPath(); c.moveTo((x0 + x1) / 2, (y0 + y1) / 2); c.quadraticCurveTo(mx, my, tx * 0.9, ty * 0.9); c.stroke();
     };
     for (let f = 0; f < 12; f++) make('tyrant' + f, 240, 240, (c) => {
       const atk = f >= WALK ? f - WALK : -1;
-      const breathe = atk < 0 ? 1 : [0.62, 0.48, 1.22, 0.84][atk];
-      const spin = (f % WALK) * 0.18 + (atk === 2 ? 0.4 : 0);
-      c.save(); c.translate(120, 112);
-      shadow(c, 0, 108, 40, 10, 0.28);
-      glowDot(c, 0, 0, 78, rgba(HEX.HFIRE, 0.45));
-      for (let i = 0; i < 12; i++) {
-        const ang = -Math.PI / 2 + (i / 12) * TAU + spin + 0.22;
-        const len = (12 + 7 * Math.sin(i * 2.1 + spin)) * breathe;
-        tongue(c, ang, len, 0.2 * Math.sin(i + spin));
+      const breathe = atk < 0 ? 1 : [0.72, 0.56, 1.58, 0.9][atk];
+      const spin = (f % WALK) * 0.08;
+      c.save(); c.translate(120, 122);
+      c.lineJoin = 'round'; c.lineCap = 'round';
+      shadow(c, 0, 90, 32, 6, 0.26);
+      glowDot(c, -10, -12, 58, rgba(HEX.SOL, 0.22));
+      for (let i = 0; i < 8; i++) {
+        const ang = -Math.PI / 2 + (i / 8) * TAU + spin + (atk === 2 ? 0.12 : 0);
+        const len = (26 + 7 * Math.sin(i * 1.6 + spin * 2)) * breathe;
+        tongue(c, ang, len, Math.cos(ang + 0.7) > 0.05);
       }
-      for (let i = 0; i < 12; i++) {
-        const ang = -Math.PI / 2 + (i / 12) * TAU + spin;
-        const len = (26 + 14 * Math.sin(i * 1.7 + spin * 2) + (i % 3 === 0 ? 6 : 0)) * breathe;
-        const curl = 0.5 * Math.sin(i * 1.3 + spin) + (i % 2 ? 0.22 : -0.18);
-        tongue(c, ang, len, curl);
-      }
-      c.beginPath(); c.arc(0, 0, 48, 0, TAU);
-      c.fillStyle = radial(c, -16, -18, 78, [[0, HEX.SHROUD], [0.22, HEX.SHROUD_D], [0.62, HEX.GLOOM_D], [1, HEX.INK]]);
+      const disc = () => { c.beginPath(); c.arc(0, 0, 48, 0, TAU); };
+      disc();
+      c.fillStyle = HEX.ECLIPSE;
       c.fill();
       c.save();
-      c.beginPath(); c.arc(0, 0, 47, 0, TAU); c.clip();
-      c.fillStyle = radial(c, -22, -20, 40, [[0, rgba(HEX.RIM, 0.75)], [1, rgba(HEX.RIM, 0)]]);
-      c.fillRect(-48, -48, 96, 96);
-      c.strokeStyle = rgba(HEX.HFIRE, 0.65); c.lineWidth = 4;
-      c.beginPath(); c.arc(0, 0, 44, 0, TAU); c.stroke();
-      c.restore();
-      c.lineWidth = 4; c.strokeStyle = OUT;
-      c.beginPath(); c.arc(0, 0, 48, 0, TAU); c.stroke();
-      c.strokeStyle = HEX.RIM; c.lineWidth = 2.5;
-      c.beginPath(); c.arc(-6, -8, 36, Math.PI * 1.05, Math.PI * 1.75); c.stroke();
-      // crown of corona, in front of the disc
-      const crown = [18, 28, 16, 38, 22];
-      for (let i = 0; i < 5; i++) {
-        const a = -Math.PI / 2 + (i - 2) * 0.32;
-        const len = crown[i] * (atk === 2 ? 1.12 : 1);
-        const x = Math.cos(a) * (48 + len), y = Math.sin(a) * (48 + len);
-        const lx = Math.cos(a - 0.22) * 50, ly = Math.sin(a - 0.22) * 50;
-        const rx = Math.cos(a + 0.18) * 50, ry = Math.sin(a + 0.18) * 50;
-        c.beginPath(); c.moveTo(lx, ly); c.lineTo(x, y); c.lineTo(rx, ry); c.closePath();
-        c.fillStyle = lin(c, x, y, 0, 0, [[0, HEX.HFIRE_H], [0.5, HEX.HFIRE], [1, HEX.HFIRE_D]]);
-        c.fill();
-        c.lineWidth = 1.6; c.strokeStyle = OUT; c.stroke();
-        circle(c, x, y, i === 2 ? 3.2 : 2.4, HEX.HGLARE, OUT, 1.4);
+      disc(); c.clip();
+      c.fillStyle = rgba(HEX.INK, 0.4);
+      c.beginPath(); c.ellipse(14, 16, 26, 20, 0.35, 0, TAU); c.fill();
+      ellipse(c, -24, -20, 8, 5, rgba(HEX.ECLIPSE_L, 0.95));
+      ellipse(c, -22, -20, 8, 4.5, rgba(HEX.WHITE, 0.3));
+      c.strokeStyle = HEX.SOL; c.lineWidth = 2.5;
+      c.beginPath(); c.arc(0, 0, 43, 0, TAU); c.stroke();
+      if (atk === 2) {
+        glowDot(c, 2, 2, 24, rgba(HEX.SOL_H, 0.85));
+        c.strokeStyle = HEX.SOL_H; c.lineWidth = 2.5;
+        c.beginPath(); c.moveTo(-28, -6); c.lineTo(-6, 6); c.lineTo(-16, 18); c.lineTo(8, 6); c.lineTo(24, 16); c.stroke();
+        c.strokeStyle = HEX.HFIRE; c.lineWidth = 1.6;
+        c.beginPath(); c.moveTo(-20, 12); c.lineTo(2, -4); c.lineTo(16, 8); c.stroke();
       }
-      const eyeRy = 2.6 + Math.sin((f % WALK) / WALK * TAU) * 0.45 + (atk === 1 || atk === 2 ? 0.8 : 0);
+      c.restore();
+      disc();
+      c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
+      c.strokeStyle = HEX.RIM; c.lineWidth = 2.5;
+      c.beginPath(); c.arc(-6, -8, 38, Math.PI * 1.08, Math.PI * 1.7); c.stroke();
+      const crown = [14, 24, 16, 36, 20, 28, 14];
+      for (let i = 0; i < crown.length; i++) {
+        const a = -Math.PI * 0.95 + (i / (crown.length - 1)) * Math.PI * 0.9;
+        const len = crown[i] * (atk === 2 ? 1.2 : 1);
+        const x = Math.cos(a) * (50 + len), y = Math.sin(a) * (50 + len);
+        const lx = Math.cos(a - 0.15) * 50, ly = Math.sin(a - 0.15) * 50;
+        const rx = Math.cos(a + 0.13) * 50, ry = Math.sin(a + 0.13) * 50;
+        c.beginPath(); c.moveTo(lx, ly); c.lineTo(x, y); c.lineTo(rx, ry); c.closePath();
+        c.fillStyle = lin(c, x, y, 0, 6, [[0, HEX.SOL_H], [0.4, HEX.SOL], [1, HEX.HFIRE]]);
+        c.fill();
+        c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
+        if (i % 2 === 0) circle(c, Math.cos(a) * (48 + len * 0.72), Math.sin(a) * (48 + len * 0.72), 2.1, HEX.HGLARE, OUT, 1.4);
+      }
+      const eyeRy = 3.6 + Math.sin((f % WALK) / WALK * TAU) * 0.3 + (atk === 2 ? 1.1 : 0);
       for (const s of [-1, 1]) {
-        c.save(); c.translate(s * 16, 2); c.rotate(s * -0.3);
-        ellipse(c, 0, 0, 6.2, eyeRy, HEX.HEYE, OUT, 1.4);
-        ellipse(c, 0, 0, 2.2, eyeRy * 0.7, HEX.INK);
-        circle(c, -2.2, -0.8, 1, HEX.WHITE);
+        c.save(); c.translate(s * 15, 4); c.rotate(s * 0.4);
+        ellipse(c, 0, 0, 9.2, eyeRy, HEX.HEYE, OUT, 1.4);
+        ellipse(c, 0.6 * s, 0.5, 2.4, eyeRy * 0.7, HEX.INK);
+        circle(c, -3.4, -1.2, 1.3, HEX.WHITE);
         c.restore();
       }
       c.restore();
@@ -457,74 +474,64 @@ export function drawBosses(make, H) {
     for (let f = 0; f < WALK; f++) make('hollow' + f, 110, 120, (c) => {
       const t = f / WALK;
       const sway = Math.sin(t * TAU) * 7;
-      const hem = Math.sin(t * TAU - 1) * 9;
+      const hem = Math.sin(t * TAU + Math.PI / 5) * 7;
       c.lineJoin = 'round'; c.lineCap = 'round';
-      shadow(c, 55, 112, 28, 6, 0.28);
+      shadow(c, 54, 102, 22, 4, 0.26);
       const shroud = () => {
         c.beginPath();
-        c.moveTo(55 + sway * 0.15, 6);
-        c.bezierCurveTo(78 + sway, 10, 86 + sway * 0.4, 36, 96 + sway * 0.5, 70);
-        c.bezierCurveTo(102 + sway * 0.3, 88, 90 + sway, 96, 84 + sway, 92);
+        c.moveTo(54 + sway * 0.1, 14);
+        c.bezierCurveTo(76 + sway * 0.35, 18, 82 + sway * 0.2, 42, 88 + sway * 0.28, 66);
+        c.bezierCurveTo(94 + sway * 0.15, 80, 84 + sway * 0.25, 86, 78 + sway * 0.25, 82);
         for (let i = 0; i < 5; i++) {
-          const x = 84 - i * 14 + sway * 0.35;
-          const lag = hem * (i % 2 ? 1 : -0.4);
-          const drop = i === 1 ? 8 : i === 4 ? 6 : 0;
-          c.lineTo(x - 3, 98 + lag + drop);
-          c.lineTo(x - 14, 90 + lag * 0.25);
+          const x = 76 - i * 12 + sway * 0.2;
+          const lag = hem * (i % 2 ? 1 : -0.3);
+          const drop = i === 1 ? 6 : i === 4 ? 4 : 0;
+          c.lineTo(x, 88 + lag + drop);
+          c.lineTo(x - 11, 80 + lag * 0.2);
         }
-        c.bezierCurveTo(14 + sway * 0.3, 78, 22, 28, 40, 12);
-        c.quadraticCurveTo(48, 4, 55 + sway * 0.15, 6);
+        c.bezierCurveTo(18 + sway * 0.15, 72, 26, 34, 40, 20);
+        c.quadraticCurveTo(48, 10, 54 + sway * 0.1, 14);
         c.closePath();
       };
       shroud();
-      c.fillStyle = lin(c, 18, 6, 96, 110, [[0, HEX.SHROUD], [0.6, HEX.SHROUD], [1, HEX.SHROUD_D]]);
+      c.fillStyle = HEX.ABYSS;
       c.fill();
       c.save(); shroud(); c.clip();
-      c.fillStyle = rgba(HEX.SHROUD_D, 0.65);
-      c.beginPath();
-      c.moveTo(62 + sway, 20); c.quadraticCurveTo(78 + sway, 50, 70 + sway * 0.5, 92 + hem * 0.4);
-      c.lineTo(58 + sway * 0.4, 90); c.quadraticCurveTo(60, 48, 50, 24); c.fill();
-      c.fillStyle = rgba(HEX.WHITE, 0.18);
-      c.beginPath();
-      c.moveTo(36, 18); c.quadraticCurveTo(30, 48, 40 + sway * 0.3, 86);
-      c.lineTo(32, 84); c.quadraticCurveTo(26, 46, 34, 16); c.fill();
-      // violet hem, a cloth band along the tatters
-      c.fillStyle = lin(c, 16, 88, 96, 112, [[0, HEX.ROSE], [1, HEX.ROSE_L]]);
-      c.beginPath(); c.moveTo(20, 84);
+      ellipse(c, 38, 36, 8, 14, rgba(HEX.ABYSS_L, 0.8));
+      ellipse(c, 70, 48, 6, 16, rgba(HEX.INK, 0.28));
+      c.fillStyle = lin(c, 20, 74, 88, 100, [[0, HEX.ROSE_D], [1, HEX.ROSE]]);
+      c.beginPath(); c.moveTo(24, 76);
       for (let i = 0; i < 5; i++) {
-        const x = 84 - i * 14 + sway * 0.35;
-        const lag = hem * (i % 2 ? 1 : -0.4);
-        const drop = i === 1 ? 8 : i === 4 ? 6 : 0;
-        c.lineTo(x - 3, 94 + lag + drop); c.lineTo(x - 14, 86 + lag * 0.25);
+        const x = 76 - i * 12 + sway * 0.2;
+        const lag = hem * (i % 2 ? 1 : -0.3);
+        const drop = i === 1 ? 6 : i === 4 ? 4 : 0;
+        c.lineTo(x, 84 + lag + drop);
+        c.lineTo(x - 11, 76 + lag * 0.2);
       }
-      c.lineTo(20, 90); c.fill();
+      c.closePath(); c.fill();
       c.restore();
       shroud();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      c.save(); shroud(); c.clip();
-      c.lineWidth = 2.5; c.strokeStyle = HEX.RIM; c.stroke();
-      c.restore();
-      // skull
-      c.beginPath();
-      c.moveTo(55, 16);
-      c.bezierCurveTo(80, 18, 82, 42, 74, 62);
-      c.quadraticCurveTo(55, 78, 36, 62);
-      c.bezierCurveTo(28, 42, 30, 18, 55, 16);
-      c.fillStyle = lin(c, 30, 14, 82, 74, [[0, HEX.WHITE], [0.35, HEX.FROST_H], [1, HEX.FROST_L]]);
+      const skull = () => {
+        c.beginPath();
+        c.moveTo(54, 24);
+        c.bezierCurveTo(74, 26, 76, 46, 68, 62);
+        c.quadraticCurveTo(54, 72, 40, 62);
+        c.bezierCurveTo(32, 46, 34, 26, 54, 24);
+        c.closePath();
+      };
+      skull();
+      c.fillStyle = lin(c, 34, 20, 74, 70, [[0, HEX.WHITE], [0.42, HEX.FROST_H], [1, HEX.FROST_L]]);
       c.fill();
       c.lineWidth = 4; c.strokeStyle = OUT; c.stroke();
-      ellipse(c, 44, 28, 8, 4, rgba(HEX.WHITE, 0.55));
-      ellipse(c, 42, 40, 6, 10, HEX.INK);
-      ellipse(c, 68, 40, 6, 10, HEX.INK);
-      circle(c, 40, 36, 1.4, HEX.GLOOM_L);
-      circle(c, 66, 36, 1.4, HEX.GLOOM_L);
-      c.beginPath();
-      c.moveTo(55, 48); c.lineTo(51, 58); c.lineTo(59, 58); c.closePath();
-      c.fillStyle = HEX.INK; c.fill();
-      c.fillStyle = HEX.FROST_H;
-      for (let i = 0; i < 4; i++) c.fillRect(46 + i * 4, 64, 2.4, 4 + (i % 2));
-      c.strokeStyle = rgba(HEX.FROST_D, 0.8); c.lineWidth = 1.2;
-      c.beginPath(); c.moveTo(48, 30); c.lineTo(52, 36); c.lineTo(49, 44); c.stroke();
+      ellipse(c, 44, 32, 8, 3.5, rgba(HEX.WHITE, 0.65));
+      ellipse(c, 43, 44, 5.2, 8.5, HEX.INK);
+      ellipse(c, 65, 44, 5.2, 8.5, HEX.INK);
+      ellipse(c, 41, 40, 1.5, 2.2, HEX.FROST_H);
+      ellipse(c, 63, 40, 1.5, 2.2, HEX.SPIRIT_L);
+      ellipse(c, 54, 62, 6.5, 2.2, HEX.INK);
+      c.strokeStyle = rgba(HEX.FROST_D, 0.75); c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(50, 30); c.lineTo(53, 38); c.lineTo(49, 50); c.stroke();
     });
   }
 }

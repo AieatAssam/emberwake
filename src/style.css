@@ -450,3 +450,5 @@ body.touch #toasts { top: 28%; }
   #timer { font-size: 20px; }
   body.touch #flarebtn { bottom: calc(68px + var(--sab)); width: 76px; height: 76px; }
 }
+.unlock-banner { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--pal-mint); border-radius: 10px; background: rgb(from var(--pal-mint) r g b / 8%); font-size: 14px; }
+.unlock-banner b { color: var(--pal-mint); }

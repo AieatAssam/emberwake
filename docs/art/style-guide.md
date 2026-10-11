@@ -1,7 +1,7 @@
-# Emberwake Art Style Guide, v1.1
+# Emberwake Art Style Guide, v1.3
 
 **Status:** this is the source of truth. Every future art audit compares against this document.
-**Version:** v1.2, 2026-10-11. It goes with **palette v1.1 (73 swatches)**. v1.2 drops the boss n80, flat-share and detail floors from v1.1. Those counts went up when a sprite was filled with stripes, so they are not a craft gate.
+**Version:** v1.3, 2026-10-11. It goes with **palette v1.3 (85 swatches)**. Boss bodies are exempt from the flat 3:1 floor: a boss may be near-black. Readability is the whole silhouette. The outer rim, glow, corona or emissive edge must be ≥ 3:1 (target ≥ 4:1) against all 8 grounds over at least 60% of the perimeter, and the face or eyes must read. Minions keep the 3:1 body floor. v1.2 dropped the boss n80, flat-share and detail floors, because a striped fill cleared them without describing a volume.
 **Based on:**
 - the repo survey of `AieatAssam/emberwake` @ `758ad49`
 - `ew-reports/drift-2026-10-10.md`
@@ -108,6 +108,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | pair | min ΔE | v1 measured |
 |---|---|---|
 | Player Ember ramp vs Hostile Fire and Hostile Signal | 20 | 28.4 |
+| Corona (SOL_D, SOL, SOL_H) vs Reward Gold, Player Ember and CANDLE | 20 | 20.3 (SOL vs R_GOLD) |
 | Any Reward swatch vs Hostile Fire and Hostile Signal | 20 | 28.5 |
 | Any player-side swatch vs Hostile Fire and Hostile Signal | 20 | 22.0 |
 | Hostile Glare `#e8ff4a` vs Reward Gold `#ffd84a` | 20 | 30.5 |
@@ -121,8 +122,8 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 
 | class | band | v1.1 result |
 |---|---|---|
-| Enemy body (normal) | ≥ 3.0. Herald ≥ 3.5. Totem ≥ 4.0. No rim exemption | min 3.61 (forge0 on Rimewood). Herald body 4.35 |
-| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0. Herald ≥ 3.2. Totem ≥ 3.5 | min 3.36 (matron0 on Rimewood). Herald elite 3.92 |
+| Enemy body (normal) | ≥ 3.0 for minions. Totem ≥ 4.0. Bosses are exempt (silhouette rule below) | min 3.61 (forge0 on Rimewood) |
+| Enemy body (elite, × `0xfff0d0`) | ≥ 3.0 for minions. Totem ≥ 3.5. Bosses are exempt | min 3.40 (forge0 on Rimewood) |
 | Pickup / reward | ≥ 4.5 | min 4.58 (pilgrim0 on Rimewood) |
 | Objective | ≥ 4.5 | rot pool is Moss + Objective (no Bog). Top-3 colour share 0.115 |
 | Bearer | ≥ 4.0. Hunter ≥ 4.5 | min 4.26 (warden on Rimewood). Hunter 5.02 |
@@ -131,7 +132,7 @@ All contrast figures are WCAG 2.x ratios. All colour distances are CIE76 ΔE (La
 | Enemy rim composite | ≥ 3.0 | 4.26 on Rimewood |
 | Enemy eyes / irises | ≥ 4.5 | held from v1 |
 
-Boss craft (`npm run contrast`) is the WCAG floors above, plus a real gradient on every boss, Herald void ≤ 0.20, Tyrant ink share ≤ 0.30, Matron ink-edge ≥ 0.90, and a pose change ≥ 0.10 between the two ends of the idle cycle. The v1.1 n80, flat-share and detail floors are gone: a banded fill cleared them without modelling a form.
+Boss craft (`npm run contrast`) keeps a real gradient on every boss, Herald void ≤ 0.20, Tyrant ink share ≤ 0.30, Matron ink-edge ≥ 0.90, and a pose change ≥ 0.10 between the two ends of the idle cycle. v1.3 adds the silhouette read (edge-read ≥ 0.60 at 3:1), a body-hue separation of ΔE ≥ 25 between bosses and ΔE ≥ 15 from the Gloomling, and a Tyrant nova pose that is ≥ 0.20 and larger than the idle pose. Measured this round: edge-read 0.98–1.00 (and ≥ 4:1 on the same share), closest boss bodies matron/hollow ΔE 25.1, nova pose 0.30. The v1.1 n80, flat-share and detail floors stay dropped.
 
 **Effective grounds (v1.1, tile mean × stage tint)**
 
@@ -180,8 +181,9 @@ All have luminance between 0.005 and 0.011.
 | Boss | Brood Matron 150×140, Cinder Colossus 190, Gloam Herald 90×120, Eclipse Tyrant 252 | silhouette fills 90–252px; boss halo HEYE |
 | Special | the Hollow (110×120, can't be harmed), Gloom Totem (40×60, breakable loot) | |
 
-- **[Rule]** an enemy's body uses one hostile material ramp. Eyes use HEYE, HGLARE, SPIRIT_L or WHITE.
-- **[Rule]** the Eclipse Tyrant's corona is outlined in INK. The disc is a shaded body, not an INK fill (§6).
+- **[Rule]** a minion's body uses one hostile material ramp. Eyes use HEYE, HGLARE, SPIRIT_L or WHITE.
+- **[Rule]** bosses may use the boss ramps (eclipse, abyss, ash, brood, corona) and the older hostile ramps. Corona (SOL_D, SOL, SOL_H) is hostile-only and boss-only. It stays ΔE ≥ 20 from Reward Gold, Player Ember and CANDLE. The Tyrant's disc is the eclipse ramp, not an INK fill, and the corona is outlined in INK (§6).
+- **[Rule]** the main body hue of any two bosses differs by ΔE ≥ 25. No boss body sits within ΔE 15 of the Gloomling.
 
 **Pickups [Current]**
 - Small and faceted or iconic: gems 22×28 (tier 4 is 31×39), heart, magnet, bomb, freeze, cinder 18, flare orb.
@@ -239,7 +241,7 @@ All have luminance between 0.005 and 0.011.
 | Horde (gloomling, moth, imp, scarab, stormkite, sunbearer) | 40×40–42 | 12–14 | 1.43–1.67 | 24 |
 | Broodling | 28×28 | 9 | 1.56 | 17 (body ≥ 10) |
 | Brute (husk 60, beetle 52×48, sentinel 64, forge 72×64) | 44–72 | 15–32 | 1.12–1.60 | 26–43 |
-| Boss: Matron / Colossus / Herald / Tyrant | 150×140 / 190 / 90×120 / 252 | 58 / 75 / 30 / 85 | 1.29 / 1.27 / 1.50 / 1.48 | 72–151 |
+| Boss: Matron / Colossus / Herald / Tyrant | 150×140 / 190 / 90×120 / 240 | 58 / 75 / 30 / 85 | 1.29 / 1.27 / 1.50 / 1.41 | 72–144 |
 | Pickups: gem / cinder / heart | 22×28 / 18 / 28×26 | — | — | 13×17 / 10.8 / 17 |
 | Chest | 44×38 | — | — | 26×23 |
 | Prop | 20–56 wide, up to 72 tall | solids from `stage.solids` | — | 12–43 |

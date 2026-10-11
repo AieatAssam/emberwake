@@ -100,8 +100,10 @@ for (const name of ENEMIES) {
   if (!c) { fails.push(name + ' missing'); continue; }
   const body = worstOf(c.rgb), elite = worstOf(eliteOf(c.rgb));
   enemies[name] = { body: +body.min.toFixed(2), bodyAt: body.at, elite: +elite.min.toFixed(2), eliteAt: elite.at, y: +c.y.toFixed(4) };
-  const bodyFloor = name === 'herald0' ? 3.5 : name === 'totem0' ? 4 : 3;
-  const eliteFloor = name === 'herald0' ? 3.2 : name === 'totem0' ? 3.5 : 3;
+  const bossBody = /^(matron|colossus|herald|tyrant|hollow)/.test(name);
+  if (bossBody) continue;
+  const bodyFloor = name === 'totem0' ? 4 : 3;
+  const eliteFloor = name === 'totem0' ? 3.5 : 3;
   if (body.min < bodyFloor) fails.push(name + ' body ' + body.min.toFixed(2) + ' on ' + body.at);
   if (elite.min < eliteFloor) fails.push(name + ' elite ' + elite.min.toFixed(2) + ' on ' + elite.at);
 }
@@ -170,9 +172,10 @@ for (const name of union) {
   }
 }
 const worst = (rows, key) => rows.reduce((a, b) => (a[key] < b[key] ? a : b));
+const minionRows = Object.entries(enemies).filter(([name]) => !/^(matron|colossus|herald|tyrant|hollow)/.test(name));
 const summary = {
-  enemyBody: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.body })), 'v'),
-  enemyElite: worst(Object.entries(enemies).map(([name, v]) => ({ name, ...v, v: v.elite })), 'v'),
+  enemyBody: worst(minionRows.map(([name, v]) => ({ name, ...v, v: v.body })), 'v'),
+  enemyElite: worst(minionRows.map(([name, v]) => ({ name, ...v, v: v.elite })), 'v'),
   pickup: worst(Object.entries(pickups).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
   bearer: worst(Object.entries(bearers).map(([name, v]) => ({ name, ...v, v: v.contrast })), 'v'),
 };
@@ -399,7 +402,11 @@ const totemDiff = poseOf('totem0', 'totem1');
 if (totemDiff < 0.05) fails.push('totem pose ' + totemDiff.toFixed(3));
 const robeW0 = bboxWidth('herald0'), robeW2 = bboxWidth('herald2');
 if (robeW0 && Math.abs(robeW2 - robeW0) / robeW0 > 0.04) fails.push('herald robe width ' + robeW0 + '→' + robeW2);
-for (const name of ['vent', 'candelabra', 'tyrant0', 'tyrant1', 'tyrant2', 'tyrant3']) {
+const bossFrames = [];
+for (const [tex, n] of [['matron', 12], ['colossus', 11], ['herald', 12], ['tyrant', 12], ['hollow', 8]]) {
+  for (let i = 0; i < n; i++) bossFrames.push(tex + i);
+}
+for (const name of ['vent', 'candelabra', ...bossFrames]) {
   const b = borderAlpha(name);
   if (b >= 8) fails.push(name + ' border ' + b);
 }
@@ -433,12 +440,120 @@ const glass = sheens.glasscluster, cob = sheens.cobble, orbS = sheens.orb;
 if (!glass || glass.dx > -0.05) fails.push('glass dx ' + (glass && glass.dx));
 if (!cob || cob.dx > -0.05 || cob.dy > -0.05) fails.push('cobble ' + (cob && cob.dx) + ',' + (cob && cob.dy));
 if (!orbS || orbS.dx > -0.1) fails.push('orb dx ' + (orbS && orbS.dx));
+function labOf(rgb) {
+  const linC = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  let r = linC(rgb[0]), g = linC(rgb[1]), b = linC(rgb[2]);
+  const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+  const Y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+}
+const dErgb = (a, b) => { const A = labOf(a), B = labOf(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
+function bodyMean(name) {
+  const g = grab(name);
+  if (!g) return null;
+  const { d, W, H } = g;
+  const fringe = (x, y) => {
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H) return true;
+      const o = (yy * W + xx) * 4;
+      if (d[o + 3] < 150) return true;
+      if (Math.abs(d[o] - 11) + Math.abs(d[o + 1] - 6) + Math.abs(d[o + 2] - 20) < 40) return true;
+    }
+    return false;
+  };
+  let lr = 0, lg = 0, lb = 0, n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = (y * W + x) * 4;
+    if (d[o + 3] < 150 || fringe(x, y)) continue;
+    const r = d[o], gv = d[o + 1], b = d[o + 2];
+    if (rel([r, gv, b]) > 0.35) continue;
+    // Eyes, signal banners and the solar corona are not the body hue.
+    if (r > gv + 40 && r > b + 30 && gv < 90) continue;
+    if (b < 40 && r > 90 && gv > 50) continue;
+    lr += lin(r); lg += lin(gv); lb += lin(b);
+    n++;
+  }
+  if (!n) return null;
+  return [enc(lr / n), enc(lg / n), enc(lb / n)];
+}
+const bossIds = ['matron0', 'colossus0', 'herald0', 'tyrant0', 'hollow0'];
+const bossMeans = Object.fromEntries(bossIds.map((id) => [id, bodyMean(id)]));
+for (let i = 0; i < bossIds.length; i++) for (let j = i + 1; j < bossIds.length; j++) {
+  const a = bossMeans[bossIds[i]], b = bossMeans[bossIds[j]];
+  if (!a || !b) { fails.push('boss body missing ' + bossIds[i]); continue; }
+  const d = dErgb(a, b);
+  if (d < 25) fails.push('boss ΔE ' + bossIds[i] + ' ' + bossIds[j] + ' ' + d.toFixed(1));
+}
+const gloomBody = bodyMean('gloomling0');
+for (const id of bossIds) {
+  if (!bossMeans[id] || !gloomBody) continue;
+  const d = dErgb(bossMeans[id], gloomBody);
+  if (d < 15) fails.push(id + ' gloomling ΔE ' + d.toFixed(1));
+}
+function edgeShare(name) {
+  const g = grab(name);
+  if (!g) return 0;
+  const { d, W, H } = g;
+  let per = 0, ok = 0, hot = 0;
+  const at = (x, y) => (y * W + x) * 4;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (d[at(x, y) + 3] < 150) continue;
+    let boundary = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H || d[at(xx, yy) + 3] < 150) boundary = true;
+    }
+    if (!boundary) continue;
+    per++;
+    let best = 0;
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+      const o = at(xx, yy);
+      if (d[o + 3] < 40) continue;
+      const rgb = [d[o], d[o + 1], d[o + 2]];
+      let min = 99;
+      for (const gnd of Object.values(grounds)) min = Math.min(min, ratio(rgb, gnd));
+      if (min > best) best = min;
+    }
+    if (best >= 3) ok++;
+    if (best >= 4) hot++;
+  }
+  return { per, share: per ? ok / per : 0, hot: per ? hot / per : 0 };
+}
+const edgeReport = {};
+for (const id of bossIds) {
+  const e = edgeShare(id);
+  edgeReport[id] = { share: +e.share.toFixed(2), hot: +e.hot.toFixed(2) };
+  if (e.share < 0.6) fails.push(id + ' edge-read ' + e.share.toFixed(2));
+}
+const nova = poseOf('tyrant0', 'tyrant10');
+if (!(nova > (poses.tyrant || 0) && nova >= 0.2)) fails.push('tyrant nova pose ' + nova.toFixed(3) + ' idle ' + poses.tyrant);
+let skull = 0, skullN = 0;
+{
+  const g = grab('hollow0');
+  if (g) {
+    for (let i = 0; i < g.d.length; i += 4) {
+      if (g.d[i + 3] < 150) continue;
+      const rgb = [g.d[i], g.d[i + 1], g.d[i + 2]];
+      if (rel(rgb) < 0.45) continue;
+      skullN++;
+      let min = 99;
+      for (const gnd of Object.values(grounds)) min = Math.min(min, ratio(rgb, gnd));
+      if (min >= 8) skull++;
+    }
+  }
+}
+if (!skullN || skull / skullN < 0.5) fails.push('hollow skull ' + skull + '/' + skullN);
 const craftSummary = {
   hollowPose: +hollowPose.toFixed(3), totemDiff: +totemDiff.toFixed(3),
   maxIou: +maxIou.toFixed(3), maxPair, hotPairs, gloomBloater: +gb.toFixed(3), matronLurker: +ml.toFixed(3),
   upperLeft: litN, lit: LIT.length, pairs: pairList,
 };
-const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens };
+const out = { fails, summary, atlasUse: window.__atlasUse, rimMin: +rimMin.toFixed(2), rimAt, poses, propMin, propMinAt, propMax, propMaxAt, grounds, enemies, pickups, bearers, props, bossCraft, craftOf, craftSummary, grads: Object.fromEntries(BOSSES.map((n) => [n, grads[n] || 0])), sheens, edgeReport, nova, bossMeans };
 document.getElementById('out').textContent = JSON.stringify(out);
 </script>
 </body>

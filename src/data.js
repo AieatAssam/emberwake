@@ -271,7 +271,7 @@ export const ENEMIES = {
   spitter: { tex: 'spitter', hp: 24, speed: 40, dmg: 8, xp: 3, r: 16, ranged: true },
   sentinel: { tex: 'sentinel', hp: 140, speed: 44, dmg: 18, xp: 10, r: 23, knockRes: 0.8 },
   matron: { tex: 'matron', hp: 4200, speed: 58, dmg: 20, xp: 250, r: 58, boss: true, knockRes: 1, summon: 'broodling', anim: 6, atkFrames: 4 },
-  colossus: { tex: 'colossus', hp: 16000, speed: 46, dmg: 40, xp: 600, r: 75, boss: true, knockRes: 1, slam: true, anim: 5, atkFrames: 2 },
+  colossus: { tex: 'colossus', hp: 16000, speed: 46, dmg: 40, xp: 600, r: 75, boss: true, knockRes: 1, slam: true, anim: 5, atkFrames: 3 },
   herald: { tex: 'herald', hp: 22000, speed: 22, dmg: 30, xp: 450, r: 30, boss: true, knockRes: 1, blink: true, shroud: true, anim: 4, atkFrames: 4 },
   tyrant: { tex: 'tyrant', hp: 90000, speed: 62, dmg: 60, xp: 2500, r: 85, boss: true, knockRes: 1, nova: true, final: true, anim: 8, atkFrames: 4 },
   imp: { tex: 'imp', hp: 16, speed: 78, dmg: 8, xp: 2, r: 13, anim: 8, deathBurst: true },

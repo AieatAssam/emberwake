@@ -2316,6 +2316,16 @@ function bossPose(e, dt) {
   const n = e.d._t.length;
   const atk = e.d.atkFrames || 0;
   const walk = n - atk;
+  // Slam: one held raise, then impact, then a recovery frame. Visual only.
+  if (e.d.slam && atk >= 3) {
+    if (e.recover > 0) {
+      e.recover -= dt;
+      const u = 1 - Math.max(0, e.recover) / 0.42;
+      return walk + 1 + (u < 0.5 ? 0 : 1);
+    }
+    if (e.charging) return walk;
+    return (e.anim | 0) % walk;
+  }
   if (e.recover > 0 && atk) {
     e.recover -= dt;
     const u = 1 - Math.max(0, e.recover) / 0.42;

@@ -1,8 +1,8 @@
-# Emberwake locked palette, v1.1 (2026-10-10)
+# Emberwake locked palette, v1.3 (2026-10-11)
 
 This is the locked palette. The constants are [`src/palette.js`](../../src/palette.js). The rules that use them are [style-guide.md](style-guide.md). It was checked, before it landed, against a throwaway copy (the repo source plus a colour-remap shim) served by a local Vite dev server. `npm run contrast` remeasures the atlas in the repo.
 
-**73 swatches** in 23 ramps, plus CANDLE on the scenery side. Sides: shared materials and neutrals, ground, player, hostile, reward, objective, scenery, UI and FX.
+**85 swatches.** v1.1 locked 73. v1.3 adds the boss ramps and the mint UI swatch, listed below. Sides: shared materials and neutrals, ground, player, hostile, reward, objective, scenery, UI and FX.
 Contrast is WCAG 2.x. "Effective ground" means the ground tile mean multiplied by the stage tint, as in the drift report. ΔE is CIE76 (Lab, D65).
 
 ## Swatch table
@@ -87,7 +87,7 @@ The contrast column gives the min–max for the flat swatch against the 8 effect
 
 ## How the 5 drift fixes are built in
 
-1. **Lighter enemy bodies.** Gloomling's top stop is now `#8a62c8` (GLOOM) and its bottom stop `#62509a`. Matron's body and head use the same Gloom ramp. Herald's cloak and hood use the Shroud ramp (`#9488b8` / `#5a5080`). Colossus and Husk use the Hulk ramp (`#86706a`, `#a8948a`, `#5a4a48`). Lurker uses the Bog ramp (`#7aa848` / `#3e6a2a`). Moth's wings move to ROSE and Forge's stone to Hulk. These are side-specific overrides, listed in `rules.py`.
+1. **Lighter minion bodies.** Gloomling's top stop is `#8a62c8` (GLOOM) and its bottom stop `#62509a`. Colossus and Husk use the Hulk ramp (`#86706a`, `#a8948a`, `#5a4a48`). Lurker uses the Bog ramp (`#7aa848` / `#3e6a2a`). Moth's wings move to ROSE and Forge's stone to Hulk. v1.3 takes Matron, Herald, Tyrant and the Hollow off the minion ramps and onto the boss ramps below. Minion side rules are unchanged.
 2. **Enemy light rim.** RIM `#e6dcff` at alpha 0.5 is drawn 1 logical px (2 atlas px at SS=2) *outside* the INK outline, on all 21 enemy body frames. The composite measures **4.24–4.36:1** against the grounds. At alpha 0.35 it was only 2.71–2.75:1, so 0.5 is the locked value.
 3. **One prop rule.** It replaces the three `dimFrame` presets and the per-stage `decorTint`. Each prop's solid-pixel mean luminance is normalised to **0.047** (linear), with a light 0.15 desaturation, and the prop is drawn at alpha 0.8 with no decorTint. This also brightens props that were too dark: rocks and pillars, which are solid obstacles, used to measure 1.0–1.3:1.
 4. **Elite tint `0xfff0d0`.** This replaces `0xffe0a0`. Halos (added 2026-10-10, v1): boss HEYE, plain elite RIM (was amber `0xffc040`), swift FROST, vampiric ROSE_L, warded VOID, volatile HFIRE. The closest pair of halos is ΔE 31.8 apart.
@@ -169,7 +169,7 @@ The mapping that produced v1 (not shipped with the game) had one row for each of
 These are the calls made while locking v1. The repo now draws from the swatches. The ground texture noise is still the original pattern: bases use the ground swatches, and stage multiply tints stay as lighting. `npm run contrast` remeasures the atlas.
 
 - **Quantising 987 colours to 72 is a big change.** 58% of colours move by more than ΔE 10. Gradients still blend between swatches, so sprites keep their shading, but subtle per-sprite hues are gone. For example, the 13 near-identical golds collapse into EMBER_L or R_GOLD, and the bearer cloths become FROST, MOON, CRIMSON, SLATE or MOSS. If 72 is too tight, add 1–2 cloth swatches per bearer as a "bearer accent" side.
-- **Herald's robe is a Shroud gradient, not an INK fill.** The hood void is a small INK ellipse. v1.1 drops the rim exemption: the body itself is 4.35:1 and the elite tint is 3.92:1 on Rimewood (floors 3.5 and 3.2). The rim composite is still checked, and it is not what carries the read.
+- **Herald's robe is the Ash ramp, not an INK fill.** The hood void is a small INK ellipse. v1.3 exempts boss bodies from the flat 3:1 floor. The robe reads by its lit rim and the hostile-signal banner. Minions still clear 3:1 (forge0 is the minimum, 3.61 on Rimewood).
 - **Ground texture noise was not redrawn.** Gloam, Rimewood and Stormbreak bases are Night Ground `#141a24` (they were within ΔE 1.6–3.4). The blob and stone colours inside the texture stay as they were, so a re-rendered tile is not the same hex as the old analytical shift. Stage multiply tints are unchanged.
 - **Halo colours follow the side rules.** Plain elite halo is RIM `#e6dcff`, vampiric is ROSE_L `#ff9ad0`, warded is VOID `#c080ff`. The closest pair is ΔE 31.8.
 - **Scenery warm light is CANDLE** `#f0dc46` (swatch 73). It is at least ΔE 20 from Player Ember and from Hostile Fire, so a candelabra is not the player's flame and not a vent.
@@ -181,7 +181,32 @@ These are the calls made while locking v1. The repo now draws from the swatches.
 ## Files
 
 - [style-guide.md](style-guide.md): the art rules
-- [`src/palette.js`](../../src/palette.js): the 73 swatches, ramps, halo colours, the prop rule and the contrast floors
+- [`src/palette.js`](../../src/palette.js): the 85 swatches, ramps, halo colours, the prop rule and the contrast floors
+
+## v1.3 boss ramps and mint
+
+Bosses are exempt from the minion 3:1 flat-body floor. A boss body may be near-black. The outer rim, glow, corona or emissive edge must be ≥ 3:1 (target ≥ 4:1) on at least 60% of the silhouette perimeter, against all 8 grounds, and the face must read. Minions stay on the 3:1 floor.
+
+The new hostile swatches are boss-only. They are darker than the minion ramps and far enough from Ink that the 4px outline still separates, because the rim and the emissive edge carry the read.
+
+| hex | id | ramp | use |
+|---|---|---|---|
+| `#1a1028` | ECLIPSE | eclipse | Tyrant disc |
+| `#3a2468` | ECLIPSE_L | eclipse | Tyrant disc, lit from the upper left |
+| `#2a1870` | ABYSS | abyss | Hollow shroud |
+| `#4a38a8` | ABYSS_L | abyss | Hollow lit fold |
+| `#1a4048` | ASH | ash | Herald robe |
+| `#4a7874` | ASH_L | ash | Herald robe, lit fold |
+| `#4a0a46` | BROOD | brood | Matron carapace |
+| `#7a2868` | BROOD_L | brood | Matron carapace, lit |
+| `#7a6410` | SOL_D | corona | Tyrant corona, shadow side |
+| `#c4a000` | SOL | corona | Tyrant corona gold |
+| `#c0d400` | SOL_H | corona | Tyrant corona, hot stop |
+| `#7affd0` | MINT | UI | Unlock banner. Replaces the inline `#7affd0` from the stage-unlock UI |
+
+Corona is hostile-only and boss-only. The closest pair against Reward Gold, Player Ember and CANDLE is SOL vs R_GOLD at ΔE 20.3. A true amber cannot clear ΔE 20 from Reward Gold, Player Ember and CANDLE at once, so the hot stop is the yellow-green SOL_H and the gold read is SOL.
+
+Any two boss body hues differ by ΔE ≥ 25 (closest rendered pair this round: Matron and the Hollow, 25.1). No boss body is within ΔE 15 of the Gloomling. Colossus stays on the Hulk ramp.
 - this document: how v1 was chosen, including the contrast numbers from the throwaway check
 
 The generation scripts, the mapping CSV and the remap shim stayed out of the repo. They were the inputs to this lock, not something the game loads.
