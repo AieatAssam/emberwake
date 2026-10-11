@@ -465,14 +465,15 @@ Each item gives what to measure and the threshold. The method is the drift/palet
 | `--space-1` … `--space-5` | 4 / 8 / 12 / 16 / 24px | padding, gap, and stack spacing |
 | `--elev-1` | inset lip | buttons |
 | `--elev-2` | 16px / 48px drop | panels |
-| `--glow-1`, `--glow-2` | 12px, 22px ember | hover and primary hover. A semantic glow (pact, frost, gold, hostile, objective) keeps its swatch and uses one of these two blurs |
+| `--glow-c` | Ember, or a semantic swatch | the colour inside every glow. Set it on the element (pact, fusion, frost, hostile, objective, a Bearer's own colour) |
+| `--glow-1`, `--glow-2`, `--glow-3` | 12px, 22px, 40px | the only glows. `--glow-3` is the chest, boss, and level-up bloom. The chest sprite's reveal halo is the one animated blur (`--glow` in px, set from the open) |
 | `--focus-width`, `--focus-color` | 3px Ember Light | the only focus ring, for `:focus-visible` and the gamepad `.pad-focus` |
 
 **[Rule]** Text is at least 11px. Cinzel is titles. Chakra Petch is everything else. Hit targets are at least 44×44px (buttons, Heat, keepsakes, Dawn, difficulty segments, pause, toggles).
 
 **[Rule]** The cinder balance (`.wallet`) is on every screen where the player decides to spend: Bearer unlock, the Hearth (including Eternal Embers), the Codex, results, and the title's Hearth button. On a scrolling panel it is sticky, and it sits above the action row, never under it.
 
-**[Rule]** A price the player can pay uses Ember (`.can-afford`) and the card reads as a button. A price they cannot pay uses Hostile Signal `#ff3a6a` (5.5:1 on the panel), a lock, `aria-disabled="true"`, and a title that says why. The tap writes that reason into `.buy-reason` (`role="status"`). It does not fail silently. A failed requirement uses the same disabled affordance; the requirement text is the reason. Native `disabled` is only for an action that cannot be explained (a spent reroll), and that label stays Slate Highlight, not 35% opacity.
+**[Rule]** A price the player can pay uses Ember (`.can-afford`) and the card reads as a button. A price they cannot pay uses Slate Highlight, a thin Slate border, a lower card, and a shortfall chip (`45 short`). It does not use Hostile Signal, and it does not use a lock. `aria-disabled="true"` and a title still say why. The tap writes that reason into the card's own `.buy-reason` (`role="status"`), a line that is already reserved under the price, so the panel does not move. A requirement lock keeps the 🔒 and its own text. Native `disabled` is only for an action that cannot be explained (a spent reroll), and that label stays Slate Highlight, not 35% opacity.
 
 **[Rule]** A stage card's thumbnail is that stage's landmark sprite (`waystone`, `forge`, `brazier`, `rotpool`, `chapel`, `sunshard`, `lighthouse`) on the stage ground, with a wash of the stage's UI colour. Prop sprites are dimmed into the ground and are not used as thumbnails. On a narrow screen the Bearer and stage strips fade out at the trailing edge and say to swipe.
 
