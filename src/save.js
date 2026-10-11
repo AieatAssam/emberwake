@@ -15,6 +15,9 @@ const DEFAULT = {
   skins: {},
   seals: {},
   stageBearers: {},
+  objBest: {},
+  objDone: {},
+  items: {},
   keepsakeSel: '',
   milestones: {},
   eternal: {},
@@ -32,7 +35,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      return { ...structuredClone(DEFAULT), ...s, feats: s.feats || {}, stages: { gloam: true, ...(s.stages || {}) }, heatMax: s.heatMax || {}, seen: s.seen || {}, daily: s.daily || {}, hints: s.hints || {}, records: s.records || {}, skins: s.skins || {}, seals: s.seals || {}, stageBearers: s.stageBearers || {}, milestones: s.milestones || {}, eternal: s.eternal || {}, heatSel: s.heatSel || {}, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
+      return { ...structuredClone(DEFAULT), ...s, feats: s.feats || {}, stages: { gloam: true, ...(s.stages || {}) }, heatMax: s.heatMax || {}, seen: s.seen || {}, daily: s.daily || {}, hints: s.hints || {}, records: s.records || {}, skins: s.skins || {}, seals: s.seals || {}, stageBearers: s.stageBearers || {}, objBest: s.objBest || {}, objDone: s.objDone || {}, items: s.items || {}, milestones: s.milestones || {}, eternal: s.eternal || {}, heatSel: s.heatSel || {}, settings: { ...DEFAULT.settings, ...(s.settings || {}) } };
     }
   } catch { /* storage unavailable */ }
   return structuredClone(DEFAULT);
