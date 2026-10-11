@@ -4,7 +4,7 @@
 **Method:** Nielsen's 10 heuristics and WCAG 2.2 AA. No hallmark UX-review skill or mode is installed in this environment, so those two are the bar.
 **How it was looked at:** headless Chrome at 1× against the Vite dev server. Viewports: 1280×720, 360×740, 412×915, and a short landscape phone at 740×360. Phone viewports emulate a coarse pointer so the touch HUD (flare button, 48px menu buttons) is the one a phone actually gets. `env(safe-area-inset-*)` stayed 0; Chrome will not invent a notch, so safe-area is reviewed from the CSS, not from a device cutout.
 
-Save used for the main set: 1,243 cinders, only Kael and the Gloam unlocked, no Heat, no Keepsake. A second 412×915 pass (`select-rich.png`, `hearth-rich.png`) turns Heat, a Dawn Seal keepsake, and the Eternal Embers on, still with 1,243 cinders, so unaffordable prices and the keepsake chips are on screen.
+Save used for the main set: 1,243 cinders, only Kael and the Gloam unlocked, no Heat, no Keepsake. A second 412×915 pass (`select-rich.webp`, `hearth-rich.webp`) turns Heat, a Dawn Seal keepsake, and the Eternal Embers on, still with 1,243 cinders, so unaffordable prices and the keepsake chips are on screen.
 
 ## Top findings
 
@@ -12,7 +12,7 @@ Save used for the main set: 1,243 cinders, only Kael and the Gloam unlocked, no 
 2. **Prices you cannot pay look the same as prices you can, and a refused tap only plays a sound.** At 1,243 cinders, Twin Flame (4,500) and Second Wick (2,000) use the same ember price as Kindled Strength (60). Hearth cards are not buttons, have no `aria-disabled`, and the click handler calls `sfx.deny()` and returns. Bearer unlock does set `disabled`, which removes it from keyboard and gamepad navigation and gives no reason.
 3. **Chrome does not share a radius, border, shadow, or focus treatment.** Computed radii on one screen include 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, and 16px, plus 50%. Cards are 12px, buttons 10px, the info box 8px, the panel 16px, heat chips 8px, seals 14px. Glows are one-off blurs. Keyboard focus is a 3px ember outline; gamepad focus adds a second glow with `!important`.
 4. **The stage card's thumbnail does not read, the card is hollow, and the carousel does not say it scrolls.** The swatch is the stage ground (`#141a24` on the Gloam) plus two low-alpha blobs, so it is a dark square. On phones the strip is a row of 236×220 cards (`align-items: stretch`), so a short card grows to the tallest neighbour and the 54px swatch sits in the top of an empty left column. The next card is cut off (`scrollWidth` about 1,600px past the client) with no fade, label, or scrollbar.
-5. **Short landscape hides the title menu.** At 740×360 the logo, tagline, lineup, and five 48px touch buttons do not fit, and `#screen` does not scroll (`body` is `overflow: hidden`). Settings and the Hearth sit below the fold with no way to reach them. See [`before/landscape-740x360/title.png`](before/landscape-740x360/title.png).
+5. **Short landscape hides the title menu.** At 740×360 the logo, tagline, lineup, and five 48px touch buttons do not fit, and `#screen` does not scroll (`body` is `overflow: hidden`). Settings and the Hearth sit below the fold with no way to reach them.
 6. **Several controls are under 44×44px, and two text styles are under the 11px floor in the art guide.** Measured: pause 38×38 (desktop), Heat and keepsake chips 32×32 (keepsake names such as "Moss Charm" are clipped to that square), Dawn 65×22, difficulty segments about 39px tall, level-up ghost buttons 34px tall on desktop, checkboxes 20×20 (the row is the real target and is about 42px). Flare name on the touch button is 8px, the Space kbd is 9px, slot levels and the Kindle "next" line are 10px, the daily "free trial" chip is 10px.
 
 ## Screens
@@ -21,27 +21,23 @@ Save used for the main set: 1,243 cinders, only Kael and the Gloam unlocked, no 
 
 Hierarchy is clear: Cinzel wordmark, tagline, lineup, one primary action, then Hearth with the balance in the button. That is the right place for a balance you are about to spend, and it is visible at 1280×720 and on both phones.
 
-![Title, 412×915](before/phone-412x915/title.png)
+![Title, 412×915](before/phone-412x915/title.webp)
 
 The wordmark is `background-clip: text` with `color: transparent`. A contrast probe reports ~1:1 because it samples the transparent color, not the gradient. The gradient runs Ember Core to Ember Deep on near-ink, which is the brand, and it stays. The tagline uses Slate Highlight (`--muted`) and clears 4.5:1 on ink.
 
 At 740×360 the menu is clipped (finding 5). Safe-area padding is already on `#screen`; it cannot help a block that is taller than the viewport and cannot scroll.
 
-![Title, short landscape](before/landscape-740x360/title.png)
-
 ### Bearer and stage select
 
 This is the reported screen. Desktop lays Bearers and stages out as grids and is readable, but the wallet is below the panel (y 1336 vs a panel that ends at 704), so the balance is off-screen until you scroll into the sticky row.
 
-![Select, 1280×720](before/desktop-1280x720/select.png)
+![Select, 1280×720](before/desktop-1280x720/select.webp)
 
 Phones turn both grids into horizontal scroll-snaps. The Bearer strip gives no hint either, but several faces are on screen, so the cut-off is less severe than the stage strip, which shows one card and a sliver.
 
-![Select, 412×915, balance under the buttons](before/phone-412x915/select.png)
+![Select, 412×915, balance under the buttons](before/phone-412x915/select.webp)
 
-![Select, 360×740, balance below the viewport](before/phone-360x740/select.png)
-
-![Select with Heat and a keepsake, wallet past the panel](before/phone-412x915/select-rich.png)
+![Select with Heat and a keepsake, wallet past the panel](before/phone-412x915/select-rich.webp)
 
 Spacing between the heading, the detail box, the stage label, the locked-Heat note, and the buttons is a mix of 8, 10, 14, 16, and 18px margins, which is why the blocks feel uneven. The detail box is a left border and an 8px radius; the stage card is 12px; the panel is 16px.
 
@@ -51,11 +47,9 @@ Locked stages already say why (`🔒 …`). Tapping one only plays the deny soun
 
 Desktop at 1280×720 reads in the right order: XP, weapons, timer, objective, Kindle, flare. Pause is 38px, under the 44px target. Slot levels are 10px.
 
-![HUD, 1280×720](before/desktop-1280x720/hud.png)
+![HUD, 1280×720](before/desktop-1280x720/hud.webp)
 
 On a phone the pause control grows to 46px and the flare button is 88px, which is fine. The flare's name is 8px. In short landscape the objective pill, the flare button, and pause share the bottom band, and the goal line, timer, and Kindle share the top. They collide.
-
-![HUD, 740×360](before/landscape-740x360/hud.png)
 
 Safe area is applied to the XP bar, top bar, Kindle, flare, objective, and pause (`--sat` / `--sab` / `--sal` / `--sar`). That part is in good shape; the collision is the portrait-to-landscape layout, not the inset.
 
@@ -63,53 +57,51 @@ Safe area is applied to the XP bar, top bar, Kindle, flare, objective, and pause
 
 Three choices, a numbered key, a clear primary line, and a stat line. The panel scrolls, so a short phone can reach Skip. Desktop ghost buttons are 34px tall. Reroll/Banish use `disabled` and `opacity: 0.35`, which drops the label under 4.5:1. Pact and fusion borders are semantic and should stay colored; they should use the same radius and glow size as other cards.
 
-![Level-up, 360×740](before/phone-360x740/levelup.png)
+![Level-up, 412×915](before/phone-412x915/levelup.webp)
 
 ### Chest
 
 The build-up and the opened reels read as a reward. The panel is `overflow: hidden`, so on a short landscape phone the claim button can sit on the bottom edge of the viewport. Radius on the reel (14px) matches nothing else.
 
-![Chest, 1280×720](before/desktop-1280x720/chest.png)
+![Chest, 1280×720](before/desktop-1280x720/chest.webp)
 
 ### Pause
 
 Run context, weapon table, stats, Resume / Settings / Abandon. Abandon is a ghost danger button, which is the right weight. Nothing is spent here. On short landscape the panel scrolls inside `max-height: calc(100dvh - 32px)`.
 
-![Pause, 412×915](before/phone-412x915/pause.png)
+![Pause, 412×915](before/phone-412x915/pause.webp)
 
 ### Hearth
 
 The shop. Every upgrade is a card with the same ember price, whether or not 1,243 cinders covers it. The balance is past the end of the grid on every viewport measured. Eternal Embers, once a win has lit them, are the same pattern with larger prices. There is no pressed, disabled, or "not enough" state other than the card dimming at max rank.
 
-![Hearth, 412×915, no balance in view](before/phone-412x915/hearth.png)
+![Hearth, 412×915, no balance in view](before/phone-412x915/hearth.webp)
 
-![Hearth with Eternal Embers](before/phone-412x915/hearth-rich.png)
+![Hearth with Eternal Embers](before/phone-412x915/hearth-rich.webp)
 
 ### Codex
 
 A long reference: ascensions, feats, seals, records, bestiary, weapons, relics, rules. It does not spend cinders. Feats and seals do show cinder rewards, and the user asked for the balance on this screen because it is where you check what a run is worth. It is not shown. Tables scroll with the panel. Locked relics are dimmed and say why, which is the pattern the shop should follow.
 
-![Codex, 360×740](before/phone-360x740/codex.png)
+![Codex, 412×915](before/phone-412x915/codex.webp)
 
 ### Results
 
 The outcome, the breakdown, and Again / Share / The Hearth / Title. The earned line shows what this run paid. It does not show the balance you now hold, which is the number that decides whether the Hearth is worth opening. On a 360px-wide phone the summary is long; the actions sit at the end of the scroll.
 
-![Results, 360×740](before/phone-360x740/results.png)
-
-![Results, short landscape](before/landscape-740x360/results.png)
+![Results, 412×915](before/phone-412x915/results.webp)
 
 ### Settings
 
 Difficulty is a segment control at about 39px tall. Toggles are close to 44px on the label and 20px on the checkbox itself. Sliders are native and thin; the row should carry the hit area. Erase save is a danger ghost and asks `confirm()`, which is the right friction. No currency.
 
-![Settings, 1280×720](before/desktop-1280x720/settings.png)
+![Settings, 1280×720](before/desktop-1280x720/settings.webp)
 
 ### Daily Ember
 
 Fixed setup, a free-trial chip at 10px, and the +100 cinder promise in the record line. No spend. Fine at every viewport except the short landscape, where it depends on the panel scroll (it has one).
 
-![Daily, 412×915](before/phone-412x915/daily.png)
+![Daily, 412×915](before/phone-412x915/daily.webp)
 
 ## Heuristics
 
@@ -148,18 +140,20 @@ Leave: combat, drops, prices, unlock requirements, and balance. The wordmark gra
 
 Every screen, before any of the changes above.
 
-| Screen | 1280×720 | 360×740 | 412×915 | 740×360 |
-|---|---|---|---|---|
-| Title | [desktop](before/desktop-1280x720/title.png) | [360](before/phone-360x740/title.png) | [412](before/phone-412x915/title.png) | [landscape](before/landscape-740x360/title.png) |
-| Select | [desktop](before/desktop-1280x720/select.png) | [360](before/phone-360x740/select.png) | [412](before/phone-412x915/select.png) | [landscape](before/landscape-740x360/select.png) |
-| Hearth | [desktop](before/desktop-1280x720/hearth.png) | [360](before/phone-360x740/hearth.png) | [412](before/phone-412x915/hearth.png) | [landscape](before/landscape-740x360/hearth.png) |
-| Codex | [desktop](before/desktop-1280x720/codex.png) | [360](before/phone-360x740/codex.png) | [412](before/phone-412x915/codex.png) | [landscape](before/landscape-740x360/codex.png) |
-| Settings | [desktop](before/desktop-1280x720/settings.png) | [360](before/phone-360x740/settings.png) | [412](before/phone-412x915/settings.png) | [landscape](before/landscape-740x360/settings.png) |
-| Daily | [desktop](before/desktop-1280x720/daily.png) | [360](before/phone-360x740/daily.png) | [412](before/phone-412x915/daily.png) | [landscape](before/landscape-740x360/daily.png) |
-| HUD | [desktop](before/desktop-1280x720/hud.png) | [360](before/phone-360x740/hud.png) | [412](before/phone-412x915/hud.png) | [landscape](before/landscape-740x360/hud.png) |
-| Level-up | [desktop](before/desktop-1280x720/levelup.png) | [360](before/phone-360x740/levelup.png) | [412](before/phone-412x915/levelup.png) | [landscape](before/landscape-740x360/levelup.png) |
-| Chest | [desktop](before/desktop-1280x720/chest.png) | [360](before/phone-360x740/chest.png) | [412](before/phone-412x915/chest.png) | [landscape](before/landscape-740x360/chest.png) |
-| Pause | [desktop](before/desktop-1280x720/pause.png) | [360](before/phone-360x740/pause.png) | [412](before/phone-412x915/pause.png) | [landscape](before/landscape-740x360/pause.png) |
-| Results | [desktop](before/desktop-1280x720/results.png) | [360](before/phone-360x740/results.png) | [412](before/phone-412x915/results.png) | [landscape](before/landscape-740x360/results.png) |
+The checked-in set is 1280×720 and 412×915. The 360×740 and 740×360 passes were reviewed the same way and are not stored here.
 
-Also at 412×915: [select with Heat and a keepsake](before/phone-412x915/select-rich.png), [Hearth with Eternal Embers](before/phone-412x915/hearth-rich.png).
+| Screen | 1280×720 | 412×915 |
+|---|---|---|
+| Title | [desktop](before/desktop-1280x720/title.webp) | [412](before/phone-412x915/title.webp) |
+| Select | [desktop](before/desktop-1280x720/select.webp) | [412](before/phone-412x915/select.webp) |
+| Hearth | [desktop](before/desktop-1280x720/hearth.webp) | [412](before/phone-412x915/hearth.webp) |
+| Codex | [desktop](before/desktop-1280x720/codex.webp) | [412](before/phone-412x915/codex.webp) |
+| Settings | [desktop](before/desktop-1280x720/settings.webp) | [412](before/phone-412x915/settings.webp) |
+| Daily | [desktop](before/desktop-1280x720/daily.webp) | [412](before/phone-412x915/daily.webp) |
+| HUD | [desktop](before/desktop-1280x720/hud.webp) | [412](before/phone-412x915/hud.webp) |
+| Level-up | [desktop](before/desktop-1280x720/levelup.webp) | [412](before/phone-412x915/levelup.webp) |
+| Chest | [desktop](before/desktop-1280x720/chest.webp) | [412](before/phone-412x915/chest.webp) |
+| Pause | [desktop](before/desktop-1280x720/pause.webp) | [412](before/phone-412x915/pause.webp) |
+| Results | [desktop](before/desktop-1280x720/results.webp) | [412](before/phone-412x915/results.webp) |
+
+Also at 412×915: [select with Heat and a keepsake](before/phone-412x915/select-rich.webp), [Hearth with Eternal Embers](before/phone-412x915/hearth-rich.webp).
