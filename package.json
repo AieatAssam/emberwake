@@ -15,7 +15,7 @@
   },
   "type": "module",
   "dependencies": {
-    "pixi.js": "^8.22.0"
+    "pixi.js": "^8.23.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
